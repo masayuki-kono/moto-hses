@@ -30,3 +30,7 @@ cargo run -p moto-hses-client --example read_status -- 127.0.0.1:12222
 ## Notes
 
 - Wire compatibility is NOT implemented yet. Replace placeholder header/commands with real HSES spec.
+
+## Ref
+
+https://github.com/hsinkoyu/fs100
