@@ -1,0 +1,11 @@
+[package]
+name = "moto-hses-client"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+tokio = { workspace = true }
+bytes = { workspace = true }
+thiserror = { workspace = true }
+moto-hses-proto = { path = "../moto-hses-proto" }

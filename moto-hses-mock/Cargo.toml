@@ -1,0 +1,11 @@
+[package]
+name = "moto-hses-mock"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+description = "Local mock server for HSES (UDP) used in E2E tests"
+
+[dependencies]
+tokio = { workspace = true }
+bytes = { workspace = true }
+moto-hses-proto = { path = "../moto-hses-proto" }

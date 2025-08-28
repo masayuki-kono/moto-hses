@@ -1,0 +1,9 @@
+[package]
+name = "moto-hses-proto"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+bytes = { workspace = true }
+thiserror = { workspace = true }
