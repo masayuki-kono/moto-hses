@@ -1,36 +1,160 @@
 # moto-hses
 
-Rust implementation of Yaskawa High-Speed Ethernet Server (HSES) client (skeleton).
+Rust implementation of Yaskawa High-Speed Ethernet Server (HSES) client library.
+
+## Overview
+
+This library provides a type-safe, asynchronous Rust client for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol. Based on the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet).
+
+## Features
+
+- **Type-safe API**: Leverage Rust's type system for compile-time safety
+- **Async-first**: Built on Tokio for efficient asynchronous I/O
+- **Comprehensive error handling**: Type-safe error handling with thiserror
+- **Memory efficient**: Zero-copy operations using the bytes crate
+- **Extensible**: Modular design for easy extension and testing
 
 ## Crates
 
-- `moto-hses-proto` — Protocol types & codecs (placeholder)
-- `moto-hses-client` — Async UDP client using Tokio (placeholder)
-- `moto-hses-mock` — Local mock HSES UDP server for E2E testing
+- `moto-hses-proto` — Protocol definitions and serialization
+- `moto-hses-client` — Async UDP client using Tokio
+- `moto-hses-mock` — Local mock HSES UDP server for testing
 
-## Docs
+## Documentation
 
-- `docs/specs/hses-protocol.md`
-- `docs/specs/io-mapping.md`
-- `docs/design/architecture.md`
-- `docs/design/client-api.md`
-- `docs/design/error-handling.md`
-- `docs/adr/0001-adopt-hses.md`
+### Specifications
 
-## Quick start (mock server + client example)
+- [`docs/specs/hses-protocol.md`](docs/specs/hses-protocol.md) — HSES protocol specification and implementation guidelines
+
+### Design Documents
+
+- [`docs/design/architecture.md`](docs/design/architecture.md) — System architecture and design principles
+- [`docs/design/api-design.md`](docs/design/api-design.md) — API design and usage examples
+- [`docs/design/implementation-guide.md`](docs/design/implementation-guide.md) — Step-by-step implementation guide
+
+### Testing
+
+- [`docs/test/testing-strategy.md`](docs/test/testing-strategy.md) — Testing strategy and best practices
+
+### Architecture Decision Records
+
+- `docs/adr/0001-adopt-hses.md` — Decision to adopt HSES protocol
+
+## Quick Start
+
+### Basic Usage
+
+```rust
+use moto_hses_client::{HsesClient, VariableType};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create client
+    let client = HsesClient::new("192.168.1.100:10040").await?;
+
+    // Read variable
+    let value: i32 = client.read_variable(1, VariableType::Int32).await?;
+    println!("D001: {}", value);
+
+    // Write variable
+    client.write_variable(1, 42i32).await?;
+
+    // Execute job
+    client.execute_job(1).await?;
+
+    Ok(())
+}
+```
+
+### Mock Server Testing
 
 ```bash
-# Terminal 1: start mock server (listens on 127.0.0.1:12222 by default)
+# Terminal 1: Start mock server
 cargo run -p moto-hses-mock
 
-# Terminal 2: run client example against the mock
+# Terminal 2: Run client example against mock
 cargo run -p moto-hses-client --example read_status -- 127.0.0.1:12222
 ```
 
-## Notes
+## Implementation Status
 
-- Wire compatibility is NOT implemented yet. Replace placeholder header/commands with real HSES spec.
+### Phase 1: Protocol Layer (moto-hses-proto) ✅
 
-## Ref
+- [x] Protocol specification
+- [x] Message types and structures
+- [x] Serialization/deserialization
+- [x] Error handling
 
-https://github.com/hsinkoyu/fs100
+### Phase 2: Client Layer (moto-hses-client) 🔄
+
+- [x] Client architecture design
+- [x] API design
+- [ ] Basic client implementation
+- [ ] Connection management
+- [ ] Error handling and retry logic
+
+### Phase 3: Mock Server (moto-hses-mock) 🔄
+
+- [x] Mock server design
+- [ ] Mock server implementation
+- [ ] Test utilities
+
+### Phase 4: Testing & Documentation 🔄
+
+- [x] Testing strategy
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Performance tests
+- [ ] Documentation
+
+## Development
+
+### Prerequisites
+
+- Rust 1.70+
+- Tokio runtime
+- Network access for UDP communication
+
+### Building
+
+```bash
+# Build all crates
+cargo build
+
+# Run tests
+cargo test
+
+# Run examples
+cargo run -p moto-hses-client --example basic_usage
+```
+
+### Testing
+
+```bash
+# Unit tests
+cargo test
+
+# Integration tests
+cargo test --test integration
+
+# Performance tests
+cargo test --test performance
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Implement your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+Apache-2.0
+
+## References
+
+- [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) — C++ reference implementation
+- [FS100 HSES Manual](https://www.motoman.com/getmedia/16B5CD92-BD0B-4DE0-9DC9-B71D0B6FE264/160766-1CD.pdf.aspx?ext=.pdf) — Official HSES documentation
