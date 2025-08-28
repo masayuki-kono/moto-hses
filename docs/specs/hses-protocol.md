@@ -15,7 +15,6 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - Robot Control: 10040
   - File Control: 10041
 - **Endianness**: Little-endian
-- **Timeout**: 300ms (recommended)
 
 ### Message Structure
 
