@@ -16,45 +16,81 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum VariableType {
-    Int32 = 0x0001,
-    Float32 = 0x0002,
-    String = 0x0003,
-    Position = 0x0004,
+pub enum Division {
+    Robot = 1,
+    File = 2,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Command {
-    ReadVariable { var_type: VariableType, var_number: u16 },
-    WriteVariable { var_type: VariableType, var_number: u16, data: VariableData },
-    ExecuteJob { job_number: u16 },
-    GetStatus,
+pub enum Service {
+    GetSingle = 0x0e,
+    SetSingle = 0x10,
+    GetAll = 0x01,
+    SetAll = 0x02,
+    ReadMultiple = 0x33,
+    WriteMultiple = 0x34,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum VariableType {
+    Byte = 0,
+    Integer = 1,
+    Double = 2,
+    Real = 3,
+    RobotPosition = 4,
+    BasePosition = 5,
+    StationPosition = 6,
+    String = 7,
 }
 
 #[derive(Debug, Clone)]
-pub enum VariableData {
-    Int32(i32),
-    Float32(f32),
-    String(String),
-    Position(Position),
+pub struct RequestHeader {
+    pub payload_size: u16,
+    pub division: Division,
+    pub ack: bool,
+    pub request_id: u8,
+    pub block_number: u32,
+    pub command: u16,
+    pub instance: u16,
+    pub attribute: u8,
+    pub service: Service,
+}
+
+#[derive(Debug, Clone)]
+pub struct ResponseHeader {
+    pub payload_size: u16,
+    pub division: Division,
+    pub ack: bool,
+    pub request_id: u8,
+    pub block_number: u32,
+    pub service: u8,
+    pub status: u8,
+    pub extra_status: u16,
 }
 
 #[derive(Debug, Clone)]
 pub struct Position {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub rx: f32,
-    pub ry: f32,
-    pub rz: f32,
+    pub position_type: u32,
+    pub joint_config: u32,
+    pub tool_number: u32,
+    pub user_coordinate: u32,
+    pub extended_config: u32,
+    pub joints: [i32; 8],
 }
 
 #[derive(Debug, Clone)]
-pub struct Message {
-    pub message_id: u16,
-    pub command_id: u16,
-    pub data_length: u16,
-    pub data: Bytes,
+pub struct CartesianPosition {
+    pub position_type: u32,
+    pub joint_config: u32,
+    pub tool_number: u32,
+    pub user_coordinate: u32,
+    pub extended_config: u32,
+    pub x: i32, // micrometers
+    pub y: i32, // micrometers
+    pub z: i32, // micrometers
+    pub rx: i32, // millidegrees
+    pub ry: i32, // millidegrees
+    pub rz: i32, // millidegrees
 }
 
 #[derive(Error, Debug)]
@@ -65,6 +101,10 @@ pub enum ProtocolError {
     DeserializationError(String),
     #[error("Invalid message: {0}")]
     InvalidMessage(String),
+    #[error("Invalid magic bytes")]
+    InvalidMagicBytes,
+    #[error("Invalid header size")]
+    InvalidHeaderSize,
 }
 ```
 
@@ -73,72 +113,135 @@ pub enum ProtocolError {
 ```rust
 // src/serializer.rs
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use crate::{Message, Command, VariableType, VariableData, Position, ProtocolError};
+use crate::{RequestHeader, ResponseHeader, Division, Service, Position, CartesianPosition, ProtocolError};
 
 pub struct Serializer;
 
 impl Serializer {
-    pub fn serialize_message(message: &Message) -> Result<Bytes, ProtocolError> {
+    pub fn serialize_request_header(header: &RequestHeader) -> Result<Bytes, ProtocolError> {
         let mut buf = BytesMut::new();
 
-        // Header (8 bytes)
-        buf.put_u16(message.message_id);
-        buf.put_u16(message.command_id);
-        buf.put_u16(message.data_length);
-        buf.put_u16(0); // Reserved
+        // Magic bytes "YERC"
+        buf.extend_from_slice(b"YERC");
 
-        // Data
-        buf.extend_from_slice(&message.data);
+        // Header size (always 0x20)
+        buf.put_u16_le(0x20);
+
+        // Payload size
+        buf.put_u16_le(header.payload_size);
+
+        // Reserved magic constant
+        buf.put_u8(0x03);
+
+        // Division
+        buf.put_u8(header.division as u8);
+
+        // ACK (always false for requests)
+        buf.put_u8(0x00);
+
+        // Request ID
+        buf.put_u8(header.request_id);
+
+        // Block number
+        buf.put_u32_le(header.block_number);
+
+        // Reserved (8 bytes of '9')
+        buf.extend_from_slice(b"99999999");
+
+        // Command
+        buf.put_u16_le(header.command);
+
+        // Instance
+        buf.put_u16_le(header.instance);
+
+        // Attribute
+        buf.put_u8(header.attribute);
+
+        // Service
+        buf.put_u8(header.service as u8);
+
+        // Padding (2 bytes)
+        buf.put_u16_le(0x0000);
 
         Ok(buf.freeze())
     }
 
-    pub fn serialize_command(command: &Command) -> Result<Bytes, ProtocolError> {
-        match command {
-            Command::ReadVariable { var_type, var_number } => {
-                let mut buf = BytesMut::new();
-                buf.put_u16(*var_type as u16);
-                buf.put_u16(*var_number);
-                Ok(buf.freeze())
-            }
-            Command::WriteVariable { var_type, var_number, data } => {
-                let mut buf = BytesMut::new();
-                buf.put_u16(*var_type as u16);
-                buf.put_u16(*var_number);
-                buf.extend_from_slice(&Self::serialize_variable_data(data)?);
-                Ok(buf.freeze())
-            }
-            Command::ExecuteJob { job_number } => {
-                let mut buf = BytesMut::new();
-                buf.put_u16(*job_number);
-                buf.put_u16(0); // Reserved
-                Ok(buf.freeze())
-            }
-            Command::GetStatus => {
-                Ok(BytesMut::new().freeze())
-            }
-        }
+    pub fn serialize_int32_var(index: u8, value: i32) -> Result<Bytes, ProtocolError> {
+        let mut buf = BytesMut::new();
+        buf.put_i32_le(value);
+        Ok(buf.freeze())
     }
 
-    fn serialize_variable_data(data: &VariableData) -> Result<Bytes, ProtocolError> {
+    pub fn serialize_float32_var(index: u8, value: f32) -> Result<Bytes, ProtocolError> {
         let mut buf = BytesMut::new();
-        match data {
-            VariableData::Int32(value) => buf.put_i32(*value),
-            VariableData::Float32(value) => buf.put_f32(*value),
-            VariableData::String(value) => {
-                let bytes = value.as_bytes();
-                buf.put_u16(bytes.len() as u16);
-                buf.extend_from_slice(bytes);
-            }
-            VariableData::Position(pos) => {
-                buf.put_f32(pos.x);
-                buf.put_f32(pos.y);
-                buf.put_f32(pos.z);
-                buf.put_f32(pos.rx);
-                buf.put_f32(pos.ry);
-                buf.put_f32(pos.rz);
-            }
+        buf.put_f32_le(value);
+        Ok(buf.freeze())
+    }
+
+    pub fn serialize_string_var(index: u8, value: &str) -> Result<Bytes, ProtocolError> {
+        let mut buf = BytesMut::new();
+        buf.extend_from_slice(value.as_bytes());
+        Ok(buf.freeze())
+    }
+
+    pub fn serialize_position_var(index: u8, position: &Position) -> Result<Bytes, ProtocolError> {
+        let mut buf = BytesMut::new();
+
+        // Position type (pulse = 0)
+        buf.put_u32_le(0x00);
+
+        // Joint configuration
+        buf.put_u32_le(position.joint_config);
+
+        // Tool number
+        buf.put_u32_le(position.tool_number);
+
+        // User coordinate
+        buf.put_u32_le(position.user_coordinate);
+
+        // Extended joint configuration
+        buf.put_u32_le(position.extended_config);
+
+        // Joint values
+        for joint in &position.joints {
+            buf.put_i32_le(*joint);
         }
+
+        Ok(buf.freeze())
+    }
+
+    pub fn serialize_cartesian_position_var(index: u8, position: &CartesianPosition) -> Result<Bytes, ProtocolError> {
+        let mut buf = BytesMut::new();
+
+        // Position type
+        buf.put_u32_le(position.position_type);
+
+        // Joint configuration
+        buf.put_u32_le(position.joint_config);
+
+        // Tool number
+        buf.put_u32_le(position.tool_number);
+
+        // User coordinate
+        buf.put_u32_le(position.user_coordinate);
+
+        // Extended joint configuration
+        buf.put_u32_le(position.extended_config);
+
+        // XYZ coordinates (in micrometers)
+        buf.put_i32_le(position.x);
+        buf.put_i32_le(position.y);
+        buf.put_i32_le(position.z);
+
+        // Rotation coordinates (in millidegrees)
+        buf.put_i32_le(position.rx);
+        buf.put_i32_le(position.ry);
+        buf.put_i32_le(position.rz);
+
+        // Padding
+        buf.put_u32_le(0x00);
+        buf.put_u32_le(0x00);
+
         Ok(buf.freeze())
     }
 }
@@ -149,74 +252,122 @@ impl Serializer {
 ```rust
 // src/deserializer.rs
 use bytes::{Buf, Bytes};
-use crate::{Message, Command, VariableType, VariableData, Position, ProtocolError};
+use crate::{RequestHeader, ResponseHeader, Division, Service, Position, CartesianPosition, ProtocolError};
 
 pub struct Deserializer;
 
 impl Deserializer {
-    pub fn deserialize_message(data: Bytes) -> Result<Message, ProtocolError> {
-        if data.len() < 8 {
+    pub fn deserialize_response_header(data: &mut Bytes) -> Result<ResponseHeader, ProtocolError> {
+        if data.len() < 32 {
             return Err(ProtocolError::InvalidMessage("Message too short".to_string()));
         }
 
-        let mut buf = data;
-        let message_id = buf.get_u16();
-        let command_id = buf.get_u16();
-        let data_length = buf.get_u16();
-        let _reserved = buf.get_u16();
+        // Check magic bytes
+        let magic = data.copy_to_bytes(4);
+        if magic != b"YERC" {
+            return Err(ProtocolError::InvalidMagicBytes);
+        }
 
-        let message_data = buf.copy_to_bytes(data_length as usize);
+        // Header size
+        let header_size = data.get_u16_le();
+        if header_size != 0x20 {
+            return Err(ProtocolError::InvalidHeaderSize);
+        }
 
-        Ok(Message {
-            message_id,
-            command_id,
-            data_length,
-            data: message_data,
+        // Payload size
+        let payload_size = data.get_u16_le();
+
+        // Reserved magic constant
+        let _reserved = data.get_u8();
+
+        // Division
+        let division = match data.get_u8() {
+            1 => Division::Robot,
+            2 => Division::File,
+            _ => return Err(ProtocolError::InvalidMessage("Invalid division".to_string())),
+        };
+
+        // ACK
+        let ack = data.get_u8() == 1;
+
+        // Request ID
+        let request_id = data.get_u8();
+
+        // Block number
+        let block_number = data.get_u32_le();
+
+        // Reserved (8 bytes)
+        data.advance(8);
+
+        // Service
+        let service = data.get_u8();
+
+        // Status
+        let status = data.get_u8();
+
+        // Extra status
+        data.advance(2); // Skip added status size
+        let extra_status = data.get_u16_le();
+
+        // Padding
+        data.advance(2);
+
+        Ok(ResponseHeader {
+            payload_size,
+            division,
+            ack,
+            request_id,
+            block_number,
+            service,
+            status,
+            extra_status,
         })
     }
 
-    pub fn deserialize_variable_data(var_type: VariableType, data: Bytes) -> Result<VariableData, ProtocolError> {
-        let mut buf = data;
-        match var_type {
-            VariableType::Int32 => {
-                if buf.len() < 4 {
-                    return Err(ProtocolError::DeserializationError("Insufficient data for Int32".to_string()));
-                }
-                Ok(VariableData::Int32(buf.get_i32()))
-            }
-            VariableType::Float32 => {
-                if buf.len() < 4 {
-                    return Err(ProtocolError::DeserializationError("Insufficient data for Float32".to_string()));
-                }
-                Ok(VariableData::Float32(buf.get_f32()))
-            }
-            VariableType::String => {
-                if buf.len() < 2 {
-                    return Err(ProtocolError::DeserializationError("Insufficient data for String length".to_string()));
-                }
-                let length = buf.get_u16() as usize;
-                if buf.len() < length {
-                    return Err(ProtocolError::DeserializationError("Insufficient data for String".to_string()));
-                }
-                let string_data = buf.copy_to_bytes(length);
-                let string = String::from_utf8(string_data.to_vec())
-                    .map_err(|e| ProtocolError::DeserializationError(format!("Invalid UTF-8: {}", e)))?;
-                Ok(VariableData::String(string))
-            }
-            VariableType::Position => {
-                if buf.len() < 24 {
-                    return Err(ProtocolError::DeserializationError("Insufficient data for Position".to_string()));
-                }
-                Ok(VariableData::Position(Position {
-                    x: buf.get_f32(),
-                    y: buf.get_f32(),
-                    z: buf.get_f32(),
-                    rx: buf.get_f32(),
-                    ry: buf.get_f32(),
-                    rz: buf.get_f32(),
-                }))
-            }
+    pub fn deserialize_int32_var(data: &mut Bytes) -> Result<i32, ProtocolError> {
+        if data.len() < 4 {
+            return Err(ProtocolError::DeserializationError("Insufficient data for Int32".to_string()));
         }
+        Ok(data.get_i32_le())
+    }
+
+    pub fn deserialize_float32_var(data: &mut Bytes) -> Result<f32, ProtocolError> {
+        if data.len() < 4 {
+            return Err(ProtocolError::DeserializationError("Insufficient data for Float32".to_string()));
+        }
+        Ok(data.get_f32_le())
+    }
+
+    pub fn deserialize_string_var(data: &mut Bytes) -> Result<String, ProtocolError> {
+        let string_data = data.to_vec();
+        String::from_utf8(string_data)
+            .map_err(|e| ProtocolError::DeserializationError(format!("Invalid UTF-8: {}", e)))
+    }
+
+    pub fn deserialize_position_var(data: &mut Bytes) -> Result<Position, ProtocolError> {
+        if data.len() < 52 {
+            return Err(ProtocolError::DeserializationError("Insufficient data for Position".to_string()));
+        }
+
+        let position_type = data.get_u32_le();
+        let joint_config = data.get_u32_le();
+        let tool_number = data.get_u32_le();
+        let user_coordinate = data.get_u32_le();
+        let extended_config = data.get_u32_le();
+
+        let mut joints = [0i32; 8];
+        for i in 0..8 {
+            joints[i] = data.get_i32_le();
+        }
+
+        Ok(Position {
+            position_type,
+            joint_config,
+            tool_number,
+            user_coordinate,
+            extended_config,
+            joints,
+        })
     }
 }
 ```
@@ -234,7 +385,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use thiserror::Error;
 
-use moto_hses_proto::{Message, Command, VariableType, VariableData, ProtocolError};
+use moto_hses_proto::{RequestHeader, ResponseHeader, Division, Service, ProtocolError};
 
 #[derive(Debug, Clone)]
 pub struct ClientConfig {
@@ -259,7 +410,7 @@ pub struct HsesClient {
     socket: Arc<UdpSocket>,
     remote_addr: SocketAddr,
     config: ClientConfig,
-    message_id_counter: Arc<Mutex<u16>>,
+    request_id_counter: Arc<Mutex<u8>>,
 }
 
 #[derive(Error, Debug)]
@@ -292,7 +443,7 @@ impl HsesClient {
             socket: Arc::new(socket),
             remote_addr,
             config: ClientConfig::default(),
-            message_id_counter: Arc::new(Mutex::new(0)),
+            request_id_counter: Arc::new(Mutex::new(0)),
         })
     }
 
@@ -302,36 +453,24 @@ impl HsesClient {
         Ok(client)
     }
 
-    async fn next_message_id(&self) -> u16 {
-        let mut counter = self.message_id_counter.lock().await;
+    async fn next_request_id(&self) -> u8 {
+        let mut counter = self.request_id_counter.lock().await;
         *counter = counter.wrapping_add(1);
         *counter
     }
 
-    async fn send_command(&self, command: Command) -> Result<Message, ClientError> {
-        let message_id = self.next_message_id().await;
-        let command_id = match &command {
-            Command::ReadVariable { .. } => 0x0001,
-            Command::WriteVariable { .. } => 0x0002,
-            Command::ExecuteJob { .. } => 0x0003,
-            Command::GetStatus => 0x0004,
-        };
+    async fn send_request(&self, header: RequestHeader, payload: Option<Bytes>) -> Result<ResponseHeader, ClientError> {
+        let serialized_header = moto_hses_proto::Serializer::serialize_request_header(&header)?;
 
-        let data = moto_hses_proto::Serializer::serialize_command(&command)?;
-        let data_length = data.len() as u16;
-
-        let message = Message {
-            message_id,
-            command_id,
-            data_length,
-            data,
-        };
-
-        let serialized = moto_hses_proto::Serializer::serialize_message(&message)?;
+        let mut message = Vec::new();
+        message.extend_from_slice(&serialized_header);
+        if let Some(payload_data) = payload {
+            message.extend_from_slice(&payload_data);
+        }
 
         // Send with retry logic
         for attempt in 0..=self.config.retry_count {
-            match timeout(self.config.timeout, self.socket.send(&serialized)).await {
+            match timeout(self.config.timeout, self.socket.send(&message)).await {
                 Ok(Ok(_)) => break,
                 Ok(Err(e)) => {
                     if attempt == self.config.retry_count {
@@ -348,24 +487,26 @@ impl HsesClient {
             }
         }
 
-        Ok(message)
-    }
-
-    async fn receive_response(&self, expected_message_id: u16) -> Result<Message, ClientError> {
+        // Receive response
         let mut buffer = vec![0u8; self.config.buffer_size];
-
         match timeout(self.config.timeout, self.socket.recv(&mut buffer)).await {
             Ok(Ok(len)) => {
-                let data = Bytes::copy_from_slice(&buffer[..len]);
-                let message = moto_hses_proto::Deserializer::deserialize_message(data)?;
+                let mut data = Bytes::copy_from_slice(&buffer[..len]);
+                let response_header = moto_hses_proto::Deserializer::deserialize_response_header(&mut data)?;
 
-                if message.message_id != expected_message_id {
+                if response_header.request_id != header.request_id {
                     return Err(ClientError::ProtocolError(
-                        ProtocolError::InvalidMessage("Message ID mismatch".to_string())
+                        ProtocolError::InvalidMessage("Request ID mismatch".to_string())
                     ));
                 }
 
-                Ok(message)
+                if response_header.status != 0 {
+                    return Err(ClientError::ProtocolError(
+                        ProtocolError::InvalidMessage(format!("Robot error: status {}", response_header.status))
+                    ));
+                }
+
+                Ok(response_header)
             }
             Ok(Err(e)) => Err(ClientError::ConnectionError(e)),
             Err(_) => Err(ClientError::TimeoutError("Receive timeout".to_string())),
@@ -378,66 +519,103 @@ impl HsesClient {
 
 ```rust
 impl HsesClient {
-    pub async fn read_variable<T>(&self, var_number: u16, var_type: VariableType) -> Result<T, ClientError>
-    where
-        T: From<VariableData>,
-    {
-        let command = Command::ReadVariable { var_type, var_number };
-        let request = self.send_command(command).await?;
-        let response = self.receive_response(request.message_id).await?;
+    pub async fn read_int32_var(&self, var_number: u16) -> Result<i32, ClientError> {
+        let request_id = self.next_request_id().await;
+        let header = RequestHeader {
+            payload_size: 0,
+            division: Division::Robot,
+            ack: false,
+            request_id,
+            block_number: 0,
+            command: 0x007c, // readwrite_int32_variable
+            instance: var_number,
+            attribute: 0,
+            service: Service::GetSingle,
+        };
 
-        // Parse response data
-        let variable_data = moto_hses_proto::Deserializer::deserialize_variable_data(var_type, response.data)?;
-        Ok(T::from(variable_data))
+        let _response = self.send_request(header, None).await?;
+
+        // Parse response payload
+        // Implementation depends on response format
+        Ok(0) // Placeholder
     }
 
-    pub async fn write_variable<T>(&self, var_number: u16, value: T) -> Result<(), ClientError>
-    where
-        T: Into<VariableData>,
-    {
-        let var_type = match &value.into() {
-            VariableData::Int32(_) => VariableType::Int32,
-            VariableData::Float32(_) => VariableType::Float32,
-            VariableData::String(_) => VariableType::String,
-            VariableData::Position(_) => VariableType::Position,
+    pub async fn write_int32_var(&self, var_number: u16, value: i32) -> Result<(), ClientError> {
+        let request_id = self.next_request_id().await;
+        let payload = moto_hses_proto::Serializer::serialize_int32_var(var_number as u8, value)?;
+
+        let header = RequestHeader {
+            payload_size: payload.len() as u16,
+            division: Division::Robot,
+            ack: false,
+            request_id,
+            block_number: 0,
+            command: 0x007c, // readwrite_int32_variable
+            instance: var_number,
+            attribute: 0,
+            service: Service::SetSingle,
         };
 
-        let command = Command::WriteVariable {
-            var_type,
-            var_number,
-            data: value.into(),
-        };
-
-        let request = self.send_command(command).await?;
-        let _response = self.receive_response(request.message_id).await?;
-
+        let _response = self.send_request(header, Some(payload)).await?;
         Ok(())
+    }
+
+    pub async fn read_status(&self) -> Result<Status, ClientError> {
+        let request_id = self.next_request_id().await;
+        let header = RequestHeader {
+            payload_size: 0,
+            division: Division::Robot,
+            ack: false,
+            request_id,
+            block_number: 0,
+            command: 0x0072, // read_status_information
+            instance: 1,
+            attribute: 0,
+            service: Service::GetAll,
+        };
+
+        let _response = self.send_request(header, None).await?;
+
+        // Parse status from response payload
+        // Implementation depends on status format
+        Ok(Status::default())
     }
 
     pub async fn execute_job(&self, job_number: u16) -> Result<(), ClientError> {
-        let command = Command::ExecuteJob { job_number };
-        let request = self.send_command(command).await?;
-        let _response = self.receive_response(request.message_id).await?;
+        let request_id = self.next_request_id().await;
+        let header = RequestHeader {
+            payload_size: 0,
+            division: Division::Robot,
+            ack: false,
+            request_id,
+            block_number: 0,
+            command: 0x0073, // execute_job_information
+            instance: job_number,
+            attribute: 0,
+            service: Service::SetAll,
+        };
 
+        let _response = self.send_request(header, None).await?;
         Ok(())
-    }
-
-    pub async fn get_status(&self) -> Result<RobotStatus, ClientError> {
-        let command = Command::GetStatus;
-        let request = self.send_command(command).await?;
-        let response = self.receive_response(request.message_id).await?;
-
-        // Parse status from response data
-        // Implementation depends on status format
-        Ok(RobotStatus::default())
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct RobotStatus {
-    pub is_ready: bool,
-    pub is_error: bool,
-    pub error_code: Option<u16>,
+#[derive(Debug, Clone, Default)]
+pub struct Status {
+    pub step: bool,
+    pub one_cycle: bool,
+    pub continuous: bool,
+    pub running: bool,
+    pub speed_limited: bool,
+    pub teach: bool,
+    pub play: bool,
+    pub remote: bool,
+    pub teach_pendant_hold: bool,
+    pub external_hold: bool,
+    pub command_hold: bool,
+    pub alarm: bool,
+    pub error: bool,
+    pub servo_on: bool,
 }
 ```
 
@@ -453,11 +631,11 @@ use std::net::SocketAddr;
 use tokio::sync::Mutex;
 use std::sync::Arc;
 
-use moto_hses_proto::{Message, Command, VariableType, VariableData, ProtocolError};
+use moto_hses_proto::{RequestHeader, ResponseHeader, Division, Service, ProtocolError};
 
 pub struct MockHsesServer {
     socket: UdpSocket,
-    variables: Arc<Mutex<HashMap<u16, VariableData>>>,
+    variables: Arc<Mutex<HashMap<u16, i32>>>,
     running: Arc<Mutex<bool>>,
 }
 
@@ -471,9 +649,9 @@ impl MockHsesServer {
         })
     }
 
-    pub async fn with_variable(mut self, var_number: u16, value: impl Into<VariableData>) -> Self {
+    pub async fn with_variable(mut self, var_number: u16, value: i32) -> Self {
         let mut variables = self.variables.lock().await;
-        variables.insert(var_number, value.into());
+        variables.insert(var_number, value);
         self
     }
 
@@ -492,10 +670,10 @@ impl MockHsesServer {
             while *running.lock().await {
                 match socket.recv_from(&mut buffer).await {
                     Ok((len, src_addr)) => {
-                        let data = bytes::Bytes::copy_from_slice(&buffer[..len]);
-                        if let Ok(message) = moto_hses_proto::Deserializer::deserialize_message(data) {
-                            if let Ok(response) = Self::handle_message(message, &variables).await {
-                                let serialized = moto_hses_proto::Serializer::serialize_message(&response).unwrap();
+                        let mut data = bytes::Bytes::copy_from_slice(&buffer[..len]);
+                        if let Ok(request_header) = moto_hses_proto::Deserializer::deserialize_request_header(&mut data) {
+                            if let Ok(response) = Self::handle_request(request_header, data, &variables).await {
+                                let serialized = moto_hses_proto::Serializer::serialize_response_header(&response).unwrap();
                                 let _ = socket.send_to(&serialized, src_addr).await;
                             }
                         }
@@ -508,67 +686,60 @@ impl MockHsesServer {
         Ok(())
     }
 
-    async fn handle_message(
-        message: Message,
-        variables: &Arc<Mutex<HashMap<u16, VariableData>>>,
-    ) -> Result<Message, ProtocolError> {
-        // Parse command from message data
-        let command = Self::parse_command(message.command_id, message.data)?;
-
-        match command {
-            Command::ReadVariable { var_type, var_number } => {
-                let variables = variables.lock().await;
-                if let Some(value) = variables.get(&var_number) {
-                    let data = moto_hses_proto::Serializer::serialize_variable_data(value)?;
-                    Ok(Message {
-                        message_id: message.message_id,
-                        command_id: message.command_id,
-                        data_length: data.len() as u16,
-                        data,
-                    })
-                } else {
-                    Err(ProtocolError::InvalidMessage("Variable not found".to_string()))
+    async fn handle_request(
+        request_header: RequestHeader,
+        payload: bytes::Bytes,
+        variables: &Arc<Mutex<HashMap<u16, i32>>>,
+    ) -> Result<ResponseHeader, ProtocolError> {
+        match request_header.command {
+            0x007c => { // readwrite_int32_variable
+                match request_header.service {
+                    Service::GetSingle => {
+                        let variables = variables.lock().await;
+                        if let Some(value) = variables.get(&request_header.instance) {
+                            // Create response with variable value
+                            Ok(ResponseHeader {
+                                payload_size: 4,
+                                division: Division::Robot,
+                                ack: true,
+                                request_id: request_header.request_id,
+                                block_number: 0,
+                                service: 0x0e,
+                                status: 0x00,
+                                extra_status: 0x0000,
+                            })
+                        } else {
+                            Ok(ResponseHeader {
+                                payload_size: 0,
+                                division: Division::Robot,
+                                ack: true,
+                                request_id: request_header.request_id,
+                                block_number: 0,
+                                service: 0x0e,
+                                status: 0x02, // Invalid instance
+                                extra_status: 0x0000,
+                            })
+                        }
+                    }
+                    Service::SetSingle => {
+                        let mut variables = variables.lock().await;
+                        let value = moto_hses_proto::Deserializer::deserialize_int32_var(&mut payload.clone())?;
+                        variables.insert(request_header.instance, value);
+                        Ok(ResponseHeader {
+                            payload_size: 0,
+                            division: Division::Robot,
+                            ack: true,
+                            request_id: request_header.request_id,
+                            block_number: 0,
+                            service: 0x10,
+                            status: 0x00,
+                            extra_status: 0x0000,
+                        })
+                    }
+                    _ => Err(ProtocolError::InvalidMessage("Unsupported service".to_string())),
                 }
             }
-            Command::WriteVariable { var_type, var_number, data } => {
-                let mut variables = variables.lock().await;
-                variables.insert(var_number, data);
-                Ok(Message {
-                    message_id: message.message_id,
-                    command_id: message.command_id,
-                    data_length: 0,
-                    data: bytes::Bytes::new(),
-                })
-            }
-            _ => {
-                // Handle other commands
-                Ok(Message {
-                    message_id: message.message_id,
-                    command_id: message.command_id,
-                    data_length: 0,
-                    data: bytes::Bytes::new(),
-                })
-            }
-        }
-    }
-
-    fn parse_command(command_id: u16, data: bytes::Bytes) -> Result<Command, ProtocolError> {
-        // Implementation to parse command from data
-        // This is a simplified version
-        match command_id {
-            0x0001 => {
-                let mut buf = data;
-                let var_type = match buf.get_u16() {
-                    0x0001 => VariableType::Int32,
-                    0x0002 => VariableType::Float32,
-                    0x0003 => VariableType::String,
-                    0x0004 => VariableType::Position,
-                    _ => return Err(ProtocolError::InvalidMessage("Invalid variable type".to_string())),
-                };
-                let var_number = buf.get_u16();
-                Ok(Command::ReadVariable { var_type, var_number })
-            }
-            _ => Err(ProtocolError::InvalidMessage("Unknown command".to_string())),
+            _ => Err(ProtocolError::InvalidMessage("Unsupported command".to_string())),
         }
     }
 }
@@ -585,15 +756,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_serialization_deserialization() {
-        let command = Command::ReadVariable {
-            var_type: VariableType::Int32,
-            var_number: 1,
+        let header = RequestHeader {
+            payload_size: 0,
+            division: Division::Robot,
+            ack: false,
+            request_id: 1,
+            block_number: 0,
+            command: 0x007c,
+            instance: 1,
+            attribute: 0,
+            service: Service::GetSingle,
         };
 
-        let data = Serializer::serialize_command(&command).unwrap();
-        let parsed = Deserializer::parse_command(0x0001, data).unwrap();
+        let serialized = Serializer::serialize_request_header(&header).unwrap();
+        assert_eq!(serialized.len(), 32); // Header size
 
-        assert!(matches!(parsed, Command::ReadVariable { var_type: VariableType::Int32, var_number: 1 }));
+        let mut data = serialized.clone();
+        let deserialized = Deserializer::deserialize_response_header(&mut data).unwrap();
+        assert_eq!(deserialized.request_id, 1);
     }
 
     #[tokio::test]
@@ -618,7 +798,7 @@ async fn test_client_mock_server_communication() {
     server.start().await.unwrap();
 
     let client = HsesClient::new("127.0.0.1:10041").await.unwrap();
-    let value: i32 = client.read_variable(1, VariableType::Int32).await.unwrap();
+    let value = client.read_int32_var(1).await.unwrap();
 
     assert_eq!(value, 42);
 }
