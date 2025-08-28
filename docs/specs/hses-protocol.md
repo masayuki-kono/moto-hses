@@ -11,7 +11,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 ### Communication Specifications
 
 - **Protocol**: UDP
-- **Default Port**: 10040
+- **Ports**:
+  - Robot Control: 10040
+  - File Control: 10041
 - **Endianness**: Little-endian
 - **Timeout**: 300ms (recommended)
 
@@ -119,7 +121,49 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x02 (set_all)
 - **Payload**: None
 
+#### 6. Set Servo Enabled
+
+- **Command**: 0x0083
+- **Instance**: Power type (1=HOLD, 2=SERVO, 3=HLOCK)
+- **Attribute**: 0x01
+- **Service**: 0x10 (set_single)
+- **Payload**: 4 bytes (switch value: 1=ON, 2=OFF)
+
+#### 7. Set Execution Mode
+
+- **Command**: 0x0084
+- **Instance**: 2
+- **Attribute**: 0x01
+- **Service**: 0x10 (set_single)
+- **Payload**: 4 bytes (cycle type: 1=STEP, 2=ONE_CYCLE, 3=CONTINUOUS)
+
+#### 8. Show Message on Pendant
+
+- **Command**: 0x0085
+- **Instance**: 1
+- **Attribute**: 1
+- **Service**: 0x10 (set_single)
+- **Payload**: 32 bytes (text message, padded with zeros)
+
+#### 9. Read System Information
+
+- **Command**: 0x0089
+- **Instance**: System type (11=R1, 12=R2, 21=S1, 22=S2, 23=S3, 101=APPLICATION)
+- **Attribute**: 0
+- **Service**: 0x01 (get_all)
+- **Payload**: None
+
+#### 10. Read Management Time
+
+- **Command**: 0x0088
+- **Instance**: Time type (various management time types)
+- **Attribute**: 0
+- **Service**: 0x01 (get_all)
+- **Payload**: None
+
 ### File Commands (Division = 0x02)
+
+File commands use a different port (10041) and have a simpler structure.
 
 #### 1. Read File
 
@@ -138,6 +182,12 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Command**: 0x00
 - **Service**: 0x09
 - **Payload**: File name
+
+#### 4. Read File List
+
+- **Command**: 0x00
+- **Service**: 0x32
+- **Payload**: File extension filter
 
 ## Position Format
 

@@ -157,4 +157,5 @@ Apache-2.0
 ## References
 
 - [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) — C++ reference implementation
+- [hsinkoyu/fs100](https://github.com/hsinkoyu/fs100) — Python reference implementation
 - [FS100 HSES Manual](https://www.motoman.com/getmedia/16B5CD92-BD0B-4DE0-9DC9-B71D0B6FE264/160766-1CD.pdf.aspx?ext=.pdf) — Official HSES documentation
