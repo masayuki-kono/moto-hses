@@ -34,10 +34,38 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 11:    Request ID (1 byte)
 12-15: Block number (4 bytes, little-endian)
 16-23: Reserved (8 bytes, always "99999999")
+24-31: Sub-header (8 bytes, structure differs for Request/Response)
+```
+
+#### Sub-header Structure
+
+**Request Sub-header (24-31):**
+
+```
 24-25: Command (2 bytes, little-endian)
 26-27: Instance (2 bytes, little-endian)
 28:    Attribute (1 byte)
 29:    Service (1 byte)
+30-31: Padding (2 bytes, always 0x00)
+```
+
+**Response Sub-header (24-31):**
+
+```
+24:    Service (1 byte)
+        - Add 0x80 to service (request)
+25:    Status (1 byte)
+        - `0x00`: Normal reply
+        - `0x1f`: Abnormal reply (added status size = 1 or 2)
+        - Other than `0x1f`: Abnormal reply (added status size = 0)
+26:    Added status size (1 byte)
+        - `0`: Not specified
+        - `1`: 1 WORD data
+        - `2`: 2 WORD data
+27:    Padding (1 byte)
+28-29: Added status (2 bytes, little-endian)
+        - Error code (interpretation depends on added status size)
+        - For details, see Added status codes section
 30-31: Padding (2 bytes, always 0x00)
 ```
 
@@ -230,37 +258,117 @@ File commands use a different port (10041) and have a simpler structure.
 48-51: Padding (4 bytes, little-endian, 0x00)
 ```
 
-## Response Structure
+## Added status codes
 
-### Success Response
+### Command Errors (1000s)
 
-- **Magic**: "YERC"
-- **Header size**: 0x20
-- **ACK**: 0x01
-- **Status**: 0x00 (success)
-- **Extra status**: 0x0000
-- **Payload**: Command-specific data
+- `1010`: Command error
+- `1011`: Error in number of command operands
+- `1012`: Command operand value range over
+- `1013`: Command operand length error
+- `1020`: Disk full of files
 
-### Error Response
+### Operation Status (2000s)
 
-- **Magic**: "YERC"
-- **Header size**: 0x20
-- **ACK**: 0x01
-- **Status**: Error code
-- **Extra status**: Additional error information
-- **Payload**: Error message (optional)
+- `2010`: Manipulator operating
+- `2020`: Hold by programming pendant
+- `2030`: Hold by playback panel
+- `2040`: External hold
+- `2050`: Command hold
+- `2060`: Error/alarm occurring
+- `2070`: Servo OFF
+- `2080`: Incorrect mode
+- `2090`: File accessing by other function
+- `2100`: Command remote not set
+- `2110`: This data cannot be accessed
+- `2120`: This data cannot be loaded
+- `2130`: Editing
+- `2150`: Running the coordinate conversion function
 
-#### Error Codes
+### System Requirements (3000s)
 
-- `0x00`: Success
-- `0x01`: Invalid command
-- `0x02`: Invalid instance
-- `0x03`: Invalid attribute
-- `0x04`: Invalid service
-- `0x05`: Invalid data
-- `0x06`: Communication error
-- `0x07`: Timeout
-- `0x08`: System error
+- `3010`: Turn ON the servo power
+- `3040`: Perform home positioning
+- `3050`: Confirm positions
+- `3070`: Current value not made
+- `3220`: Panel lock; mode/cycle prohibit signal is ON
+- `3230`: Panel lock; start prohibit signal is ON
+- `3350`: User coordinate is not taught
+- `3360`: User coordinate is destroyed
+- `3370`: Incorrect control group
+- `3380`: Incorrect base axis data
+
+### Memory and File Errors (4000s)
+
+- `4010`: Insufficient memory capacity (job registered memory)
+- `4012`: Insufficient memory capacity (position data registered memory)
+- `4020`: Job editing prohibited
+- `4030`: Same job name exists
+- `4040`: No specified job
+- `4060`: Set an execution job
+- `4120`: Position data is destroyed
+- `4130`: Position data not exist
+- `4140`: Incorrect position variable type
+
+### Protocol Errors (A000s)
+
+- `A000`: Undefined command
+- `A001`: Instance error
+- `A002`: Attribute error
+- `A100`: Replying data part size error (hardware limit)
+- `A101`: Replying data part size error (software limit)
+
+### Data Errors (B000s)
+
+- `B001`: Undefined position variable
+- `B002`: Data use prohibited
+- `B003`: Requiring data size error
+- `B004`: Out of range the data
+- `B005`: Data undefined
+- `B006`: Specified application unregistered
+- `B007`: Specified type unregistered
+- `B008`: Control group setting error
+- `B009`: Speed setting error
+- `B00A`: Operating speed is not setting
+- `B00B`: Operation coordinate system setting error
+- `B00C`: Type setting error
+- `B00D`: Tool No. setting error
+- `B00E`: User No. setting error
+
+### System Errors (C000s, D000s, E000s, F000s)
+
+- `C001`: System error (data area setting processing error)
+- `C002`: System error (over the replying data area)
+- `C003`: System error (size of the data element not same)
+- `C800`: System error (customize API processing error)
+- `CFFF`: Other error
+- `D8FA`: Transmission exclusive error (BUSY or Semaphore error)
+- `D8F1`: Processing the another command (BUSY condition)
+- `E24F`: Wrong parameter setting for the system backup
+- `E250`: System backup file creating error
+- `E289`: System error
+- `E28A`: System error
+- `E28B`: Disconnect the communication due to receive timeout
+- `E28C`: Cannot over write the target file
+- `E29C`: The requested file does not exist or the file size is "0"
+- `E2A0`: The wrong required pass
+- `E2A7`: The relevant file is not in the requested file list
+- `E2AF`: Receive the deletion request of the file that cannot to delete
+- `E2B0`: System error
+- `E2B1`: The directory cannot to be deleted
+- `E2B2`: Receive the request of the sending/receiving file at the remote OFF state
+- `E2B3`: File not found
+- `E2B4`: The requested pass is too long
+- `E444`: Processing the another command (BUSY condition)
+- `FFF0`: System error
+- `FFF2`: System error
+- `FFF3`: System error
+- `FFF4`: System error
+- `FFF5`: System error
+- `FFF6`: Too many request and unable to process (BUSY condition)
+- `FFF7`: System error
+- `FFF8`: System error
+- `FFFE`: The remote mode is detected, and disconnect the communication
 
 ## Variable Types
 
