@@ -58,6 +58,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
         - `0x00`: Normal reply
         - `0x1f`: Abnormal reply (added status size = 1 or 2)
         - Other than `0x1f`: Abnormal reply (added status size = 0)
+            - `0x08`:  Requested command is not defined
+            - `0x09`:  The element number of the invalid data is detected
+            - `0x28`:  An instance of the requested data does not exist in the specified command
 26:    Added status size (1 byte)
         - `0`: Not specified
         - `1`: 1 WORD data
@@ -297,6 +300,13 @@ File commands use a different port (10041) and have a simpler structure.
 - `3360`: User coordinate is destroyed
 - `3370`: Incorrect control group
 - `3380`: Incorrect base axis data
+- `3390`: Relative job conversion prohibited (at CVTRJ)
+- `3400`: Master job call prohibited (parameter)
+- `3410`: Master job call prohibited (lamp ON during operation)
+- `3420`: Master job call prohibited (teach lock)
+- `3430`: Robot calibration data not defined
+- `3450`: Servo power cannot be turned ON
+- `3460`: Coordinate system cannot be set
 
 ### Memory and File Errors (4000s)
 
@@ -309,6 +319,47 @@ File commands use a different port (10041) and have a simpler structure.
 - `4120`: Position data is destroyed
 - `4130`: Position data not exist
 - `4140`: Incorrect position variable type
+- `4150`: END instruction for job which is not master job
+- `4170`: Instruction data is destroyed
+- `4190`: Invalid character in job name
+- `4200`: Invalid character in the label name
+- `4230`: Invalid instruction in this system
+- `4420`: No step in job to be converted
+- `4430`: Already converted
+- `4480`: Teach user coordinate
+- `4490`: Relative job/ independent control function not permitted
+
+### Syntax and Format Errors (5000s)
+
+- `5110`: Syntax error (syntax of instruction)
+- `5120`: Position data error
+- `5130`: No NOP or END
+- `5170`: Format error (incorrect format)
+- `5180`: Incorrect number of data
+- `5200`: Data range over
+- `5310`: Syntax error (except instruction)
+- `5340`: Error in pseudo instruction specification
+- `5370`: Error in condition file data record
+- `5390`: Error in JOB data record
+- `5430`: System data not same
+- `5480`: Incorrect welding function type
+
+### Device and System Errors (6000s)
+
+- `6010`: The robot/station is under the operation
+- `6020`: Not enough memory of the specified device
+- `6030`: Cannot be accessed to the specified device
+- `6040`: Unexpected auto backup request
+- `6050`: CMOS size is over the RAM area
+- `6060`: No memory allocation at the power supply on
+- `6070`: Accessing error to backup file information
+- `6080`: Failed in sorting backup file (Remove)
+- `6090`: Failed in sorting backup file (Rename)
+- `6100`: Drive name exceeds the specified values
+- `6110`: Incorrect device
+- `6120`: System error
+- `6130`: Auto backup is not available
+- `6140`: Cannot be backed up under the auto backup
 
 ### Protocol Errors (A000s)
 
@@ -359,7 +410,20 @@ File commands use a different port (10041) and have a simpler structure.
 - `E2B2`: Receive the request of the sending/receiving file at the remote OFF state
 - `E2B3`: File not found
 - `E2B4`: The requested pass is too long
+- `E2AA`: System error
 - `E444`: Processing the another command (BUSY condition)
+- `E49D`: Format error (data size 0)
+- `E49E`: Format error (frame size over)
+- `E49F`: Format error (frame size 0)
+- `E4A1`: Format error (block number error)
+- `E4A2`: Format error (ACK error)
+- `E4A3`: Format error (processing category error)
+- `E4A4`: Format error (access level error)
+- `E4A5`: Format error (header size error)
+- `E4A6`: Format error (identifier error)
+- `E4A7`: Format error (the size of the requested command and received frame are different)
+- `E4A8`: System error
+- `E4A9`: System error
 - `FFF0`: System error
 - `FFF2`: System error
 - `FFF3`: System error
@@ -369,6 +433,8 @@ File commands use a different port (10041) and have a simpler structure.
 - `FFF7`: System error
 - `FFF8`: System error
 - `FFFE`: The remote mode is detected, and disconnect the communication
+
+**Note**: This list of Added Status Codes is based on the official HSES manual. However, error codes may vary depending on the controller model and firmware version. For the most accurate and up-to-date error codes, please refer to the official manual for your specific Yaskawa robot controller.
 
 ## Variable Types
 
