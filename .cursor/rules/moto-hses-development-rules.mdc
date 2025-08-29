@@ -179,27 +179,6 @@ cd moto-hses-mock && cargo test
 - Code formatting must be standardized
 - Consistency with implementation guide must be maintained
 
-## Commit Message Convention
-
-### Format
-
-```
-[Phase][Step] Brief description
-
-Detailed changes (if necessary)
-```
-
-### Example
-
-```
-[Phase1][Step1] Add core types and traits
-
-- Implement Command and VariableType traits
-- Add basic enums (Division, Service, CoordinateSystem)
-- Add Variable<T> struct for type-safe operations
-- Add unit tests for core functionality
-```
-
 ## Emergency Response
 
 ### Inconsistency with Implementation Guide

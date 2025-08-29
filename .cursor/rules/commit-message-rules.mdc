@@ -1,0 +1,115 @@
+# Commit Message Rules
+
+## Language Requirement
+
+- **All commit messages must be written in English**
+- This ensures international collaboration and code review accessibility
+- Use clear, descriptive English that follows conventional commit format
+
+## Conventional Commit Format
+
+### Basic Structure
+
+```
+type: description
+
+Detailed changes (if necessary)
+
+- Bullet points for specific changes
+- Reference issues when applicable
+```
+
+### Commit Types
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `refactor`: Code refactoring (no functional changes)
+- `docs`: Documentation changes
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks, dependencies, etc.
+- `style`: Code style changes (formatting, etc.)
+- `perf`: Performance improvements
+- `ci`: CI/CD changes
+- `build`: Build system changes
+
+### Guidelines
+
+- Keep the first line under 50 characters
+- Use imperative mood ("Add" not "Added")
+- Start with lowercase letter
+- Don't end with a period
+- Provide detailed description in body if needed
+- Reference issues or related commits when applicable
+
+## Examples
+
+### Good Examples
+
+```
+feat: add HSES protocol implementation
+
+- Implement Command and VariableType traits
+- Add basic enums (Division, Service, CoordinateSystem)
+- Add Variable<T> struct for type-safe operations
+- Add unit tests for core functionality
+
+Closes #123
+```
+
+```
+refactor: split lib.rs into multiple modules
+
+- error.rs: error handling module
+- types.rs: basic type definitions and traits
+- position.rs: position data structures
+- status.rs: status data structures
+- message.rs: HSES message structures
+- variables.rs: variable type implementations
+- tests.rs: test code (separate module)
+
+This refactoring significantly improves code maintainability,
+readability, and modularity.
+```
+
+```
+fix: resolve VariableType trait conflict
+
+Remove duplicate implementation for Position type
+in variables.rs to avoid compilation errors.
+```
+
+### Bad Examples
+
+```
+Added new feature
+```
+```
+FIX: bug in protocol
+```
+```
+refactor: split lib.rs into multiple module files for better maintainability and improved code organization with enhanced modularity
+```
+
+## Branch Naming Convention
+
+- `feature/description`: New features
+- `fix/description`: Bug fixes
+- `refactor/description`: Code refactoring
+- `docs/description`: Documentation updates
+- `test/description`: Test-related changes
+
+## Pull Request Guidelines
+
+- Use descriptive titles in English
+- Include summary of changes
+- Reference related issues
+- Ensure all tests pass
+- Follow code review checklist
+
+---
+
+## rule_type: Always
+description:
+globs:
+alwaysApply: true
+---
