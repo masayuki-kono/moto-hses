@@ -18,6 +18,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 ### Message Structure
 
+- Header (32 bytes)
+- Payload (Max: 479 bytes)
+
 #### Header (32 bytes)
 
 ```
@@ -154,115 +157,98 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - Command 43: Available from YBS3.10-00 onwards
 - Command 44: Available from YBS4.10-00 onwards
 
-### 1. Read Status Information
+### Representative Command Examples
 
-- **Command**: 0x0072
-- **Instance**: 1
-- **Attribute**: 0
-- **Service**: 0x01 (get_all)
-- **Payload**: None
+#### Read Status Information (Command 0x72)
 
-### 2. Read Robot Position
+**Request Structure:**
 
-- **Command**: 0x0075
-- **Instance**: Control group + offset
-  - Robot pulse: +1
-  - Base pulse: +11
-  - Station pulse: +21
-  - Robot cartesian: +101
-- **Attribute**: 0
-- **Service**: 0x01 (get_all)
-- **Payload**: None
+- **Command**: 0x72
+- **Instance**: Fixed to 1
+- **Attribute**: Specifies which status data to read
+  - `1`: Data 1
+  - `2`: Data 2
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Reads data of a specified element number
+  - `0x01` (Get_Attribute_All): Reads data of all element numbers (specify 0 for element number)
+- **Payload**: No data part
 
-### 3. Read/Write Variables
+**Response Structure:**
 
-#### Integer 32-bit (D variables)
+- **Status**: Command execution result
+  - `0x00`: Normal response
+  - Other than `0x00`: Abnormal response (error occurred)
+- **Added status size**: Size of additional status data
+  - `0`: Not specified (no added status data)
+  - `1`: 1 WORD (2 bytes) of added status data
+  - `2`: 2 WORD (4 bytes) of added status data
+- **Added status**: Error code if added status size is 1 or 2
+- **Payload**: Status information data (32-bit integers, 4 bytes each)
 
-- **Command**: 0x007c
-- **Instance**: Variable number
-- **Attribute**: 0
-- **Service**: 0x0e (get_single) / 0x10 (set_single)
-- **Payload**: 4 bytes (little-endian)
+**Response Data Structure:**
 
-#### Float 32-bit (R variables)
+**Data 1:**
 
-- **Command**: 0x007d
-- **Instance**: Variable number
-- **Attribute**: 0
-- **Service**: 0x0e (get_single) / 0x10 (set_single)
-- **Payload**: 4 bytes (little-endian)
+- `bit0`: Step
+- `bit1`: 1 cycle
+- `bit2`: Automatic and continuous
+- `bit3`: Running
+- `bit4`: In-guard safe operation
+- `bit5`: Teach
+- `bit6`: Play
+- `bit7`: Command remote
 
-#### String (S variables)
+**Data 2:**
 
-- **Command**: 0x007e
-- **Instance**: Variable number
-- **Attribute**: 0
-- **Service**: 0x0e (get_single) / 0x10 (set_single)
-- **Payload**: Variable length string
+- `bit0`: (Not defined)
+- `bit1`: In hold status (by programming pendant)
+- `bit2`: In hold status (externally)
+- `bit3`: In hold status (by command)
+- `bit4`: Alarming
+- `bit5`: Error occurring
+- `bit6`: Servo ON
+- `bit7`: (Not defined)
 
-#### Robot Position (P variables)
+#### I/O Data Reading / Writing Command (Command 0x78)
 
-- **Command**: 0x007f
-- **Instance**: Variable number
-- **Attribute**: 0
-- **Service**: 0x0e (get_single) / 0x10 (set_single)
-- **Payload**: Position data (see Position Format)
+**Request Structure:**
 
-### 4. Execute Job
+- **Command**: 0x78
+- **Instance**: Logical number of the I/O data
+  - `1 to 128`: Robot user input
+  - `1001 to 1128`: Robot user output
+  - `2001 to 2127`: External input
+  - `2501 to 2628`: Network input
+  - `3001 to 3128`: External output
+  - `3501 to 3628`: Network output
+  - `4001 to 4160`: Robot system input
+  - `5001 to 5200`: Robot system output
+  - `6001 to 6064`: Interface panel input
+  - `7001 to 7999`: Auxiliary relay
+  - `8001 to 8064`: Robot control status signal
+  - `8201 to 8220`: Pseudo input
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out of all I/O data is enabled
+  - `0x10` (Set_Attribute_Single): Only network input signal is writable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): I/O data
 
-- **Command**: 0x0073
-- **Instance**: Job number
-- **Attribute**: 0
-- **Service**: 0x02 (set_all)
-- **Payload**: None
+**Response Structure:**
 
-### 5. Start Job
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): I/O data
+  - I/O data exists only when requested by the client
 
-- **Command**: 0x0086
-- **Instance**: Job number
-- **Attribute**: 0
-- **Service**: 0x02 (set_all)
-- **Payload**: None
-
-### 6. Set Servo Enabled
-
-- **Command**: 0x0083
-- **Instance**: Power type (1=HOLD, 2=SERVO, 3=HLOCK)
-- **Attribute**: 0x01
-- **Service**: 0x10 (set_single)
-- **Payload**: 4 bytes (switch value: 1=ON, 2=OFF)
-
-### 7. Set Execution Mode
-
-- **Command**: 0x0084
-- **Instance**: 2
-- **Attribute**: 0x01
-- **Service**: 0x10 (set_single)
-- **Payload**: 4 bytes (cycle type: 1=STEP, 2=ONE_CYCLE, 3=CONTINUOUS)
-
-### 8. Show Message on Pendant
-
-- **Command**: 0x0085
-- **Instance**: 1
-- **Attribute**: 1
-- **Service**: 0x10 (set_single)
-- **Payload**: 32 bytes (text message, padded with zeros)
-
-### 9. Read System Information
-
-- **Command**: 0x0089
-- **Instance**: System type (11=R1, 12=R2, 21=S1, 22=S2, 23=S3, 101=APPLICATION)
-- **Attribute**: 0
-- **Service**: 0x01 (get_all)
-- **Payload**: None
-
-### 10. Read Management Time
-
-- **Command**: 0x0088
-- **Instance**: Time type (various management time types)
-- **Attribute**: 0
-- **Service**: 0x01 (get_all)
-- **Payload**: None
+**Note**: For detailed specifications of all commands, refer to the official HSES manual. The above examples show the basic structure and common patterns used in robot control commands.
 
 ## File Commands (Division = 0x02)
 
@@ -279,30 +265,6 @@ File commands use a different port (10041) and have a simpler structure.
 | 5   | -          | -        | -         | 0x16    | File saving command (Batch data backup) | Backup batch data from robot to PC |
 
 **Note**: Command 5 is available for system software version FS1.14 or higher.
-
-### 1. Read File
-
-- **Command**: 0x00
-- **Service**: 0x16
-- **Payload**: File name
-
-### 2. Write File
-
-- **Command**: 0x00
-- **Service**: 0x15
-- **Payload**: File name + data
-
-### 3. Delete File
-
-- **Command**: 0x00
-- **Service**: 0x09
-- **Payload**: File name
-
-### 4. Read File List
-
-- **Command**: 0x00
-- **Service**: 0x32
-- **Payload**: File extension filter
 
 ## Position Format
 
