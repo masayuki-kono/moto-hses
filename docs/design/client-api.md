@@ -38,34 +38,51 @@ let client = HsesClient::connect_with_config("192.168.1.100:10040", config).awai
 ```rust
 use moto_hses_client::{HsesClient, VariableType};
 
-// Type-safe variable reading
-let value: u8 = client.read_variable(0).await?;
-let value: i16 = client.read_variable(1).await?;
-let value: i32 = client.read_variable(2).await?;
-let value: f32 = client.read_variable(3).await?;
-let value: String = client.read_variable(4).await?;
-let value: Position = client.read_variable(5).await?;
+// Type-safe variable reading - Commands 0x7A-0x81
+let value: u8 = client.read_variable(0).await?;        // Command 0x7A (B variable)
+let value: i16 = client.read_variable(1).await?;       // Command 0x7B (I variable)
+let value: i32 = client.read_variable(2).await?;       // Command 0x7C (D variable)
+let value: f32 = client.read_variable(3).await?;       // Command 0x7D (R variable)
+let value: String = client.read_variable(4).await?;    // Command 0x7E (S variable)
+let value: Position = client.read_variable(5).await?;  // Command 0x7F (P variable)
 
-// Type-safe variable writing
-client.write_variable(0, 42u8).await?;
-client.write_variable(1, 1000i16).await?;
-client.write_variable(2, 1000000i32).await?;
-client.write_variable(3, 3.14f32).await?;
-client.write_variable(4, "Hello Robot".to_string()).await?;
+// Type-safe variable writing - Commands 0x7A-0x81
+client.write_variable(0, 42u8).await?;                 // Command 0x7A (B variable)
+client.write_variable(1, 1000i16).await?;              // Command 0x7B (I variable)
+client.write_variable(2, 1000000i32).await?;           // Command 0x7C (D variable)
+client.write_variable(3, 3.14f32).await?;              // Command 0x7D (R variable)
+client.write_variable(4, "Hello Robot".to_string()).await?; // Command 0x7E (S variable)
 
-// Position writing
+// Position writing - Command 0x7F
 let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
-client.write_variable(5, position).await?;
+client.write_variable(5, position).await?;             // Command 0x7F (P variable)
 ```
 
 ### Status and Position Operations
 
 ```rust
-// Read robot status
+// Read robot status - Command 0x72
 let status = client.read_status().await?;
 println!("Robot running: {}", status.is_running());
 println!("Servo on: {}", status.is_servo_on());
 println!("Alarm: {}", status.has_alarm());
+println!("Teach mode: {}", status.is_teach_mode());
+println!("Play mode: {}", status.is_play_mode());
+println!("Remote mode: {}", status.is_remote_mode());
+
+// Read alarm data - Command 0x70
+let alarm_data = client.read_alarm_data(1, AlarmAttribute::AlarmCode).await?;
+println!("Latest alarm code: {}", alarm_data.alarm_code);
+
+let alarm_name = client.read_alarm_data(1, AlarmAttribute::AlarmName).await?;
+println!("Latest alarm name: {}", alarm_name);
+
+// Read system information - Command 0x89
+let system_info = client.get_system_info(11, SystemInfoType::SystemSoftwareVersion).await?;
+println!("System software version: {}", system_info);
+
+let model_info = client.get_system_info(11, SystemInfoType::ModelName).await?;
+println!("Model name: {}", model_info);
 
 // Read current position
 let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
@@ -88,22 +105,22 @@ let cartesian_position = client.read_position(1, CoordinateSystemType::RobotCart
 ### Batch Operations
 
 ```rust
-// Batch reading
+// Batch reading - Commands 0x302-0x309
 let values = client.read_variables(&[
-    (0, VariableType::Byte),
-    (1, VariableType::Integer),
-    (2, VariableType::Double),
-    (3, VariableType::Real),
-    (4, VariableType::String),
+    (0, VariableType::Byte),      // Command 0x302 (Plural B variables)
+    (1, VariableType::Integer),   // Command 0x303 (Plural I variables)
+    (2, VariableType::Double),    // Command 0x304 (Plural D variables)
+    (3, VariableType::Real),      // Command 0x305 (Plural R variables)
+    (4, VariableType::String),    // Command 0x306 (Plural S variables)
 ]).await?;
 
-// Batch writing
+// Batch writing - Commands 0x302-0x309
 let variables = vec![
-    (0, 42u8),
-    (1, 1000i16),
-    (2, 1000000i32),
-    (3, 3.14f32),
-    (4, "Hello Robot".to_string()),
+    (0, 42u8),                    // Command 0x302 (Plural B variables)
+    (1, 1000i16),                 // Command 0x303 (Plural I variables)
+    (2, 1000000i32),              // Command 0x304 (Plural D variables)
+    (3, 3.14f32),                 // Command 0x305 (Plural R variables)
+    (4, "Hello Robot".to_string()), // Command 0x306 (Plural S variables)
 ];
 client.write_variables(&variables).await?;
 ```
@@ -113,50 +130,50 @@ client.write_variables(&variables).await?;
 ```rust
 use moto_hses_client::IoType;
 
-// Read I/O data
-let input_value = client.read_io(IoType::RobotUserInput, 1).await?;
-let output_value = client.read_io(IoType::RobotUserOutput, 1001).await?;
-let network_input = client.read_io(IoType::NetworkInput, 2501).await?;
+// Read I/O data - Command 0x78
+let input_value = client.read_io(IoType::RobotUserInput, 1).await?;      // Command 0x78
+let output_value = client.read_io(IoType::RobotUserOutput, 1001).await?; // Command 0x78
+let network_input = client.read_io(IoType::NetworkInput, 2501).await?;   // Command 0x78
 
-// Write I/O data (network input only)
-client.write_io(IoType::NetworkInput, 2501, true).await?;
-client.write_io(IoType::NetworkInput, 2502, false).await?;
+// Write I/O data (network input only) - Command 0x78
+client.write_io(IoType::NetworkInput, 2501, true).await?;   // Command 0x78
+client.write_io(IoType::NetworkInput, 2502, false).await?;  // Command 0x78
 
-// Batch I/O operations
+// Batch I/O operations - Command 0x300
 let io_values = client.read_multiple_io(&[
-    (IoType::RobotUserInput, 1),
-    (IoType::RobotUserInput, 2),
-    (IoType::RobotUserOutput, 1001),
+    (IoType::RobotUserInput, 1),    // Command 0x300 (Plural I/O data)
+    (IoType::RobotUserInput, 2),    // Command 0x300 (Plural I/O data)
+    (IoType::RobotUserOutput, 1001), // Command 0x300 (Plural I/O data)
 ]).await?;
 ```
 
 ### File Operations
 
 ```rust
-// File list operations - returns Vec<String> of filenames
+// File list operations - returns Vec<String> of filenames - Service 0x32
 let job_files: Vec<String> = client.read_file_list("*.JOB")
     .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;
+    .await?;                                                                 // Service 0x32 (File list acquiring)
 
 println!("Found JOB files:");
 for filename in &job_files {
     println!("  - {}", filename);
 }
 
-// Read file content as string (for JOB files)
+// Read file content as string (for JOB files) - Service 0x16
 let job_content: String = client.read_file("TEST.JOB")
     .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;
+    .await?;                                                                 // Service 0x16 (File saving command)
 
 println!("JOB file content:");
 println!("{}", job_content);
 
-// Read file content as bytes (for binary files)
+// Read file content as bytes (for binary files) - Service 0x16
 let binary_content: Vec<u8> = client.read_file_as_bytes("DATA.BIN")
     .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;
+    .await?;                                                                 // Service 0x16 (File saving command)
 
-// Write file content (string for JOB files)
+// Write file content (string for JOB files) - Service 0x15
 let new_job_content = r#"
 PROGRAM TEST
     MOV P1
@@ -168,39 +185,49 @@ client.write_file("NEW_TEST.JOB", new_job_content)
     .on_progress(|bytes_sent, bytes_total| {
         println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
     })
-    .await?;
+    .await?;                                                                 // Service 0x15 (File loading command)
 
-// Write file content (bytes for binary files)
+// Write file content (bytes for binary files) - Service 0x15
 let binary_data = vec![0x01, 0x02, 0x03, 0x04];
 client.write_file_as_bytes("DATA.BIN", binary_data)
     .on_progress(|bytes_sent, bytes_total| {
         println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
     })
-    .await?;
+    .await?;                                                                 // Service 0x15 (File loading command)
 
-client.delete_file("TEST.JOB").await?;
+client.delete_file("TEST.JOB").await?;                                      // Service 0x09 (File delete)
 ```
 
 ### Job Operations
 
 ```rust
-// Job execution
-client.start_job(1).await?;
-client.select_job("MAIN.JOB").await?;
+// Job execution - Command 0x86 (Start-up command)
+client.start_job().await?;
 
-// Job execution with parameters
-let params = JobParameters::new()
-    .with_parameter("speed", 50.0)
-    .with_parameter("acceleration", 100.0);
-client.execute_job_with_params(1, params).await?;
+// Job selection - Command 0x87 (Job select command)
+client.select_job("MAIN.JOB", 1).await?; // job_name, line_number
 
-// Get job status
-let status = client.get_job_status(1).await?;
-match status {
-    JobStatus::Running => println!("Job is running"),
-    JobStatus::Completed => println!("Job completed"),
-    JobStatus::Error(e) => println!("Job failed: {}", e),
-}
+// Get executing job information - Command 0x73
+let job_info = client.get_executing_job_info(1, JobInfoAttribute::JobName).await?;
+println!("Current job: {}", job_info);
+
+let line_number = client.get_executing_job_info(1, JobInfoAttribute::LineNumber).await?;
+println!("Line number: {}", line_number);
+
+let step_number = client.get_executing_job_info(1, JobInfoAttribute::StepNumber).await?;
+println!("Step number: {}", step_number);
+
+let speed_override = client.get_executing_job_info(1, JobInfoAttribute::SpeedOverride).await?;
+println!("Speed override: {}", speed_override);
+
+// Get all job information at once
+let all_job_info = client.get_all_executing_job_info(1).await?;
+println!("Job: {}, Line: {}, Step: {}, Speed: {}",
+    all_job_info.job_name,
+    all_job_info.line_number,
+    all_job_info.step_number,
+    all_job_info.speed_override
+);
 ```
 
 ### Move Operations
@@ -208,7 +235,7 @@ match status {
 ```rust
 use moto_hses_client::{Speed, SpeedType, MoveFrame};
 
-// Cartesian move
+// Cartesian move - Command 0x8A
 let target = CartesianPosition::new(
     100.0, 200.0, 300.0,  // X, Y, Z
     0.0, 0.0, 0.0,        // RX, RY, RZ
@@ -218,12 +245,12 @@ let target = CartesianPosition::new(
 );
 
 let speed = Speed::new(SpeedType::Translation, 100); // 10.0 mm/s
-client.move_cartesian(1, target, speed).await?;
+client.move_cartesian(1, target, speed).await?;      // Command 0x8A (Move instruction - Cartesian)
 
-// Pulse move
+// Pulse move - Command 0x8B
 let target = PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1);
 let speed = Speed::new(SpeedType::Joint, 50); // 0.5% of max speed
-client.move_pulse(1, target, speed).await?;
+client.move_pulse(1, target, speed).await?;           // Command 0x8B (Move instruction - Pulse)
 ```
 
 ## Type Definitions
@@ -432,6 +459,89 @@ impl Default for PoseConfiguration {
 }
 ```
 
+### Job Operation Types
+
+`````rust
+#[derive(Debug, Clone, Copy)]
+pub enum JobInfoAttribute {
+    JobName = 1,
+    LineNumber = 2,
+    StepNumber = 3,
+    SpeedOverride = 4,
+}
+
+#[derive(Debug, Clone)]
+pub struct JobInfo {
+    pub job_name: String,
+    pub line_number: u32,
+    pub step_number: u32,
+    pub speed_override: u32,
+}
+
+impl JobInfo {
+    pub fn new(job_name: String, line_number: u32, step_number: u32, speed_override: u32) -> Self {
+        Self {
+            job_name,
+            line_number,
+            step_number,
+            speed_override,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TaskType {
+    Master = 1,
+    SubTask1 = 2,
+    SubTask2 = 3,
+    SubTask3 = 4,
+    SubTask4 = 5,
+    SubTask5 = 6,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum JobSelectType {
+    SetExecutionJob = 1,
+    SetMasterJobTask0 = 10,
+    SetMasterJobTask1 = 11,
+    SetMasterJobTask2 = 12,
+    SetMasterJobTask3 = 13,
+    SetMasterJobTask4 = 14,
+    SetMasterJobTask5 = 15,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum AlarmAttribute {
+    AlarmCode = 1,
+    AlarmData = 2,
+    AlarmType = 3,
+    AlarmTime = 4,
+    AlarmName = 5,
+}
+
+#[derive(Debug, Clone)]
+pub struct AlarmData {
+    pub alarm_code: u32,
+    pub alarm_data: u32,
+    pub alarm_type: u32,
+    pub alarm_time: String,
+    pub alarm_name: String,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum SystemInfoType {
+    SystemSoftwareVersion = 1,
+    ModelName = 2,
+    ParameterVersion = 3,
+}
+
+#[derive(Debug, Clone)]
+pub struct SystemInfo {
+    pub software_version: String,
+    pub model_name: String,
+    pub parameter_version: String,
+}
+
 ### File Operation Types
 
 ````rust
@@ -580,7 +690,65 @@ pub enum ProtocolError {
     #[error("Invalid variable type: {0}")]
     InvalidVariableType(String),
 }
-````
+`````
+
+## Protocol Command Mapping
+
+This API is designed based on the following HSES protocol commands:
+
+### Robot Commands (Division = 0x01)
+
+| API Method                                          | Command ID | Description                                                                 |
+| --------------------------------------------------- | ---------- | --------------------------------------------------------------------------- |
+| `read_alarm_data()`                                 | 0x70       | Alarm data reading command                                                  |
+| `read_alarm_history()`                              | 0x71       | Alarm history reading command                                               |
+| `read_status()`                                     | 0x72       | Status information reading command                                          |
+| `get_executing_job_info()`                          | 0x73       | Executing job information reading command                                   |
+| `read_axis_config()`                                | 0x74       | Axis configuration information reading command                              |
+| `read_position()`                                   | 0x75       | Robot position data reading command                                         |
+| `read_position_error()`                             | 0x76       | Position error reading command                                              |
+| `read_torque()`                                     | 0x77       | Torque data reading command                                                 |
+| `read_io()`, `write_io()`                           | 0x78       | I/O data reading / writing command                                          |
+| `read_register()`, `write_register()`               | 0x79       | Register data reading / writing command                                     |
+| `read_variable<u8>()`, `write_variable()`           | 0x7A       | Byte variable (B) reading / writing command                                 |
+| `read_variable<i16>()`, `write_variable()`          | 0x7B       | Integer type variable (I) reading / writing command                         |
+| `read_variable<i32>()`, `write_variable()`          | 0x7C       | Double precision integer type variable (D) reading / writing command        |
+| `read_variable<f32>()`, `write_variable()`          | 0x7D       | Real type variable (R) reading / writing command                            |
+| `read_variable<String>()`, `write_variable()`       | 0x7E       | Character type variable (S) reading / writing command                       |
+| `read_variable<Position>()`, `write_variable()`     | 0x7F       | Robot position type variable (P) reading / writing command                  |
+| `read_variable<BasePosition>()`, `write_variable()` | 0x80       | Base position type variable (BP) reading / writing command                  |
+| `read_variable<ExternalAxis>()`, `write_variable()` | 0x81       | External axis type variable (EX) reading / writing command                  |
+| `reset_alarm()`                                     | 0x82       | Alarm reset / error cancel command                                          |
+| `set_hold()`, `set_servo()`                         | 0x83       | HOLD / servo ON/OFF command                                                 |
+| `set_execution_mode()`                              | 0x84       | Step / cycle / continuous switching command                                 |
+| `display_message()`                                 | 0x85       | Character string display command to the programming pendant                 |
+| `start_job()`                                       | 0x86       | Start-up (job START) command                                                |
+| `select_job()`                                      | 0x87       | Job select command                                                          |
+| `get_management_time()`                             | 0x88       | Management time acquiring command                                           |
+| `get_system_info()`                                 | 0x89       | System information acquiring command                                        |
+| `read_multiple_io()`                                | 0x300      | Plural I/O data reading / writing command                                   |
+| `read_multiple_registers()`                         | 0x301      | Plural register data reading / writing command                              |
+| `read_multiple_variables<u8>()`                     | 0x302      | Plural byte type variable (B) reading / writing command                     |
+| `read_multiple_variables<i16>()`                    | 0x303      | Plural integer type variable (I) reading / writing command                  |
+| `read_multiple_variables<i32>()`                    | 0x304      | Plural double precision integer type variable (D) reading / writing command |
+| `read_multiple_variables<f32>()`                    | 0x305      | Plural real type variable (R) reading / writing command                     |
+| `read_multiple_variables<String>()`                 | 0x306      | Plural character type variable (S) reading / writing command                |
+| `read_multiple_variables<Position>()`               | 0x307      | Plural robot position type variable (P) reading / writing command           |
+| `read_multiple_variables<BasePosition>()`           | 0x308      | Plural base position type variable (BP) reading / writing command           |
+| `read_multiple_variables<ExternalAxis>()`           | 0x309      | Plural external axis type variable (EX) reading / writing command           |
+| `read_alarm_data_with_subcode()`                    | 0x30A      | Alarm data reading command (for applying the sub code character strings)    |
+| `read_alarm_history_with_subcode()`                 | 0x30B      | Alarm history reading command (for applying the sub character strings)      |
+| `move_cartesian()`                                  | 0x8A       | Move instruction command (Type Cartesian coordinates)                       |
+| `move_pulse()`                                      | 0x8B       | Move instruction command (Type Pulse)                                       |
+
+### File Commands (Division = 0x02)
+
+| API Method         | Service | Description                        |
+| ------------------ | ------- | ---------------------------------- |
+| `delete_file()`    | 0x09    | File delete                        |
+| `write_file()`     | 0x15    | File loading command (PC to FS100) |
+| `read_file()`      | 0x16    | File saving command (FS100 to PC)  |
+| `read_file_list()` | 0x32    | File list acquiring command        |
 
 ## Best Practices
 
