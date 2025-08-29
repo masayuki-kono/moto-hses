@@ -36,7 +36,7 @@
 
 ### README.md
 
-```markdown
+````markdown
 # Project Name
 
 Brief description in English
@@ -51,6 +51,7 @@ Brief description in English
 ```bash
 cargo install project-name
 ```
+````
 
 ## Usage
 
@@ -63,7 +64,8 @@ Link to detailed documentation
 ## Contributing
 
 Guidelines for contributors
-```
+
+````
 
 ### API Documentation
 
@@ -89,7 +91,7 @@ Guidelines for contributors
 pub fn function(param1: Type1, param2: Type2) -> ReturnType {
     // Implementation
 }
-```
+````
 
 ## File Naming Convention
 
@@ -137,7 +139,7 @@ If documentation needs to be available in multiple languages:
 
 ### Good Documentation
 
-```markdown
+````markdown
 # HSES Protocol Implementation
 
 This library provides a type-safe implementation of the HSES (High Speed Ethernet Server) protocol for industrial robot communication.
@@ -157,7 +159,9 @@ use moto_hses_proto::{HsesClient, ReadStatus};
 let client = HsesClient::new("192.168.1.100:10040")?;
 let status = client.send_command(ReadStatus)?;
 ```
-```
+````
+
+````
 
 ### Bad Documentation
 
@@ -172,12 +176,14 @@ let status = client.send_command(ReadStatus)?;
 - 効率的なバッチ操作
 - 包括的なエラーハンドリング
 - テスト用のモックサーバー
-```
+````
 
 ---
 
 ## rule_type: Always
+
 description:
 globs:
 alwaysApply: true
+
 ---
