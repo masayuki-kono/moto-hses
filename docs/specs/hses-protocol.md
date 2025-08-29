@@ -98,6 +98,62 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 ## Robot Commands (Division = 0x01)
 
+### Command List
+
+| No. | Command ID | Name                                                                        | Description                                  |
+| --- | ---------- | --------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | 0x70       | Alarm data reading command                                                  | Read current alarm data                      |
+| 2   | 0x71       | Alarm history reading command                                               | Read alarm history                           |
+| 3   | 0x72       | Status information reading command                                          | Read robot status information                |
+| 4   | 0x73       | Executing job information reading command                                   | Read currently executing job info            |
+| 5   | 0x74       | Axis configuration information reading command                              | Read axis configuration                      |
+| 6   | 0x75       | Robot position data reading command                                         | Read robot position data                     |
+| 7   | 0x76       | Position error reading command                                              | Read position error                          |
+| 8   | 0x77       | Torque data reading command                                                 | Read torque data                             |
+| 9   | 0x78       | I/O data reading / writing command                                          | Read/write I/O data                          |
+| 10  | 0x79       | Register data reading / writing command                                     | Read/write register data                     |
+| 11  | 0x7A       | Byte variable (B) reading / writing command                                 | Read/write byte variables                    |
+| 12  | 0x7B       | Integer type variable (I) reading / writing command                         | Read/write integer variables                 |
+| 13  | 0x7C       | Double precision integer type variable (D) reading / writing command        | Read/write double integer variables          |
+| 14  | 0x7D       | Real type variable (R) reading / writing command                            | Read/write real variables                    |
+| 15  | 0x7E       | Character type variable (S) reading / writing command                       | Read/write string variables                  |
+| 16  | 0x7F       | Robot position type variable (P) reading / writing command                  | Read/write position variables                |
+| 17  | 0x80       | Base position type variable (BP) reading / writing command                  | Read/write base position variables           |
+| 18  | 0x81       | External axis type variable (EX) reading / writing command                  | Read/write external axis variables           |
+| 19  | 0x82       | Alarm reset / error cancel command                                          | Reset alarms and cancel errors               |
+| 20  | 0x83       | HOLD / servo ON/OFF command                                                 | Control HOLD and servo power                 |
+| 21  | 0x84       | Step / cycle / continuous switching command                                 | Switch execution modes                       |
+| 22  | 0x85       | Character string display command to the programming pendant                 | Display messages on pendant                  |
+| 23  | 0x86       | Start-up (job START) command                                                | Start job execution                          |
+| 24  | 0x87       | Job select command                                                          | Select job to execute                        |
+| 25  | 0x88       | Management time acquiring command                                           | Get management time                          |
+| 26  | 0x89       | System information acquiring command                                        | Get system information                       |
+| 27  | 0x300      | Plural I/O data reading / writing command                                   | Read/write multiple I/O data                 |
+| 28  | 0x301      | Plural register data reading / writing command                              | Read/write multiple register data            |
+| 29  | 0x302      | Plural byte type variable (B) reading / writing command                     | Read/write multiple byte variables           |
+| 30  | 0x303      | Plural integer type variable (I) reading / writing command                  | Read/write multiple integer variables        |
+| 31  | 0x304      | Plural double precision integer type variable (D) reading / writing command | Read/write multiple double integer variables |
+| 32  | 0x305      | Plural real type variable (R) reading / writing command                     | Read/write multiple real variables           |
+| 33  | 0x306      | Plural character type variable (S) reading / writing command                | Read/write multiple string variables         |
+| 34  | 0x307      | Plural robot position type variable (P) reading / writing command           | Read/write multiple position variables       |
+| 35  | 0x308      | Plural base position type variable (BP) reading / writing command           | Read/write multiple base position variables  |
+| 36  | 0x309      | Plural external axis type variable (EX) reading / writing command           | Read/write multiple external axis variables  |
+| 37  | 0x30A      | Alarm data reading command (for applying the sub code character strings)    | Read alarm data with sub code strings        |
+| 38  | 0x30B      | Alarm history reading command (for applying the sub character strings)      | Read alarm history with sub strings          |
+| 39  | 0x8A       | Move instruction command (Type Cartesian coordinates)                       | Move robot using Cartesian coordinates       |
+| 40  | 0x8B       | Move instruction command (Type Pulse)                                       | Move robot using pulse coordinates           |
+| 41  | 0x8C       | 32-byte character type variable (S) reading / writing command               | Read/write 32-byte string variables          |
+| 42  | 0x30C      | 32-byte character type variable (S) multiple reading / writing command      | Read/write multiple 32-byte string variables |
+| 43  | 0x0411     | Encoder temperature reading command                                         | Read encoder temperature                     |
+| 44  | 0x0413     | Converter temperature reading command                                       | Read converter temperature                   |
+
+**Notes**:
+
+- Commands 37-40: Available for system software version FS1.14 or higher
+- Commands 41-42: 32-byte S variable compatible commands (16-byte S variable commands are also available)
+- Command 43: Available from YBS3.10-00 onwards
+- Command 44: Available from YBS4.10-00 onwards
+
 ### 1. Read Status Information
 
 - **Command**: 0x0072
