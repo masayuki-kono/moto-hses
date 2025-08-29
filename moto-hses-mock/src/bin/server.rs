@@ -5,7 +5,6 @@
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 use moto_hses_proto as proto;
-use bytes::{BytesMut, BufMut};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,29 +15,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut buf = vec![0u8; 2048];
     loop {
         let (n, src) = sock.recv_from(&mut buf).await?;
-        if n < 8 { continue; }
+        if n < 32 { continue; }
 
-        let mut s = &buf[..n];
-        // Parse placeholder header
-        let hdr = match proto::Header::decode(&mut s) {
-            Ok(h) => h,
+        // Parse HSES message
+        let message = match proto::HsesMessage::decode(&buf[..n]) {
+            Ok(msg) => msg,
             Err(_) => continue,
         };
-        let cmd = hdr.cmd;
-        // Build response
-        let mut out = BytesMut::with_capacity(8 + 64);
-        let mut rh = proto::Header { seq: hdr.seq, cmd, size: 0, reserved: 0 };
+        
+        let command = message.sub_header.command;
+        
+        // Build response header
+        let _response_header = proto::HsesHeader::new(
+            message.header.division,
+            0x01, // ACK
+            message.header.request_id,
+            0
+        );
+        
         // Craft a canned payload by command
-        let payload: Vec<u8> = match cmd {
-            x if x == proto::CommandId::ReadStatus as u16 => vec![0xAA, 0x55],
-            x if x == proto::CommandId::ReadPositions as u16 => vec![0u8; 24], // placeholder
-            x if x == proto::CommandId::ReadIo as u16 => vec![0x01], // e.g., ON
+        let payload: Vec<u8> = match command {
+            0x72 => vec![0x01, 0x00, 0x40, 0x00], // ReadStatus - running and servo on
+            0x75 => vec![0u8; 52], // ReadCurrentPosition - placeholder
+            0x7a => vec![0x01, 0x00, 0x00, 0x00], // ReadVar<u8> - value 1
+            0x7b => vec![0x64, 0x00, 0x00, 0x00], // ReadVar<i32> - value 100
+            0x7d => vec![0x00, 0x00, 0x20, 0x41], // ReadVar<f32> - value 10.0
+            0x7f => vec![0u8; 52], // ReadVar<Position> - placeholder
             _ => vec![],
         };
-        rh.size = payload.len() as u16;
-        rh.encode(&mut out);
-        out.put_slice(&payload);
-
-        let _ = sock.send_to(&out, src).await?;
+        
+        // Create response message
+        let response_message = proto::HsesMessage::new(
+            message.header.division,
+            0x01, // ACK
+            message.header.request_id,
+            command,
+            message.sub_header.instance,
+            message.sub_header.attribute,
+            message.sub_header.service,
+            payload
+        );
+        
+        let response_data = response_message.encode();
+        let _ = sock.send_to(&response_data, src).await?;
     }
 }
