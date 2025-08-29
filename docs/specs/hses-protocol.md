@@ -1987,6 +1987,34 @@ File commands use a different port (10041) and have a simpler structure.
 
 ### Command details
 
+#### File Deleting Command (Service 0x09)
+
+**Request Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x09 (File deleting process)
+- **Payload**: Job name to be deleted
+  - 32-bit integer format
+  - Example: "TEST.JOB" (8 characters, 2 integers)
+    - Integer 1: "TEST" (T, E, S, T)
+    - Integer 2: "JOB." (J, O, B, .)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: No data part
+
 #### File Loading Command (Service 0x15)
 
 **Request Structure:**
@@ -2014,6 +2042,114 @@ File commands use a different port (10041) and have a simpler structure.
   - 1 WORD error code if added status size is 1
   - 2 WORD error code if added status size is 2
 - **Payload**: No data part
+
+#### File Saving Command (Service 0x16)
+
+**Request Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x16 (File saving process)
+- **Payload**: Job name to be saved
+  - 32-bit integer format
+  - Example: "TEST.JOB" (8 characters, 2 integers)
+    - Integer 1: "TEST" (T, E, S, T)
+    - Integer 2: "JOB." (J, O, B, .)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: No data part
+
+#### File List Acquiring Command (Service 0x32)
+
+**Request Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x32 (File list acquiring process)
+- **Payload**: File type specification
+  - 32-bit integer format
+  - Example: "\*" (wildcard for all JBI files)
+    - Byte 0: "\*"
+    - Byte 1: "-"
+    - Byte 2: "J"
+    - Byte 3: "B"
+
+**File Type Specifications:**
+
+- No specification: JBI list
+- `**`: JBI list
+- `*.JBI`: JBI list
+- `*.DAT`: DAT file list
+- `*.CND`: CND file list
+- `*.PRM`: PRM file list
+- `*.SYS`: SYS file list
+- `*.LST`: LST file list
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: File list data
+  - File names terminated by `<CR><LF>`
+  - 32-bit integer format for each file name
+
+#### File Saving Command (Batch Data Backup) (Service 0x16)
+
+**Request Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x16 (File saving process)
+- **Payload**: File path to be saved
+  - 32-bit integer format
+  - Example: "/SPDRV/CMOSBK.BIN"
+    - Integer 1: "/SPD" (/, S, P, D)
+    - Integer 2: "RV/C" (R, V, /, C)
+    - Integer 3: "MOSB" (M, O, S, B)
+    - Integer 4: "K.BI" (K, ., B, I)
+    - Integer 5: "N" (N, padding, padding, padding)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: No data part
+
+**Notes:**
+
+- To set the batch data backup function, set the device as "RAMDISK" in advance
+- It takes about ten minutes to finish backing-up the data by using the batch data backup function
+- Refer to chapter 2.5 "Setting of a Batch Data Backup Function" for more detail
 
 ## Position Format
 
