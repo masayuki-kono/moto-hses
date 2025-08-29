@@ -26,8 +26,8 @@ mod serialization_tests {
     #[test]
     fn test_serialize_read_variable_command() {
         let command = Command::ReadVariable {
-            var_type: VariableType::Int32,
-            var_number: 1,
+            var_type: VariableType::Integer,
+            var_number: 0,
         };
 
         let data = Serializer::serialize_command(&command).unwrap();
@@ -61,14 +61,14 @@ async fn test_read_variable() {
     let server = MockHsesServer::new("127.0.0.1:10041")
         .await
         .unwrap()
-        .with_variable(1, 42i32)
+        .with_variable(0, 42i32)
         .await;
 
     server.start().await.unwrap();
     tokio::time::sleep(Duration::from_millis(100)).await;
 
     let client = HsesClient::new("127.0.0.1:10041").await.unwrap();
-    let value: i32 = client.read_variable(1, VariableType::Int32).await.unwrap();
+    let value: i32 = client.read_variable(0, VariableType::Integer).await.unwrap();
 
     assert_eq!(value, 42);
 }
@@ -82,7 +82,7 @@ async fn test_read_throughput() {
     let server = MockHsesServer::new("127.0.0.1:10048")
         .await
         .unwrap()
-        .with_variable(1, 42i32)
+        .with_variable(0, 42i32)
         .await;
 
     server.start().await.unwrap();
@@ -94,7 +94,7 @@ async fn test_read_throughput() {
     let iterations = 1000;
 
     for _ in 0..iterations {
-        let _: i32 = client.read_variable(1, VariableType::Int32).await.unwrap();
+        let _: i32 = client.read_variable(0, VariableType::Integer).await.unwrap();
     }
 
     let duration = start.elapsed();

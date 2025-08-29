@@ -58,11 +58,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Robot running: {}", status.is_running());
 
     // Read variable
-    let value: i32 = client.read_variable(1, VariableType::Int32).await?;
-    println!("D001: {}", value);
+    let value: i32 = client.read_variable(0, VariableType::Integer).await?;
+    println!("D000: {}", value);
 
     // Write variable
-    client.write_variable(1, 42i32).await?;
+    client.write_variable(0, 42i32).await?;
 
     // Execute job
     client.execute_job(1).await?;

@@ -48,23 +48,27 @@ println!("Joint 1: {} pulses", position.joints[0]);
 use moto_hses_proto::VariableType;
 
 // Type-safe variable reading
-let value: i32 = client.read_variable(1, VariableType::Int32).await?;
-let value: f32 = client.read_variable(2, VariableType::Float32).await?;
-let value: String = client.read_variable(3, VariableType::String).await?;
-let value: Position = client.read_variable(4, VariableType::Position).await?;
+let value: u8 = client.read_variable(0, VariableType::Byte).await?;
+let value: i32 = client.read_variable(1, VariableType::Integer).await?;
+let value: i32 = client.read_variable(2, VariableType::Double).await?;
+let value: f32 = client.read_variable(3, VariableType::Real).await?;
+let value: String = client.read_variable(4, VariableType::String).await?;
+let value: Position = client.read_variable(5, VariableType::RobotPosition).await?;
 
 // With timeout
-let value: i32 = client
-    .read_variable(1, VariableType::Int32)
+let value: u8 = client
+    .read_variable(0, VariableType::Byte)
     .timeout(Duration::from_millis(300))
     .await?;
 
 // Batch reading
 let values = client
     .read_variables(&[
-        (1, VariableType::Int32),
-        (2, VariableType::Float32),
-        (3, VariableType::String),
+        (0, VariableType::Byte),
+        (1, VariableType::Integer),
+        (2, VariableType::Double),
+        (3, VariableType::Real),
+        (4, VariableType::String),
     ])
     .await?;
 ```
@@ -73,18 +77,29 @@ let values = client
 
 ```rust
 // Type-safe variable writing
+client.write_variable(0, 42u8).await?;
 client.write_variable(1, 42i32).await?;
-client.write_variable(2, 3.14f32).await?;
-client.write_variable(3, "Hello Robot".to_string()).await?;
+client.write_variable(2, 100i32).await?;
+client.write_variable(3, 3.14f32).await?;
+client.write_variable(4, "Hello Robot".to_string()).await?;
 
-let position = Position::new(100.0, 200.0, 300.0, 0.0, 0.0, 0.0);
-client.write_variable(4, position).await?;
+let position = Position {
+    position_type: 0x00,
+    joint_config: 0x00,
+    tool_number: 1,
+    user_coordinate: 0x00,
+    extended_config: 0x00,
+    joints: [1000, 2000, 3000, 0, 0, 0, 0, 0],
+};
+client.write_variable(5, position).await?;
 
 // Batch writing
 let variables = vec![
+    (0, 42u8),
     (1, 42i32),
-    (2, 3.14f32),
-    (3, "Hello Robot".to_string()),
+    (2, 100i32),
+    (3, 3.14f32),
+    (4, "Hello Robot".to_string()),
 ];
 client.write_variables(&variables).await?;
 ```
@@ -291,28 +306,63 @@ let client = HsesClient::with_config_from_env(config).await?;
 ```rust
 #[derive(Debug, Clone, PartialEq)]
 pub enum VariableType {
-    Int32,
-    Float32,
-    String,
-    Position,
+    Byte,           // B variables (Command 0x7A)
+    Integer,        // I variables (Command 0x7B)
+    Double,         // D variables (Command 0x7C)
+    Real,           // R variables (Command 0x7D)
+    String,         // S variables (Command 0x7E)
+    RobotPosition,  // P variables (Command 0x7F)
+    BasePosition,   // Bp variables (Command 0x80)
+    ExternalAxis,   // Ex variables (Command 0x81)
 }
 
 #[derive(Debug, Clone)]
 pub enum VariableValue {
-    Int32(i32),
-    Float32(f32),
+    Byte(u8),
+    Integer(i32),
+    Double(i32),
+    Real(f32),
     String(String),
-    Position(Position),
+    RobotPosition(Position),
+    BasePosition(BasePosition),
+    ExternalAxis(ExternalAxis),
 }
 
 #[derive(Debug, Clone)]
 pub struct Position {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub rx: f32,
-    pub ry: f32,
-    pub rz: f32,
+    pub position_type: u32,
+    pub joint_config: u32,
+    pub tool_number: u32,
+    pub user_coordinate: u32,
+    pub extended_config: u32,
+    pub joints: [i32; 8],
+}
+
+#[derive(Debug, Clone)]
+pub struct CartesianPosition {
+    pub position_type: u32,
+    pub joint_config: u32,
+    pub tool_number: u32,
+    pub user_coordinate: u32,
+    pub extended_config: u32,
+    pub x: i32,      // micrometers
+    pub y: i32,      // micrometers
+    pub z: i32,      // micrometers
+    pub rx: i32,     // millidegrees
+    pub ry: i32,     // millidegrees
+    pub rz: i32,     // millidegrees
+}
+
+#[derive(Debug, Clone)]
+pub struct BasePosition {
+    pub data_type: u32,
+    pub coordinates: [i32; 8],
+}
+
+#[derive(Debug, Clone)]
+pub struct ExternalAxis {
+    pub data_type: u32,
+    pub coordinates: [i32; 8],
 }
 ```
 

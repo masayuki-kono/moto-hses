@@ -33,14 +33,14 @@ pub enum Service {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum VariableType {
-    Byte = 0,        // B variables
-    Integer = 1,     // I variables
-    Double = 2,      // D variables
-    Real = 3,        // R variables
-    RobotPosition = 4, // P variables
-    BasePosition = 5,  // BP variables
-    ExternalAxis = 6,  // EX variables
-    String = 7,      // S variables
+    Byte = 0x7A,        // B variables (Command 0x7A)
+    Integer = 0x7B,     // I variables (Command 0x7B)
+    Double = 0x7C,      // D variables (Command 0x7C)
+    Real = 0x7D,        // R variables (Command 0x7D)
+    String = 0x7E,      // S variables (Command 0x7E)
+    RobotPosition = 0x7F, // P variables (Command 0x7F)
+    BasePosition = 0x80,  // Bp variables (Command 0x80)
+    ExternalAxis = 0x81,  // Ex variables (Command 0x81)
 }
 
 #[derive(Debug, Clone)]
@@ -143,6 +143,8 @@ pub struct CartesianPosition {
     // Padding (44-51): 0x00
     pub padding: [u32; 2],
 }
+
+
 
 #[derive(Error, Debug)]
 pub enum ProtocolError {
@@ -418,6 +420,41 @@ impl Deserializer {
             user_coordinate,
             extended_config,
             joints,
+        })
+    }
+
+    pub fn deserialize_cartesian_position_var(data: &mut Bytes) -> Result<CartesianPosition, ProtocolError> {
+        if data.len() < 52 {
+            return Err(ProtocolError::DeserializationError("Insufficient data for CartesianPosition".to_string()));
+        }
+
+        let position_type = data.get_u32_le();
+        let joint_config = data.get_u32_le();
+        let tool_number = data.get_u32_le();
+        let user_coordinate = data.get_u32_le();
+        let extended_config = data.get_u32_le();
+        let x = data.get_i32_le();
+        let y = data.get_i32_le();
+        let z = data.get_i32_le();
+        let rx = data.get_i32_le();
+        let ry = data.get_i32_le();
+        let rz = data.get_i32_le();
+        let padding1 = data.get_u32_le();
+        let padding2 = data.get_u32_le();
+
+        Ok(CartesianPosition {
+            position_type,
+            joint_config,
+            tool_number,
+            user_coordinate,
+            extended_config,
+            x,
+            y,
+            z,
+            rx,
+            ry,
+            rz,
+            padding: [padding1, padding2],
         })
     }
 }

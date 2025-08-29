@@ -53,8 +53,8 @@ use moto_hses_proto::{Message, Command, VariableType};
 
 let message = Message::new()
     .with_command(Command::ReadVariable {
-        var_type: VariableType::Int32,
-        var_number: 1,
+        var_type: VariableType::Integer,
+        var_number: 0,
     })
     .build();
 ```
@@ -97,7 +97,7 @@ use std::time::Duration;
 let client = HsesClient::new("192.168.1.100:10040").await?;
 
 let value: i32 = client
-    .read_variable(1, VariableType::Int32)
+    .read_variable(0, VariableType::Integer)
     .timeout(Duration::from_millis(300))
     .await?;
 ```
