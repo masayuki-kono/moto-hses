@@ -96,11 +96,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - Variable length (max 0x1DF bytes)
 - Structure varies depending on the command and service
 
-## Main Commands
+## Robot Commands (Division = 0x01)
 
-### Robot Commands (Division = 0x01)
-
-#### 1. Read Status Information
+### 1. Read Status Information
 
 - **Command**: 0x0072
 - **Instance**: 1
@@ -108,7 +106,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x01 (get_all)
 - **Payload**: None
 
-#### 2. Read Robot Position
+### 2. Read Robot Position
 
 - **Command**: 0x0075
 - **Instance**: Control group + offset
@@ -120,9 +118,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x01 (get_all)
 - **Payload**: None
 
-#### 3. Read/Write Variables
+### 3. Read/Write Variables
 
-##### Integer 32-bit (D variables)
+#### Integer 32-bit (D variables)
 
 - **Command**: 0x007c
 - **Instance**: Variable number
@@ -130,7 +128,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x0e (get_single) / 0x10 (set_single)
 - **Payload**: 4 bytes (little-endian)
 
-##### Float 32-bit (R variables)
+#### Float 32-bit (R variables)
 
 - **Command**: 0x007d
 - **Instance**: Variable number
@@ -138,7 +136,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x0e (get_single) / 0x10 (set_single)
 - **Payload**: 4 bytes (little-endian)
 
-##### String (S variables)
+#### String (S variables)
 
 - **Command**: 0x007e
 - **Instance**: Variable number
@@ -146,7 +144,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x0e (get_single) / 0x10 (set_single)
 - **Payload**: Variable length string
 
-##### Robot Position (P variables)
+#### Robot Position (P variables)
 
 - **Command**: 0x007f
 - **Instance**: Variable number
@@ -154,7 +152,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x0e (get_single) / 0x10 (set_single)
 - **Payload**: Position data (see Position Format)
 
-#### 4. Execute Job
+### 4. Execute Job
 
 - **Command**: 0x0073
 - **Instance**: Job number
@@ -162,7 +160,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x02 (set_all)
 - **Payload**: None
 
-#### 5. Start Job
+### 5. Start Job
 
 - **Command**: 0x0086
 - **Instance**: Job number
@@ -170,7 +168,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x02 (set_all)
 - **Payload**: None
 
-#### 6. Set Servo Enabled
+### 6. Set Servo Enabled
 
 - **Command**: 0x0083
 - **Instance**: Power type (1=HOLD, 2=SERVO, 3=HLOCK)
@@ -178,7 +176,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x10 (set_single)
 - **Payload**: 4 bytes (switch value: 1=ON, 2=OFF)
 
-#### 7. Set Execution Mode
+### 7. Set Execution Mode
 
 - **Command**: 0x0084
 - **Instance**: 2
@@ -186,7 +184,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x10 (set_single)
 - **Payload**: 4 bytes (cycle type: 1=STEP, 2=ONE_CYCLE, 3=CONTINUOUS)
 
-#### 8. Show Message on Pendant
+### 8. Show Message on Pendant
 
 - **Command**: 0x0085
 - **Instance**: 1
@@ -194,7 +192,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x10 (set_single)
 - **Payload**: 32 bytes (text message, padded with zeros)
 
-#### 9. Read System Information
+### 9. Read System Information
 
 - **Command**: 0x0089
 - **Instance**: System type (11=R1, 12=R2, 21=S1, 22=S2, 23=S3, 101=APPLICATION)
@@ -202,7 +200,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x01 (get_all)
 - **Payload**: None
 
-#### 10. Read Management Time
+### 10. Read Management Time
 
 - **Command**: 0x0088
 - **Instance**: Time type (various management time types)
@@ -210,29 +208,29 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Service**: 0x01 (get_all)
 - **Payload**: None
 
-### File Commands (Division = 0x02)
+## File Commands (Division = 0x02)
 
 File commands use a different port (10041) and have a simpler structure.
 
-#### 1. Read File
+### 1. Read File
 
 - **Command**: 0x00
 - **Service**: 0x16
 - **Payload**: File name
 
-#### 2. Write File
+### 2. Write File
 
 - **Command**: 0x00
 - **Service**: 0x15
 - **Payload**: File name + data
 
-#### 3. Delete File
+### 3. Delete File
 
 - **Command**: 0x00
 - **Service**: 0x09
 - **Payload**: File name
 
-#### 4. Read File List
+### 4. Read File List
 
 - **Command**: 0x00
 - **Service**: 0x32
