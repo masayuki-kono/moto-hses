@@ -2017,20 +2017,79 @@ File commands use a different port (10041) and have a simpler structure.
 
 #### File Loading Command (Service 0x15)
 
+The File Loading Command is not a single message but a protocol involving multiple message exchanges.
+
+**Communication Flow:**
+
+1. **Loading Request (Request 1)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x00
+   - **Service**: 0x15 (File loading process)
+   - **Block No.**: 0x0000_0000
+   - **Payload**: File name to be loaded
+     - 32-bit integer format
+     - Example: "TEST.JOB" (8 characters, 2 integers)
+       - Integer 1: "TEST" (T, E, S, T)
+       - Integer 2: "JOB." (J, O, B, .)
+
+2. **Request Acknowledgment (ACK to Request)**
+
+   - **Service**: 0x95 (ACK service)
+   - **Status**: 0x00 (Normal response)
+   - **Added status size**: 0x00
+   - **Added status**: 0x0000
+
+3. **File Data Transfer (Data 1, Data 2, ..., Data N)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x00
+   - **Service**: 0x15
+   - **Block No.**: Increment by 1 from previous block number (1, 2, ..., N)
+   - **Payload**: File data blocks
+     - Data 1: First data block
+     - Data 2-N: Intermediate data blocks
+     - Data N: Last data block (Add 0x8000_0000 to the previous block number)
+
+4. **Data Acknowledgment (ACK 1, ACK 2, ..., ACK N)**
+
+   - **Service**: 0x95 (ACK service)
+   - **Status**: 0x00 (Normal response)
+   - **Added status size**: 0x00
+   - **Added status**: 0x0000
+   - Individual ACK response for each data block
+
 **Request Structure:**
 
 - **Command**: 0x00
 - **Instance**: 0x00
 - **Attribute**: 0x00
 - **Service**: 0x15 (File loading process)
-- **Payload**: Job name to be loaded
+- **Block No.**: 0x0000_0000 (for initial request)
+- **Payload**: File name to be loaded
   - 32-bit integer format
   - Example: "TEST.JOB" (8 characters, 2 integers)
     - Integer 1: "TEST" (T, E, S, T)
     - Integer 2: "JOB." (J, O, B, .)
 
+**Data Transfer Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x15
+- **Block No.**: Increment by 1 from previous block number
+  - Normal packets: 1, 2, ..., N
+  - Last packet: Add 0x8000_0000 to the previous block number
+- **Payload**: File data blocks
+  - Variable size data blocks
+  - Last block identified by adding 0x8000_0000 to the previous block number
+
 **Response Structure:**
 
+- **Service**: 0x95 (ACK service)
 - **Status**: Command execution result
   - `0x00`: Respond normally
   - Other than `0x00`: Respond abnormally
