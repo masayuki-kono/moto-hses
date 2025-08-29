@@ -375,6 +375,343 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - `bit6`: Servo ON
 - `bit7`: (Not defined)
 
+#### Executing Job Information Reading Command (Command 0x73)
+
+**Request Structure:**
+
+- **Command**: 0x73
+- **Instance**: Specifies the task type
+  - `1`: Master task
+  - `2`: Sub task 1
+  - `3`: Sub task 2
+  - `4`: Sub task 3
+  - `5`: Sub task 4
+  - `6`: Sub task 5
+- **Attribute**: Specifies the job information attribute to read
+  - `1`: Job name
+  - `2`: Line number
+  - `3`: Step number
+  - `4`: Speed override value
+  - _Note: Specify the status data number of the executing job information._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Job information data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Job Name (32-bit integers 1-8):**
+
+- Format: Character strings of 32 letters
+- Half-width character: 32 characters
+- Full-width character: 16 characters
+
+**Line Number (32-bit integer 9):**
+
+- Range: 0 to 9999
+
+**Step Number (32-bit integer 10):**
+
+- Range: 1 to 9998
+
+**Speed Override Value (32-bit integer 11):**
+
+- Speed override value
+
+**Important Note**: For the job name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant. Use the same language code as the FS100, or the characters corrupt in case the client side does not correspond to its language code.
+
+#### Axis Configuration Information Reading Command (Command 0x74)
+
+**Request Structure:**
+
+- **Command**: 0x74
+- **Instance**: Specifies the control group
+  - `1 to 2`: R1 to R2 (Robot pulse value)
+  - `11 to 12`: B1 to B2 (Base pulse value)
+  - `21 to 23`: S1 to S3 (Station pulse value)
+  - `101 to 102`: R1 to R2 (Robot cartesian coordinate)
+  - `111 to 112`: B1 to B2 (Base cartesian coordinate)
+- **Attribute**: Specifies the data number of axis information
+  - `1`: Axis name of the first axis
+  - `2`: Axis name of the second axis
+  - `3`: Axis name of the third axis
+  - `4`: Axis name of the fourth axis
+  - `5`: Axis name of the fifth axis
+  - `6`: Axis name of the sixth axis
+  - `7`: Axis name of the seventh axis
+  - `8`: Axis name of the eighth axis
+  - _Note: Specify the data number of axis information. Each axis is justified for setting. '0' is set to nonexistent axis._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Axis configuration data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Coordinate Names (32-bit integers 1-8):**
+
+**First coordinate name (32-bit integer 1):**
+
+- "S" (R*: pulse) / "X" (R*/B*: cartesian value) / "1" (B*/S\*: pulse)
+
+**Second coordinate name (32-bit integer 2):**
+
+- "L" (R*: pulse) / "Y" (R*/B*: cartesian value) / "2" (B*/S\*: pulse)
+
+**Third coordinate name (32-bit integer 3):**
+
+- "U" (R*: pulse) / "Z" (R*/B*: cartesian value) / "3" (B*/S\*: pulse)
+
+**Fourth coordinate name (32-bit integer 4):**
+
+- "R" (R*: pulse) / "Rx" (R*: cartesian value) / "4" (B*/S*: pulse)
+
+**Fifth coordinate name (32-bit integer 5):**
+
+- "B" (R*: pulse) / "Ry" (R*: cartesian value) / "5" (B*/S*: pulse)
+
+**Sixth coordinate name (32-bit integer 6):**
+
+- "T" (R*: pulse) / "Rz" (R*: cartesian value) / "6" (B*/S*: pulse)
+
+**Seventh coordinate name (32-bit integer 7):**
+
+- "E" (R*: pulse) / "Rz" (R*: cartesian value) / "7" (B*/S*: pulse)
+
+**Eighth coordinate name (32-bit integer 8):**
+
+- (Not specified in manual)
+
+**Control Group Abbreviations:**
+
+- `*`: Each control group number
+- `R`: Robot (R1 to R2)
+- `S`: Station (S1 to S3)
+- `B`: Base (B1 to B2)
+
+#### Robot Position Data Reading Command (Command 0x75)
+
+**Request Structure:**
+
+- **Command**: 0x75
+- **Instance**: Specifies the control group
+  - `1 to 2`: R1 to R2 (Robot pulse value)
+  - `11 to 12`: B1 to B2 (Base pulse value)
+  - `21 to 23`: S1 to S3 (Station pulse value)
+  - `101 to 102`: R1 to R2 (Robot cartesian coordinate)
+  - _Note: Cartesian value can select the base coordinate only. (It cannot select the robot, user and tool coordinates.)_
+- **Attribute**: Specifies the position information data number
+  - `1`: Data type (0: pulse value / 16: base coordinate value)
+  - `2`: Form (refer to "Details of data")
+  - `3`: Tool number
+  - `4`: User coordinate number
+  - `5`: Extended form (refer to "Details of data")
+  - `6`: First axis data
+  - `7`: Second axis data
+  - `8`: Third axis data
+  - `9`: Fourth axis data
+  - `10`: Fifth axis data
+  - `11`: Sixth axis data
+  - `12`: Seventh axis data
+  - `13`: Eighth axis data
+  - _Note: Each axis data is output by the same sequence as mentioned in chapter 3.3.5 "Axis Configuration Information Reading Command", and "0" is set to nonexistent axis._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Position data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Data Type (32-bit integer 1):**
+
+- `0`: Pulse value
+- `16`: Base coordinate value
+
+**Form (32-bit integer 2):**
+
+- 8 bits (bit0 to bit7):
+  - `bit0`: 0: Front, 1: Back
+  - `bit1`: 0: Upper arm, 1: Lower arm
+  - `bit2`: 0: Flip, 1: No flip
+  - `bit3`: 0: θR < 180, 1: θR ≥ 180
+  - `bit4`: 0: θT < 180, 1: θT ≥ 180
+  - `bit5`: 0: θS < 180, 1: θS ≥ 180
+  - `bit6`: 0: Redundant front, 1: Redundant back
+  - `bit7`: 0: Previous step regarded reverse conversion specified, 1: Form regarded reverse conversion specified
+
+**Tool Number (32-bit integer 3):**
+
+- Tool number
+
+**User Coordinate Number (32-bit integer 4):**
+
+- User coordinate number
+
+**Extended Form (32-bit integer 5):**
+
+- 8 bits (bit0 to bit7):
+  - `bit0`: 0: θL < 180, 1: θL ≥ 180
+  - `bit1`: 0: θU < 180, 1: θU ≥ 180
+  - `bit2`: 0: θB < 180, 1: θB ≥ 180
+  - `bit3`: 0: θE < 180, 1: θE ≥ 180
+  - `bit4`: 0: θW < 180, 1: θW ≥ 180
+  - `bit5`: Reserve
+  - `bit6`: Reserve
+  - `bit7`: Reserve
+
+**Axis Data (32-bit integers 6-13):**
+
+- First axis data (32-bit integer 6)
+- Second axis data (32-bit integer 7)
+- Third axis data (32-bit integer 8)
+- Fourth axis data (32-bit integer 9)
+- Fifth axis data (32-bit integer 10)
+- Sixth axis data (32-bit integer 11)
+- Seventh axis data (32-bit integer 12)
+- Eighth axis data (32-bit integer 13)
+
+**Note**: Please refer "3.9.4 Flip/ No flip" in "FS100 OPERATOR'S MANUAL" prepared for each application.
+
+#### Position Error Reading Command (Command 0x76)
+
+**Request Structure:**
+
+- **Command**: 0x76
+- **Instance**: Specifies the control group
+  - `1 to 2`: R1 to R2 (Robot axis)
+  - `11 to 12`: B1 to B2 (Base axis)
+  - `21 to 23`: S1 to S3 (Station axis)
+- **Attribute**: Specifies the axis number
+  - `1`: First axis data
+  - `2`: Second axis data
+  - `3`: Third axis data
+  - `4`: Fourth axis data
+  - `5`: Fifth axis data
+  - `6`: Sixth axis data
+  - `7`: Seventh axis data
+  - `8`: Eighth axis data
+  - _Note: Specify the axis number. Each axis data is output by the same sequence as mentioned in chapter 3.3.5 "Axis Configuration Information Reading Command", and "0" is set to nonexistent axis._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Position error data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Axis Error Data (32-bit integers 1-8):**
+
+- First axis data (32-bit integer 1)
+- Second axis data (32-bit integer 2)
+- Third axis data (32-bit integer 3)
+- Fourth axis data (32-bit integer 4)
+- Fifth axis data (32-bit integer 5)
+- Sixth axis data (32-bit integer 6)
+- Seventh axis data (32-bit integer 7)
+- Eighth axis data (32-bit integer 8)
+
+**Note**: Position variable data of each axis can be read out.
+
+#### Torque Data Reading Command (Command 0x77)
+
+**Request Structure:**
+
+- **Command**: 0x77
+- **Instance**: Specifies the control group
+  - `1 to 2`: R1 to R2 (Robot axis)
+  - `11 to 12`: B1 to B2 (Base axis)
+  - `21 to 23`: S1 to S3 (Station axis)
+  - _Note: Specify the control group._
+- **Attribute**: Specifies the axis number
+  - `1`: First axis data
+  - `2`: Second axis data
+  - `3`: Third axis data
+  - `4`: Fourth axis data
+  - `5`: Fifth axis data
+  - `6`: Sixth axis data
+  - `7`: Seventh axis data
+  - `8`: Eighth axis data
+  - _Note: Specify the axis number. Each axis data is output by the same sequence as mentioned in chapter 3.3.5 "Axis Configuration Information Reading Command", and "0" is set to nonexistent axis._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+  - _Note: Specify the accessing method to the data._
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Torque data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Axis Torque Data (32-bit integers 1-8):**
+
+- First axis data (32-bit integer 1)
+- Second axis data (32-bit integer 2)
+- Third axis data (32-bit integer 3)
+- Fourth axis data (32-bit integer 4)
+- Fifth axis data (32-bit integer 5)
+- Sixth axis data (32-bit integer 6)
+- Seventh axis data (32-bit integer 7)
+- Eighth axis data (32-bit integer 8)
+
+**Note**: Torque data of each axis can be read out.
+
 #### I/O Data Reading / Writing Command (Command 0x78)
 
 **Request Structure:**
