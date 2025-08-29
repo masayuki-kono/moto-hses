@@ -9,3 +9,15 @@ tokio = { workspace = true }
 bytes = { workspace = true }
 thiserror = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
+
+[[example]]
+name = "read_status"
+path = "examples/read_status.rs"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "connection_management"
+path = "examples/connection_management.rs"

@@ -94,13 +94,13 @@ cargo run -p moto-hses-client --example read_status -- 127.0.0.1:12222
 - [x] Serialization/deserialization
 - [x] Error handling
 
-### Phase 2: Client Layer (moto-hses-client) 🔄
+### Phase 2: Client Layer (moto-hses-client) ✅
 
 - [x] Client architecture design
 - [x] API design
-- [ ] Basic client implementation
-- [ ] Connection management
-- [ ] Error handling and retry logic
+- [x] Basic client implementation
+- [x] Connection management
+- [x] Error handling and retry logic
 
 ### Phase 3: Mock Server (moto-hses-mock) 🔄
 
