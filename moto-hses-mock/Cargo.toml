@@ -9,3 +9,10 @@ description = "Local mock server for HSES (UDP) used in E2E tests"
 tokio = { workspace = true }
 bytes = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[dev-dependencies]
+tokio-test = "0.4"

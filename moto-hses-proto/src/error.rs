@@ -28,4 +28,10 @@ pub enum ProtocolError {
     SystemInfoError(String),
     #[error("invalid message: {0}")]
     InvalidMessage(String),
+    #[error("invalid attribute")]
+    InvalidAttribute,
+    #[error("invalid service")]
+    InvalidService,
+    #[error("invalid command")]
+    InvalidCommand,
 }

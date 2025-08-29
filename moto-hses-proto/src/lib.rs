@@ -6,6 +6,7 @@ pub mod position;
 pub mod status;
 pub mod message;
 pub mod variables;
+pub mod alarm;
 #[cfg(test)]
 pub mod tests;
 
@@ -20,3 +21,4 @@ pub use types::{
 pub use position::{Position, PulsePosition, CartesianPosition};
 pub use status::{Status, StatusWrapper};
 pub use message::{HsesMessage, HsesHeader, HsesSubHeader};
+pub use alarm::{Alarm, AlarmAttribute};

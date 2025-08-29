@@ -4,7 +4,7 @@ use tokio::time::{timeout, sleep};
 use std::sync::atomic::Ordering;
 use moto_hses_proto::{
     Command, VariableType, Position, Status, StatusWrapper, ReadStatus, ReadCurrentPosition,
-    ReadVar, WriteVar, CoordinateSystemType, ProtocolError
+    ReadVar, WriteVar, CoordinateSystemType
 };
 
 use crate::types::{HsesClient, ClientError};
@@ -104,7 +104,8 @@ impl HsesClient {
 
         // Create and send message
         let message = self.create_message(C::command_id(), request_id, payload)?;
-        self.inner.socket.send(&message).await?;
+        eprintln!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
+        self.inner.socket.send_to(&message, self.inner.remote_addr).await?;
 
         // Wait for response
         let response = self.wait_for_response(request_id).await?;
@@ -152,8 +153,8 @@ impl HsesClient {
         // Attribute (1 for most commands)
         message.push(1);
 
-        // Service (Get_Attribute_All for reads, Set_Attribute_All for writes)
-        message.push(0x01);
+        // Service (Get_Attribute_Single for reads, Set_Attribute_Single for writes)
+        message.push(0x0e);
 
         // Padding
         message.extend_from_slice(&0u16.to_le_bytes());
@@ -172,26 +173,50 @@ impl HsesClient {
                 .map_err(|_| ClientError::TimeoutError("Response timeout".to_string()))??;
 
             let response_data = &buffer[..len];
+            
+            // Debug: Log received data
+            eprintln!("Received response: {} bytes", len);
+            if len >= 4 {
+                eprintln!("Magic bytes: {:?}", &response_data[0..4]);
+            }
+            if len >= 11 {
+                eprintln!("Request ID: 0x{:02x}", response_data[11]);
+            }
+            if len >= 10 {
+                eprintln!("ACK: 0x{:02x}", response_data[10]);
+            }
 
             // Parse response header
             if response_data.len() < 32 {
                 continue;
             }
 
-            let response_request_id = response_data[18];
+            // Verify magic bytes "YERC"
+            if &response_data[0..4] != b"YERC" {
+                continue;
+            }
+
+            // Check request ID (byte 11)
+            let response_request_id = response_data[11];
             if response_request_id != request_id {
                 continue;
             }
 
-            let status = response_data[33];
-            if status != 0 {
-                return Err(ClientError::ProtocolError(ProtocolError::InvalidMessage(
-                    format!("Robot returned error status: {}", status)
-                )));
+            // Check ACK (byte 10, should be 0x01 for response)
+            let ack = response_data[10];
+            if ack != 0x01 {
+                continue;
             }
 
-            // Extract payload
+            // Extract payload size (bytes 6-7)
             let payload_size = u16::from_le_bytes([response_data[6], response_data[7]]) as usize;
+            
+            // Ensure we have enough data
+            if response_data.len() < 32 + payload_size {
+                continue;
+            }
+
+            // Extract payload (starting from byte 32)
             let payload = response_data[32..32+payload_size].to_vec();
 
             return Ok(payload);
