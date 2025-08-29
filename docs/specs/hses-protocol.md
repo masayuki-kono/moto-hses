@@ -268,6 +268,18 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 File commands use a different port (10041) and have a simpler structure.
 
+### Command List
+
+| No. | Command ID | Instance | Attribute | Service | Name                                    | Description                        |
+| --- | ---------- | -------- | --------- | ------- | --------------------------------------- | ---------------------------------- |
+| 1   | 0x00       | 0x00     | 0x00      | 0x09    | File delete                             | Delete specified file              |
+| 2   | -          | -        | -         | 0x15    | File loading command (PC to FS100)      | Upload file from PC to robot       |
+| 3   | -          | -        | -         | 0x16    | File saving command (FS100 to PC)       | Download file from robot to PC     |
+| 4   | -          | -        | -         | 0x32    | File list acquiring command             | Get list of files on robot         |
+| 5   | -          | -        | -         | 0x16    | File saving command (Batch data backup) | Backup batch data from robot to PC |
+
+**Note**: Command 5 is available for system software version FS1.14 or higher.
+
 ### 1. Read File
 
 - **Command**: 0x00
