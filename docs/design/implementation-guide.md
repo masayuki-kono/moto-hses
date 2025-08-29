@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides a step-by-step guide for implementing the Rust HSES client library, based on the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet).
+This document provides a step-by-step guide for implementing the Rust HSES client library, based on the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) and incorporating design insights from the Python implementation [fs100](https://github.com/fih-mobile/fs100).
 
 ## Implementation Phases
 
@@ -27,6 +27,40 @@ pub trait VariableType: Send + Sync + 'static {
     fn command_id() -> u16;
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>;
+}
+
+// Variable type definitions incorporating design insights from Python implementation
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VariableType {
+    Io = 0x78,           // 1 byte
+    Register = 0x79,     // 2 bytes
+    Byte = 0x7a,         // 1 byte
+    Integer = 0x7b,      // 2 bytes
+    Double = 0x7c,       // 4 bytes
+    Real = 0x7d,         // 4 bytes
+    String = 0x7e,       // 16 bytes
+    RobotPosition = 0x7f, // Position data
+    BasePosition = 0x80,  // Base position data
+    ExternalAxis = 0x81,  // External axis data
+}
+
+// Variable object for type-safe operations
+#[derive(Debug, Clone)]
+pub struct Variable<T> {
+    pub var_type: VariableType,
+    pub index: u8,
+    pub value: T,
+}
+
+impl<T> Variable<T> {
+    pub fn new(var_type: VariableType, index: u8, value: T) -> Self {
+        Self { var_type, index, value }
+    }
+
+    pub fn with_default(var_type: VariableType, index: u8) -> Self
+    where T: Default {
+        Self { var_type, index, value: T::default() }
+    }
 }
 
 // Basic enums
@@ -98,155 +132,136 @@ impl From<u8> for PoseConfiguration {
         }
     }
 }
+```
 
-impl From<PoseConfiguration> for u8 {
-    fn from(config: PoseConfiguration) -> Self {
-        (config.no_flip as u8) |
-        ((config.lower_arm as u8) << 1) |
-        ((config.back as u8) << 2) |
-        ((config.high_r as u8) << 3) |
-        ((config.high_t as u8) << 4) |
-        ((config.high_s as u8) << 5)
-    }
+#### Step 2: Enhanced Command System
+
+```rust
+// Type-safe command definitions with improved variable support
+pub struct ReadVar<T> {
+    pub index: u8,
+    _phantom: PhantomData<T>,
+}
+
+pub struct WriteVar<T> {
+    pub index: u8,
+    pub value: T,
+}
+
+// Multiple variable operations incorporating efficient design patterns
+pub struct ReadVars<T> {
+    pub start_index: u8,
+    pub count: u8,
+    _phantom: PhantomData<T>,
+}
+
+pub struct WriteVars<T> {
+    pub start_index: u8,
+    pub values: Vec<T>,
+}
+
+// Status and position operations
+pub struct ReadStatus;
+pub struct ReadCurrentPosition {
+    pub control_group: u8,
+    pub coordinate_system: CoordinateSystemType,
+}
+
+pub struct ReadPosition {
+    pub robot_no: u8,
+}
+
+pub struct ReadPositionError {
+    pub robot_no: u8,
+}
+
+pub struct ReadTorque {
+    pub robot_no: u8,
+}
+
+// File operations
+pub struct ReadFileList {
+    pub extension: String,
+}
+
+pub struct ReadFile {
+    pub filename: String,
+}
+
+pub struct WriteFile {
+    pub filename: String,
+    pub data: Vec<u8>,
+}
+
+pub struct DeleteFile {
+    pub filename: String,
+}
+
+// System information
+pub struct ReadSystemInfo {
+    pub system_type: u8,
+    pub info_type: u8,
+}
+
+pub struct ReadManagementTime {
+    pub time_type: u8,
+}
+
+// Power and control operations
+pub struct SwitchPower {
+    pub power_type: u8,
+    pub switch_action: u8,
+}
+
+pub struct SelectCycle {
+    pub cycle_type: u8,
+}
+
+pub struct Move {
+    pub move_type: u8,
+    pub coordinate: u8,
+    pub speed_class: u8,
+    pub speed: f32,
+    pub position: Position,
+    pub form: u8,
+    pub extended_form: u8,
+    pub robot_no: u8,
+    pub station_no: u8,
+    pub tool_no: u8,
+    pub user_coor_no: u8,
 }
 ```
 
-#### Step 2: Position Types
+#### Step 3: Enhanced Error Handling
 
 ```rust
-// src/position.rs
-#[derive(Debug, Clone)]
-pub struct PulsePosition {
-    joints: [i32; 8],
-    tool: i32,
-    size: u8, // Number of active joints
+#[derive(Debug, Error)]
+pub enum ProtocolError {
+    #[error("buffer underflow")]
+    Underflow,
+    #[error("invalid header")]
+    InvalidHeader,
+    #[error("unknown command 0x{0:04X}")]
+    UnknownCommand(u16),
+    #[error("unsupported operation")]
+    Unsupported,
+    #[error("serialization error: {0}")]
+    Serialization(String),
+    #[error("deserialization error: {0}")]
+    Deserialization(String),
+    #[error("invalid variable type")]
+    InvalidVariableType,
+    #[error("invalid coordinate system")]
+    InvalidCoordinateSystem,
+    #[error("position data error: {0}")]
+    PositionError(String),
+    #[error("file operation error: {0}")]
+    FileError(String),
+    #[error("system info error: {0}")]
+    SystemInfoError(String),
 }
 
-impl PulsePosition {
-    pub fn new(joints: [i32; 8], tool: i32) -> Self {
-        Self { joints, tool, size: 8 }
-    }
-
-    pub fn new_with_size(joints: [i32; 8], size: u8, tool: i32) -> Self {
-        Self { joints, tool, size }
-    }
-
-    pub fn joints(&self) -> &[i32] {
-        &self.joints[..self.size as usize]
-    }
-
-    pub fn joints_mut(&mut self) -> &mut [i32] {
-        &mut self.joints[..self.size as usize]
-    }
-
-    pub fn tool(&self) -> i32 {
-        self.tool
-    }
-
-    pub fn set_tool(&mut self, tool: i32) {
-        self.tool = tool;
-    }
-
-    pub fn size(&self) -> u8 {
-        self.size
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct CartesianPosition {
-    x: f64,
-    y: f64,
-    z: f64,
-    rx: f64,
-    ry: f64,
-    rz: f64,
-    frame: CoordinateSystem,
-    configuration: PoseConfiguration,
-    tool: i32,
-}
-
-impl CartesianPosition {
-    pub fn new(
-        x: f64, y: f64, z: f64,
-        rx: f64, ry: f64, rz: f64,
-        frame: CoordinateSystem,
-        configuration: PoseConfiguration,
-        tool: i32,
-    ) -> Self {
-        Self { x, y, z, rx, ry, rz, frame, configuration, tool }
-    }
-
-    pub fn x(&self) -> f64 { self.x }
-    pub fn y(&self) -> f64 { self.y }
-    pub fn z(&self) -> f64 { self.z }
-    pub fn rx(&self) -> f64 { self.rx }
-    pub fn ry(&self) -> f64 { self.ry }
-    pub fn rz(&self) -> f64 { self.rz }
-    pub fn frame(&self) -> CoordinateSystem { self.frame }
-    pub fn configuration(&self) -> PoseConfiguration { self.configuration }
-    pub fn tool(&self) -> i32 { self.tool }
-
-    pub fn set_x(&mut self, x: f64) { self.x = x; }
-    pub fn set_y(&mut self, y: f64) { self.y = y; }
-    pub fn set_z(&mut self, z: f64) { self.z = z; }
-    pub fn set_rx(&mut self, rx: f64) { self.rx = rx; }
-    pub fn set_ry(&mut self, ry: f64) { self.ry = ry; }
-    pub fn set_rz(&mut self, rz: f64) { self.rz = rz; }
-    pub fn set_frame(&mut self, frame: CoordinateSystem) { self.frame = frame; }
-    pub fn set_configuration(&mut self, config: PoseConfiguration) { self.configuration = config; }
-    pub fn set_tool(&mut self, tool: i32) { self.tool = tool; }
-}
-
-// Unified Position type
-#[derive(Debug, Clone)]
-pub enum Position {
-    Pulse(PulsePosition),
-    Cartesian(CartesianPosition),
-}
-
-impl Position {
-    pub fn is_pulse(&self) -> bool {
-        matches!(self, Position::Pulse(_))
-    }
-
-    pub fn is_cartesian(&self) -> bool {
-        matches!(self, Position::Cartesian(_))
-    }
-
-    pub fn as_pulse(&self) -> Option<&PulsePosition> {
-        match self {
-            Position::Pulse(pos) => Some(pos),
-            _ => None,
-        }
-    }
-
-    pub fn as_pulse_mut(&mut self) -> Option<&mut PulsePosition> {
-        match self {
-            Position::Pulse(pos) => Some(pos),
-            _ => None,
-        }
-    }
-
-    pub fn as_cartesian(&self) -> Option<&CartesianPosition> {
-        match self {
-            Position::Cartesian(pos) => Some(pos),
-            _ => None,
-        }
-    }
-
-    pub fn as_cartesian_mut(&mut self) -> Option<&mut CartesianPosition> {
-        match self {
-            Position::Cartesian(pos) => Some(pos),
-            _ => None,
-        }
-    }
-}
-```
-
-#### Step 3: Status Types
-
-```rust
-// src/status.rs
+// Enhanced status structure
 #[derive(Debug, Clone)]
 pub struct Status {
     pub step: bool,
@@ -266,335 +281,71 @@ pub struct Status {
 }
 
 impl Status {
+    pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
+        if data.len() < 2 {
+            return Err(ProtocolError::Underflow);
+        }
+
+        let status_word = u16::from_le_bytes([data[0], data[1]]);
+
+        Ok(Self {
+            step: (status_word & 0x0001) != 0,
+            one_cycle: (status_word & 0x0002) != 0,
+            continuous: (status_word & 0x0004) != 0,
+            running: (status_word & 0x0008) != 0,
+            speed_limited: (status_word & 0x0010) != 0,
+            teach: (status_word & 0x0020) != 0,
+            play: (status_word & 0x0040) != 0,
+            remote: (status_word & 0x0080) != 0,
+            teach_pendant_hold: (status_word & 0x0100) != 0,
+            external_hold: (status_word & 0x0200) != 0,
+            command_hold: (status_word & 0x0400) != 0,
+            alarm: (status_word & 0x0800) != 0,
+            error: (status_word & 0x1000) != 0,
+            servo_on: (status_word & 0x2000) != 0,
+        })
+    }
+
+    // Convenience methods
     pub fn is_running(&self) -> bool { self.running }
     pub fn is_servo_on(&self) -> bool { self.servo_on }
     pub fn has_alarm(&self) -> bool { self.alarm }
-    pub fn has_error(&self) -> bool { self.error }
     pub fn is_teach_mode(&self) -> bool { self.teach }
     pub fn is_play_mode(&self) -> bool { self.play }
     pub fn is_remote_mode(&self) -> bool { self.remote }
-    pub fn is_step_mode(&self) -> bool { self.step }
-    pub fn is_continuous_mode(&self) -> bool { self.continuous }
-    pub fn is_speed_limited(&self) -> bool { self.speed_limited }
-    pub fn is_hold(&self) -> bool {
-        self.teach_pendant_hold || self.external_hold || self.command_hold
-    }
 }
 ```
 
-#### Step 4: Command Definitions
+#### Step 4: Efficient Variable Operations
+
+The library incorporates efficient design patterns for multiple variable operations, including:
+
+1. **Consecutive Variable Grouping**: Automatically groups consecutive variables of the same type for efficient batch operations
+2. **Plural Commands**: Uses HSE plural commands (0x33) for reading multiple variables in a single network call
+3. **Automatic Optimization**: Handles padding requirements for 1-byte variable types
 
 ```rust
-// src/commands.rs
-use std::marker::PhantomData;
-
-// Type-safe command definitions
-pub struct ReadVar<T> {
-    pub index: u8,
-    _phantom: PhantomData<T>,
-}
-
-pub struct WriteVar<T> {
-    pub index: u8,
-    pub value: T,
-}
-
-pub struct ReadVars<T> {
-    pub index: u8,
-    pub count: u8,
-    _phantom: PhantomData<T>,
-}
-
-pub struct WriteVars<T> {
-    pub index: u8,
-    pub values: Vec<T>,
-}
-
-// Simple commands
-pub struct ReadStatus;
-pub struct ReadCurrentPosition {
-    pub control_group: u8,
-    pub coordinate_system: CoordinateSystemType,
-}
-
-pub struct MoveL {
-    pub control_group: u8,
-    pub target: CartesianPosition,
-    pub speed: Speed,
-}
-
-pub struct MoveP {
-    pub control_group: u8,
-    pub target: PulsePosition,
-    pub speed: Speed,
-}
-
-// Speed and configuration
-#[derive(Debug, Clone, Copy)]
-pub enum SpeedType {
-    Joint,       // 0.01% of max speed
-    Translation, // 0.1 mm/s
-    Rotation     // 0.1 degrees/s
-}
-
-#[derive(Debug, Clone)]
-pub struct Speed {
-    pub speed_type: SpeedType,
-    pub value: u32,
-}
-
-impl Speed {
-    pub fn new(speed_type: SpeedType, value: u32) -> Self {
-        Self { speed_type, value }
-    }
-}
-
-// Command implementations
-impl<T: VariableType> Command for ReadVar<T> {
-    type Response = T;
-
-    fn command_id() -> u16 {
-        T::command_id()
+// Implementation of efficient variable operations
+impl HsesClient {
+    // Groups consecutive variables for optimal batch operations
+    fn group_consecutive_variables<T>(vars: &[Variable<T>]) -> Vec<Vec<&Variable<T>>> {
+        // Implementation that groups consecutive variables for efficient batch operations
+        // Similar to Python implementation's _group_nums method
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.index.to_le_bytes());
-        Ok(buf)
-    }
-}
-
-impl<T: VariableType> Command for WriteVar<T> {
-    type Response = ();
-
-    fn command_id() -> u16 {
-        T::command_id()
+    // Reads consecutive variables using plural command (0x33)
+    async fn read_consecutive_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
+    where T: VariableType {
+        // Uses plural command (0x33) for efficient batch reading
+        // Automatically handles padding for 1-byte variable types
+        // Similar to Python implementation's _read_consecutive_variables method
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.index.to_le_bytes());
-        buf.extend(self.value.serialize()?);
-        Ok(buf)
-    }
-}
-
-impl Command for ReadStatus {
-    type Response = Status;
-
-    fn command_id() -> u16 {
-        0x72
-    }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        Ok(Vec::new())
-    }
-}
-
-impl Command for ReadCurrentPosition {
-    type Response = Position;
-
-    fn command_id() -> u16 {
-        0x75
-    }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.control_group.to_le_bytes());
-        buf.extend_from_slice(&(self.coordinate_system as u8).to_le_bytes());
-        Ok(buf)
-    }
-}
-```
-
-#### Step 5: Variable Type Implementations
-
-```rust
-// src/variables.rs
-impl VariableType for u8 {
-    fn command_id() -> u16 { 0x7A }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.to_le_bytes());
-        buf.extend_from_slice(&[0u8; 3]); // Reserved bytes
-        Ok(buf)
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
-            return Err(ProtocolError::DeserializationError("Insufficient data for u8".to_string()));
-        }
-        let mut bytes = [0u8; 4];
-        bytes.copy_from_slice(&data[..4]);
-        Ok(u8::from_le_bytes(bytes))
-    }
-}
-
-impl VariableType for i16 {
-    fn command_id() -> u16 { 0x7B }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.to_le_bytes());
-        buf.extend_from_slice(&[0u8; 2]); // Reserved bytes
-        Ok(buf)
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
-            return Err(ProtocolError::DeserializationError("Insufficient data for i16".to_string()));
-        }
-        let mut bytes = [0u8; 4];
-        bytes.copy_from_slice(&data[..4]);
-        Ok(i32::from_le_bytes(bytes) as i16)
-    }
-}
-
-impl VariableType for i32 {
-    fn command_id() -> u16 { 0x7C }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.to_le_bytes());
-        Ok(buf)
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
-            return Err(ProtocolError::DeserializationError("Insufficient data for i32".to_string()));
-        }
-        let mut bytes = [0u8; 4];
-        bytes.copy_from_slice(&data[..4]);
-        Ok(i32::from_le_bytes(bytes))
-    }
-}
-
-impl VariableType for f32 {
-    fn command_id() -> u16 { 0x7D }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        buf.extend_from_slice(&self.to_le_bytes());
-        Ok(buf)
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
-            return Err(ProtocolError::DeserializationError("Insufficient data for f32".to_string()));
-        }
-        let mut bytes = [0u8; 4];
-        bytes.copy_from_slice(&data[..4]);
-        Ok(f32::from_le_bytes(bytes))
-    }
-}
-
-impl VariableType for Position {
-    fn command_id() -> u16 { 0x7F }
-
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut buf = Vec::new();
-        match self {
-            Position::Pulse(pos) => {
-                // Position type (0x00 for pulse)
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // Joint configuration
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // Tool number
-                buf.extend_from_slice(&pos.tool().to_le_bytes());
-                // User coordinate
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // Extended joint configuration
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // Joint values
-                for joint in pos.joints() {
-                    buf.extend_from_slice(&joint.to_le_bytes());
-                }
-                // Pad remaining joints with zeros
-                for _ in pos.joints().len()..8 {
-                    buf.extend_from_slice(&0i32.to_le_bytes());
-                }
-            }
-            Position::Cartesian(pos) => {
-                // Position type (0x10 for base frame)
-                buf.extend_from_slice(&0x10u32.to_le_bytes());
-                // Joint configuration
-                buf.extend_from_slice(&(pos.configuration() as u8 as u32).to_le_bytes());
-                // Tool number
-                buf.extend_from_slice(&pos.tool().to_le_bytes());
-                // User coordinate number
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // Extended joint configuration
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                // XYZ coordinates (in micrometers)
-                buf.extend_from_slice(&(pos.x() * 1000.0) as i32).to_le_bytes());
-                buf.extend_from_slice(&(pos.y() * 1000.0) as i32).to_le_bytes());
-                buf.extend_from_slice(&(pos.z() * 1000.0) as i32).to_le_bytes());
-                // Rotation coordinates (in millidegrees)
-                buf.extend_from_slice(&(pos.rx() * 1000.0) as i32).to_le_bytes());
-                buf.extend_from_slice(&(pos.ry() * 1000.0) as i32).to_le_bytes());
-                buf.extend_from_slice(&(pos.rz() * 1000.0) as i32).to_le_bytes());
-                // Padding
-                buf.extend_from_slice(&0u32.to_le_bytes());
-                buf.extend_from_slice(&0u32.to_le_bytes());
-            }
-        }
-        Ok(buf)
-    }
-
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 52 {
-            return Err(ProtocolError::DeserializationError("Insufficient data for Position".to_string()));
-        }
-
-        let mut cursor = std::io::Cursor::new(data);
-        let position_type = cursor.get_u32_le();
-
-        match position_type {
-            0x00 => {
-                // Pulse position
-                let _joint_config = cursor.get_u32_le();
-                let tool = cursor.get_i32_le();
-                let _user_coordinate = cursor.get_u32_le();
-                let _extended_config = cursor.get_u32_le();
-
-                let mut joints = [0i32; 8];
-                for i in 0..8 {
-                    joints[i] = cursor.get_i32_le();
-                }
-
-                Ok(Position::Pulse(PulsePosition::new(joints, tool)))
-            }
-            0x10..=0x22 => {
-                // Cartesian position
-                let joint_config = cursor.get_u32_le();
-                let tool = cursor.get_i32_le();
-                let _user_coordinate = cursor.get_u32_le();
-                let _extended_config = cursor.get_u32_le();
-
-                let x = cursor.get_i32_le() as f64 / 1000.0; // micrometers to mm
-                let y = cursor.get_i32_le() as f64 / 1000.0;
-                let z = cursor.get_i32_le() as f64 / 1000.0;
-                let rx = cursor.get_i32_le() as f64 / 1000.0; // millidegrees to degrees
-                let ry = cursor.get_i32_le() as f64 / 1000.0;
-                let rz = cursor.get_i32_le() as f64 / 1000.0;
-
-                let frame = match position_type {
-                    0x10 => CoordinateSystem::Base,
-                    0x11 => CoordinateSystem::Robot,
-                    0x12 => CoordinateSystem::Tool,
-                    n if n >= 0x13 && n <= 0x22 => CoordinateSystem::User((n - 0x13 + 1) as u8),
-                    _ => return Err(ProtocolError::DeserializationError("Invalid position type".to_string())),
-                };
-
-                let configuration = PoseConfiguration::from(joint_config as u8);
-
-                Ok(Position::Cartesian(CartesianPosition::new(
-                    x, y, z, rx, ry, rz, frame, configuration, tool
-                )))
-            }
-            _ => Err(ProtocolError::DeserializationError("Unknown position type".to_string())),
-        }
+    // Public API for reading multiple variables with automatic optimization
+    pub async fn read_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
+    where T: VariableType {
+        // Automatically groups variables and uses optimal reading strategy
+        // Similar to Python implementation's read_variables method
     }
 }
 ```
@@ -1084,19 +835,3 @@ mod tests {
 2. **Pending Requests**: Thread-safe HashMap for tracking requests
 3. **Connection Pooling**: Reuse connections when possible
 4. **Batch Operations**: Support for multiple commands in single request
-
-## Migration from Current Design
-
-### Key Changes
-
-1. **Template-Based Commands**: Replace enum-based commands with trait-based system
-2. **Unified Position Type**: Use enum instead of separate types
-3. **Enhanced Type Safety**: Leverage Rust's type system more effectively
-4. **Async-First API**: Improve async patterns and error handling
-5. **Better Mock Support**: Enhanced testing capabilities
-
-### Backward Compatibility
-
-- Maintain existing API where possible
-- Provide migration guides for breaking changes
-- Support both old and new patterns during transition

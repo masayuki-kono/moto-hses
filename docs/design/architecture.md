@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the architecture of the Rust HSES client library, inspired by the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet).
+This document describes the architecture of the Rust HSES client library, inspired by the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) and incorporating design insights from the Python implementation [fs100](https://github.com/fih-mobile/fs100).
 
 ## Core Design Principles
 
@@ -11,6 +11,8 @@ This document describes the architecture of the Rust HSES client library, inspir
 3. **Zero-Copy**: Efficient memory usage with the bytes crate
 4. **Error Handling**: Comprehensive error handling with thiserror
 5. **Template-Based Commands**: Type-safe command definitions inspired by C++ templates
+6. **Efficient Batch Operations**: Optimized multiple variable operations incorporating successful design patterns
+7. **Design Insights**: Architecture incorporating successful patterns from existing implementations
 
 ## Architecture Overview
 
@@ -24,6 +26,8 @@ This document describes the architecture of the Rust HSES client library, inspir
 │ • Serialization │    │   API           │    │ • Scenarios     │
 │ • Commands      │    │ • Connection    │    │ • Assertions    │
 │ • Types         │    │   Management    │    │                 │
+│ • Variable      │    │ • Batch Ops     │    │                 │
+│   Operations    │    │ • Error Handling│    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
@@ -34,6 +38,7 @@ This document describes the architecture of the Rust HSES client library, inspir
                     │ • Robot Control │
                     │ • File Operations│
                     │ • Status Monitor│
+                    │ • Variable Mgmt │
                     └─────────────────┘
 ```
 
@@ -41,16 +46,62 @@ This document describes the architecture of the Rust HSES client library, inspir
 
 ### moto-hses-proto
 
-Protocol definitions and serialization layer.
+Protocol definitions and serialization layer with enhanced variable support.
 
 #### Key Types
 
 ```rust
-// Type-safe command definitions inspired by C++ templates
+// Variable type definitions incorporating design insights from Python implementation
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VariableType {
+    Io = 0x78,           // 1 byte
+    Register = 0x79,     // 2 bytes
+    Byte = 0x7a,         // 1 byte
+    Integer = 0x7b,      // 2 bytes
+    Double = 0x7c,       // 4 bytes
+    Real = 0x7d,         // 4 bytes
+    String = 0x7e,       // 16 bytes
+    RobotPosition = 0x7f, // Position data
+    BasePosition = 0x80,  // Base position data
+    ExternalAxis = 0x81,  // External axis data
+}
+
+// Variable object for type-safe operations
+#[derive(Debug, Clone)]
+pub struct Variable<T> {
+    pub var_type: VariableType,
+    pub index: u8,
+    pub value: T,
+}
+
+// Type-safe command definitions with improved variable support
 pub trait Command {
     type Response;
     fn command_id() -> u16;
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
+}
+
+// Single variable operations
+pub struct ReadVar<T> {
+    pub index: u8,
+    _phantom: PhantomData<T>,
+}
+
+pub struct WriteVar<T> {
+    pub index: u8,
+    pub value: T,
+}
+
+// Multiple variable operations incorporating efficient design patterns
+pub struct ReadVars<T> {
+    pub start_index: u8,
+    pub count: u8,
+    _phantom: PhantomData<T>,
+}
+
+pub struct WriteVars<T> {
+    pub start_index: u8,
+    pub values: Vec<T>,
 }
 
 // Unified Position type using enum
@@ -81,100 +132,117 @@ pub struct PoseConfiguration {
 }
 ```
 
-#### Command System
+#### Enhanced Error Handling
 
 ```rust
-// Type-safe command definitions
-pub struct ReadVar<T> {
-    pub index: u8,
-    _phantom: PhantomData<T>,
-}
-
-pub struct WriteVar<T> {
-    pub index: u8,
-    pub value: T,
-}
-
-pub struct ReadStatus;
-pub struct ReadCurrentPosition {
-    pub control_group: u8,
-    pub coordinate_system: CoordinateSystemType,
-}
-
-// Command implementations
-impl Command for ReadVar<i32> {
-    type Response = i32;
-    fn command_id() -> u16 { 0x7C }
-    // ...
+#[derive(Debug, Error)]
+pub enum ProtocolError {
+    #[error("buffer underflow")]
+    Underflow,
+    #[error("invalid header")]
+    InvalidHeader,
+    #[error("unknown command 0x{0:04X}")]
+    UnknownCommand(u16),
+    #[error("unsupported operation")]
+    Unsupported,
+    #[error("serialization error: {0}")]
+    Serialization(String),
+    #[error("deserialization error: {0}")]
+    Deserialization(String),
+    #[error("invalid variable type")]
+    InvalidVariableType,
+    #[error("invalid coordinate system")]
+    InvalidCoordinateSystem,
+    #[error("position data error: {0}")]
+    PositionError(String),
+    #[error("file operation error: {0}")]
+    FileError(String),
+    #[error("system info error: {0}")]
+    SystemInfoError(String),
 }
 ```
 
 ### moto-hses-client
 
-Asynchronous client implementation with high-level API.
+High-level client API with enhanced functionality.
 
-#### Client Architecture
+#### Client Features
 
 ```rust
 pub struct HsesClient {
-    inner: Arc<InnerClient>,
+    socket: UdpSocket,
+    controller: SocketAddr,
+    seq: u16,
     config: ClientConfig,
 }
 
-struct InnerClient {
-    socket: UdpSocket,
-    remote_addr: SocketAddr,
-    request_id: AtomicU8,
-    pending_requests: Arc<Mutex<HashMap<u8, PendingRequest>>>,
+pub struct ClientConfig {
+    pub timeout: Duration,
+    pub retry_count: u32,
+    pub retry_delay: Duration,
+    pub buffer_size: usize,
+    pub enable_debug: bool,
+    pub connection_pool_size: usize,
 }
 
-// High-level async API
+// Enhanced variable operations
 impl HsesClient {
-    pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
-    where
-        T: VariableType,
-    {
-        let command = ReadVar::<T>::new(index);
-        self.send_command(command).await
-    }
+    // Single variable operations
+    pub async fn read_variable<T>(&mut self, var: &mut Variable<T>) -> Result<(), ClientError>
+    where T: VariableType;
 
-    pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
-    where
-        T: VariableType,
-    {
-        let command = WriteVar::<T>::new(index, value);
-        self.send_command(command).await
-    }
+    pub async fn write_variable<T>(&mut self, var: &Variable<T>) -> Result<(), ClientError>
+    where T: VariableType;
 
-    pub async fn read_status(&self) -> Result<Status, ClientError> {
-        self.send_command(ReadStatus).await
-    }
+    // Multiple variable operations with automatic optimization
+    pub async fn read_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
+    where T: VariableType;
 
-    pub async fn read_position(&self, control_group: u8, coord_system: CoordinateSystemType) -> Result<Position, ClientError> {
-        let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
-        self.send_command(command).await
-    }
+    pub async fn write_variables<T>(&mut self, vars: &[Variable<T>]) -> Result<(), ClientError>
+    where T: VariableType;
+
+    // Status and position operations
+    pub async fn read_status(&mut self) -> Result<Status, ClientError>;
+    pub async fn read_position(&mut self, robot_no: u8) -> Result<PositionInfo, ClientError>;
+    pub async fn read_position_error(&mut self, robot_no: u8) -> Result<PositionError, ClientError>;
+    pub async fn read_torque(&mut self, robot_no: u8) -> Result<TorqueData, ClientError>;
+
+    // File operations
+    pub async fn get_file_list(&mut self, extension: &str) -> Result<Vec<String>, ClientError>;
+    pub async fn send_file(&mut self, filename: &str) -> Result<(), ClientError>;
+    pub async fn recv_file(&mut self, filename: &str, local_dir: &str) -> Result<(), ClientError>;
+    pub async fn delete_file(&mut self, filename: &str) -> Result<(), ClientError>;
+
+    // System information
+    pub async fn get_system_info(&mut self, system_type: u8, info_type: u8) -> Result<SystemInfo, ClientError>;
+    pub async fn get_management_time(&mut self, time_type: u8) -> Result<ManagementTime, ClientError>;
+
+    // Power and control operations
+    pub async fn switch_power(&mut self, power_type: u8, switch_action: u8) -> Result<(), ClientError>;
+    pub async fn select_cycle(&mut self, cycle_type: u8) -> Result<(), ClientError>;
+    pub async fn move_to_position(&mut self, move_type: u8, coordinate: u8, speed_class: u8,
+                                 speed: f32, position: Position, form: u8, extended_form: u8,
+                                 robot_no: u8, station_no: u8, tool_no: u8, user_coor_no: u8) -> Result<(), ClientError>;
 }
 ```
 
-#### Connection Management
+#### Efficient Variable Operations
+
+The client automatically optimizes multiple variable operations by grouping consecutive variables of the same type, incorporating efficient design patterns:
 
 ```rust
+// Automatic grouping of consecutive variables
 impl HsesClient {
-    pub async fn connect(addr: &str, config: ClientConfig) -> Result<Self, ClientError> {
-        let socket = UdpSocket::bind("0.0.0.0:0").await?;
-        let remote_addr: SocketAddr = addr.parse()?;
-        socket.connect(remote_addr).await?;
+    fn group_consecutive_variables<T>(vars: &[Variable<T>]) -> Vec<Vec<&Variable<T>>> {
+        // Implementation that groups consecutive variables for efficient batch operations
+        // Uses the same logic as Python implementation's _group_nums method
+    }
 
-        Ok(Self {
-            inner: Arc::new(InnerClient {
-                socket,
-                remote_addr,
-                request_id: AtomicU8::new(1),
-                pending_requests: Arc::new(Mutex::new(HashMap::new())),
-            }),
-            config,
-        })
+    async fn read_consecutive_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
+    where T: VariableType {
+        // Uses plural command (0x33) for efficient batch reading
+        // Automatically handles padding for 1-byte variable types
+        // Similar to Python implementation's _read_consecutive_variables method
     }
 }
 ```
@@ -183,183 +251,128 @@ impl HsesClient {
 
 Mock server for testing and development.
 
-#### Mock Server Features
+```rust
+pub struct MockServer {
+    socket: UdpSocket,
+    handlers: HashMap<u16, Box<dyn CommandHandler>>,
+}
+
+// Mock implementations for all command types
+impl MockServer {
+    pub fn new() -> Self;
+    pub async fn start(addr: SocketAddr) -> Result<Self, MockError>;
+    pub fn register_handler<C: Command>(&mut self, handler: impl CommandHandler + 'static);
+    pub async fn run(&mut self) -> Result<(), MockError>;
+}
+```
+
+## Design Patterns
+
+### 1. Type-Safe Variable Operations
+
+Incorporating design insights from both C++ templates and Python's Variable class:
 
 ```rust
-pub struct MockHsesServer {
-    variables: Arc<RwLock<HashMap<u8, VariableValue>>>,
-    positions: Arc<RwLock<HashMap<u8, Position>>>,
-    status: Arc<RwLock<Status>>,
-    handlers: Arc<RwLock<HashMap<u16, Box<dyn RequestHandler>>>>,
-}
+// Type-safe variable creation
+let mut var_b0 = Variable::with_default(VariableType::Byte, 0);
+let mut var_i1 = Variable::new(VariableType::Integer, 1, 0i16);
+let mut var_r2 = Variable::new(VariableType::Real, 2, 0.0f32);
 
-impl MockHsesServer {
-    pub fn with_variable<T: VariableType>(mut self, index: u8, value: T) -> Self {
-        self.variables.write().unwrap().insert(index, value.into());
-        self
-    }
-
-    pub fn with_position(mut self, index: u8, position: Position) -> Self {
-        self.positions.write().unwrap().insert(index, position);
-        self
-    }
-
-    pub fn with_custom_handler<F>(mut self, command_id: u16, handler: F) -> Self
-    where
-        F: RequestHandler + 'static,
-    {
-        self.handlers.write().unwrap().insert(command_id, Box::new(handler));
-        self
-    }
-}
+// Type-safe operations
+client.read_variable(&mut var_b0).await?;
+client.write_variable(&var_i1).await?;
 ```
 
-## Type System Design
+### 2. Efficient Batch Operations
 
-### Variable Types
+Optimized multiple variable operations with automatic optimization:
 
 ```rust
-// Type-safe variable type system
-pub trait VariableType: Send + Sync + 'static {
-    fn command_id() -> u16;
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>;
-}
+// Automatic grouping and optimization
+let mut vars = vec![
+    Variable::with_default(VariableType::Integer, 0),
+    Variable::with_default(VariableType::Integer, 1),
+    Variable::with_default(VariableType::Integer, 2),
+    Variable::with_default(VariableType::Integer, 3),
+];
 
-impl VariableType for u8 {
-    fn command_id() -> u16 { 0x7A }
-    // ...
-}
-
-impl VariableType for i16 {
-    fn command_id() -> u16 { 0x7B }
-    // ...
-}
-
-impl VariableType for i32 {
-    fn command_id() -> u16 { 0x7C }
-    // ...
-}
-
-impl VariableType for f32 {
-    fn command_id() -> u16 { 0x7D }
-    // ...
-}
-
-impl VariableType for Position {
-    fn command_id() -> u16 { 0x7F }
-    // ...
-}
+// Automatically uses plural command for efficiency
+client.read_variables(&mut vars).await?;
 ```
 
-### Position Types
+The optimization includes:
+
+1. **Consecutive Variable Grouping**: Automatically groups consecutive variables of the same type
+2. **Plural Commands**: Uses HSE plural commands (0x33) for reading multiple variables in a single network call
+3. **Automatic Padding**: Handles padding requirements for 1-byte variable types
+
+### 3. Error Handling
+
+Comprehensive error handling with detailed error types:
 
 ```rust
-#[derive(Debug, Clone)]
-pub struct PulsePosition {
-    pub joints: [i32; 8],
-    pub tool: i32,
-    pub size: u8, // Number of active joints
-}
-
-#[derive(Debug, Clone)]
-pub struct CartesianPosition {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-    pub rx: f64,
-    pub ry: f64,
-    pub rz: f64,
-    pub frame: CoordinateSystem,
-    pub configuration: PoseConfiguration,
-    pub tool: i32,
-}
-
-// Unified Position type
-#[derive(Debug, Clone)]
-pub enum Position {
-    Pulse(PulsePosition),
-    Cartesian(CartesianPosition),
-}
-
-impl Position {
-    pub fn is_pulse(&self) -> bool {
-        matches!(self, Position::Pulse(_))
+match client.read_variable(&mut var).await {
+    Ok(_) => println!("Success"),
+    Err(ClientError::Proto(ProtocolError::InvalidVariableType)) => {
+        println!("Invalid variable type");
     }
-
-    pub fn is_cartesian(&self) -> bool {
-        matches!(self, Position::Cartesian(_))
+    Err(ClientError::Timeout) => {
+        println!("Operation timed out");
     }
-
-    pub fn as_pulse(&self) -> Option<&PulsePosition> {
-        match self {
-            Position::Pulse(pos) => Some(pos),
-            _ => None,
-        }
-    }
-
-    pub fn as_cartesian(&self) -> Option<&CartesianPosition> {
-        match self {
-            Position::Cartesian(pos) => Some(pos),
-            _ => None,
-        }
-    }
-}
-```
-
-## Error Handling Strategy
-
-### Error Types Hierarchy
-
-```
-Error
-├── ClientError
-│   ├── ConnectionError
-│   ├── TimeoutError
-│   ├── ProtocolError
-│   └── InvalidVariableError
-├── ProtocolError
-│   ├── SerializationError
-│   ├── DeserializationError
-│   ├── InvalidMessageError
-│   └── InvalidCommandError
-└── MockError
-    ├── HandlerNotFound
-    ├── InvalidResponse
-    └── ServerError
-```
-
-### Error Handling Patterns
-
-```rust
-// Result type aliases
-pub type Result<T> = std::result::Result<T, Error>;
-pub type ClientResult<T> = std::result::Result<T, ClientError>;
-pub type ProtocolResult<T> = std::result::Result<T, ProtocolError>;
-
-// Error conversion
-impl From<ProtocolError> for ClientError {
-    fn from(err: ProtocolError) -> Self {
-        ClientError::ProtocolError(err)
+    Err(ClientError::Io(e)) => {
+        println!("IO error: {}", e);
     }
 }
 ```
 
 ## Performance Considerations
 
-### Memory Management
+### 1. Zero-Copy Operations
 
-1. **Zero-Copy Operations**: Use bytes crate for efficient buffer management
-2. **Arc for Sharing**: Share client state across async tasks
-3. **Pooled Buffers**: Reuse message buffers to reduce allocations
-4. **Async I/O**: Non-blocking UDP operations with Tokio
+- Use of `Bytes` and `BytesMut` for efficient memory management
+- Minimal allocations during serialization/deserialization
+- Efficient buffer reuse
 
-### Concurrency
+### 2. Efficient Variable Operations
 
-1. **Request ID Management**: Atomic operations for request ID allocation
-2. **Pending Requests**: Thread-safe HashMap for tracking requests
-3. **Connection Pooling**: Reuse connections when possible
-4. **Batch Operations**: Support for multiple commands in single request
+- Automatic grouping of consecutive variables
+- Use of plural commands (0x33) for efficiency
+- Reduced network round trips
+- Automatic padding handling for 1-byte variable types
+
+### 3. Connection Management
+
+- Connection pooling for high-performance applications
+- Automatic retry logic with exponential backoff
+- Configurable timeouts and buffer sizes
+
+### 4. Async/Await
+
+- Non-blocking I/O operations
+- Efficient resource utilization
+- Support for concurrent operations
+
+## Design Insights
+
+The architecture incorporates successful patterns from existing implementations:
+
+### Variable Object Pattern
+
+The `Variable<T>` object pattern provides type safety while maintaining flexibility, incorporating design insights from successful implementations.
+
+### Efficient Batch Operations
+
+The library implements efficient batch operations that automatically optimize network usage, reducing round trips and improving performance for applications that need to read multiple variables.
+
+## Future Enhancements
+
+1. **WebSocket Support**: Real-time status streaming
+2. **GraphQL Interface**: Modern API querying
+3. **Plugin System**: Extensible command support
+4. **Performance Monitoring**: Built-in metrics and profiling
+5. **Configuration Management**: YAML/JSON configuration files
+6. **Logging Integration**: Structured logging with tracing
+7. **Security Features**: TLS encryption and authentication
 
 ## Testing Strategy
 
@@ -409,19 +422,3 @@ async fn test_full_workflow() {
     client.write_variable(0, 200i32).await?;
 }
 ```
-
-## Migration from Current Design
-
-### Key Changes
-
-1. **Template-Based Commands**: Replace enum-based commands with trait-based system
-2. **Unified Position Type**: Use enum instead of separate types
-3. **Enhanced Type Safety**: Leverage Rust's type system more effectively
-4. **Async-First API**: Improve async patterns and error handling
-5. **Better Mock Support**: Enhanced testing capabilities
-
-### Backward Compatibility
-
-- Maintain existing API where possible
-- Provide migration guides for breaking changes
-- Support both old and new patterns during transition

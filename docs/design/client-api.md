@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the API design for the Rust HSES client library, inspired by the C++ reference implementation. The API is designed to be type-safe, async-first, and easy to use while maintaining high performance.
+This document describes the API design for the Rust HSES client library, inspired by the C++ reference implementation and incorporating design insights from the Python implementation. The API is designed to be type-safe, async-first, and easy to use while maintaining high performance.
 
 ## Design Principles
 
@@ -11,6 +11,8 @@ This document describes the API design for the Rust HSES client library, inspire
 3. **Template-Based**: Type-safe command definitions inspired by C++ templates
 4. **Zero-Copy**: Efficient memory usage where possible
 5. **Error Handling**: Comprehensive error handling with thiserror
+6. **Efficient Batch Operations**: Support for optimized multiple variable operations
+7. **Design Insights**: API design incorporating successful patterns from existing implementations
 
 ## Core API Design
 
@@ -33,35 +35,65 @@ let config = ClientConfig {
 let client = HsesClient::connect_with_config("192.168.1.100:10040", config).await?;
 ```
 
-### Variable Operations
+### Enhanced Variable Operations
 
 ```rust
-use moto_hses_client::{HsesClient, VariableType};
+use moto_hses_client::{HsesClient, Variable, VariableType};
 
-// Type-safe variable reading - Commands 0x7A-0x81
-let value: u8 = client.read_variable(0).await?;        // Command 0x7A (B variable)
-let value: i16 = client.read_variable(1).await?;       // Command 0x7B (I variable)
-let value: i32 = client.read_variable(2).await?;       // Command 0x7C (D variable)
-let value: f32 = client.read_variable(3).await?;       // Command 0x7D (R variable)
-let value: String = client.read_variable(4).await?;    // Command 0x7E (S variable)
-let value: Position = client.read_variable(5).await?;  // Command 0x7F (P variable)
+// Single variable operations - Type-safe with Variable<T> objects
+let mut var_b0 = Variable::with_default(VariableType::Byte, 0);
+client.read_variable(&mut var_b0).await?;
+println!("B0 = {}", var_b0.value);
 
-// Type-safe variable writing - Commands 0x7A-0x81
-client.write_variable(0, 42u8).await?;                 // Command 0x7A (B variable)
-client.write_variable(1, 1000i16).await?;              // Command 0x7B (I variable)
-client.write_variable(2, 1000000i32).await?;           // Command 0x7C (D variable)
-client.write_variable(3, 3.14f32).await?;              // Command 0x7D (R variable)
-client.write_variable(4, "Hello Robot".to_string()).await?; // Command 0x7E (S variable)
+let mut var_i1 = Variable::new(VariableType::Integer, 1, 0i16);
+client.read_variable(&mut var_i1).await?;
+println!("I1 = {}", var_i1.value);
 
-// Position writing - Command 0x7F
-let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
-client.write_variable(5, position).await?;             // Command 0x7F (P variable)
+let mut var_r2 = Variable::new(VariableType::Real, 2, 0.0f32);
+client.read_variable(&mut var_r2).await?;
+println!("R2 = {}", var_r2.value);
+
+// String variables
+let mut var_s3 = Variable::new(VariableType::String, 3, String::new());
+client.read_variable(&mut var_s3).await?;
+println!("S3 = '{}'", var_s3.value);
+
+// Position variables
+let mut var_p4 = Variable::new(VariableType::RobotPosition, 4, Position::default());
+client.read_variable(&mut var_p4).await?;
+println!("P4 = {:?}", var_p4.value);
+
+// Writing variables
+let var_write = Variable::new(VariableType::Integer, 10, 1000i16);
+client.write_variable(&var_write).await?;
+
+// Multiple variable operations with automatic optimization
+let mut vars = vec![
+    Variable::with_default(VariableType::Integer, 0),
+    Variable::with_default(VariableType::Integer, 1),
+    Variable::with_default(VariableType::Integer, 2),
+    Variable::with_default(VariableType::Integer, 3),
+];
+
+// Efficient batch read - automatically groups consecutive variables
+client.read_variables(&mut vars).await?;
+for var in &vars {
+    println!("I{} = {}", var.index, var.value);
+}
+
+// Batch write
+let write_vars = vec![
+    Variable::new(VariableType::Integer, 10, 100i16),
+    Variable::new(VariableType::Integer, 11, 200i16),
+    Variable::new(VariableType::Integer, 12, 300i16),
+];
+client.write_variables(&write_vars).await?;
 ```
 
 ### Status and Position Operations
 
 ```rust
-// Read robot status - Command 0x72
+// Read robot status with enhanced error handling
 let status = client.read_status().await?;
 println!("Robot running: {}", status.is_running());
 println!("Servo on: {}", status.is_servo_on());
@@ -70,188 +102,214 @@ println!("Teach mode: {}", status.is_teach_mode());
 println!("Play mode: {}", status.is_play_mode());
 println!("Remote mode: {}", status.is_remote_mode());
 
-// Read alarm data - Command 0x70
-let alarm_data = client.read_alarm_data(1, AlarmAttribute::AlarmCode).await?;
-println!("Latest alarm code: {}", alarm_data.alarm_code);
+// Read position with detailed information
+let position_info = client.read_position(1).await?;
+println!("Position type: {}", position_info.data_type);
+println!("Form: {}", position_info.form);
+println!("Tool number: {}", position_info.tool_no);
+println!("User coordinate: {}", position_info.user_coor_no);
+println!("Extended form: {}", position_info.extended_form);
+println!("Position: {:?}", position_info.pos);
 
-let alarm_name = client.read_alarm_data(1, AlarmAttribute::AlarmName).await?;
-println!("Latest alarm name: {}", alarm_name);
+// Read position error data
+let error_data = client.read_position_error(1).await?;
+println!("Axis 1 error: {}", error_data.axis_1);
+println!("Axis 2 error: {}", error_data.axis_2);
+// ... other axes
 
-// Read system information - Command 0x89
-let system_info = client.get_system_info(11, SystemInfoType::SystemSoftwareVersion).await?;
-println!("System software version: {}", system_info);
-
-let model_info = client.get_system_info(11, SystemInfoType::ModelName).await?;
-println!("Model name: {}", model_info);
-
-// Read current position
-let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
-match position {
-    Position::Pulse(pulse_pos) => {
-        println!("Joint 1: {}", pulse_pos.joints()[0]);
-        println!("Tool: {}", pulse_pos.tool());
-    }
-    Position::Cartesian(cart_pos) => {
-        println!("X: {}, Y: {}, Z: {}", cart_pos.x(), cart_pos.y(), cart_pos.z());
-        println!("RX: {}, RY: {}, RZ: {}", cart_pos.rx(), cart_pos.ry(), cart_pos.rz());
-    }
-}
-
-// Read position with specific coordinate system
-let base_position = client.read_position(1, CoordinateSystemType::BasePulse).await?;
-let cartesian_position = client.read_position(1, CoordinateSystemType::RobotCartesian).await?;
-```
-
-### Batch Operations
-
-```rust
-// Batch reading - Commands 0x302-0x309
-let values = client.read_variables(&[
-    (0, VariableType::Byte),      // Command 0x302 (Plural B variables)
-    (1, VariableType::Integer),   // Command 0x303 (Plural I variables)
-    (2, VariableType::Double),    // Command 0x304 (Plural D variables)
-    (3, VariableType::Real),      // Command 0x305 (Plural R variables)
-    (4, VariableType::String),    // Command 0x306 (Plural S variables)
-]).await?;
-
-// Batch writing - Commands 0x302-0x309
-let variables = vec![
-    (0, 42u8),                    // Command 0x302 (Plural B variables)
-    (1, 1000i16),                 // Command 0x303 (Plural I variables)
-    (2, 1000000i32),              // Command 0x304 (Plural D variables)
-    (3, 3.14f32),                 // Command 0x305 (Plural R variables)
-    (4, "Hello Robot".to_string()), // Command 0x306 (Plural S variables)
-];
-client.write_variables(&variables).await?;
-```
-
-### I/O Operations
-
-```rust
-use moto_hses_client::IoType;
-
-// Read I/O data - Command 0x78
-let input_value = client.read_io(IoType::RobotUserInput, 1).await?;      // Command 0x78
-let output_value = client.read_io(IoType::RobotUserOutput, 1001).await?; // Command 0x78
-let network_input = client.read_io(IoType::NetworkInput, 2501).await?;   // Command 0x78
-
-// Write I/O data (network input only) - Command 0x78
-client.write_io(IoType::NetworkInput, 2501, true).await?;   // Command 0x78
-client.write_io(IoType::NetworkInput, 2502, false).await?;  // Command 0x78
-
-// Batch I/O operations - Command 0x300
-let io_values = client.read_multiple_io(&[
-    (IoType::RobotUserInput, 1),    // Command 0x300 (Plural I/O data)
-    (IoType::RobotUserInput, 2),    // Command 0x300 (Plural I/O data)
-    (IoType::RobotUserOutput, 1001), // Command 0x300 (Plural I/O data)
-]).await?;
+// Read torque data
+let torque_data = client.read_torque(1).await?;
+println!("Axis 1 torque: {}", torque_data.axis_1);
+println!("Axis 2 torque: {}", torque_data.axis_2);
+// ... other axes
 ```
 
 ### File Operations
 
 ```rust
-// File list operations - returns Vec<String> of filenames - Service 0x32
-let job_files: Vec<String> = client.read_file_list("*.JOB")
-    .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;                                                                 // Service 0x32 (File list acquiring)
-
-println!("Found JOB files:");
-for filename in &job_files {
-    println!("  - {}", filename);
+// Get file list
+let files = client.get_file_list("JBI").await?;
+for file in files {
+    println!("File: {}", file);
 }
 
-// Read file content as string (for JOB files) - Service 0x16
-let job_content: String = client.read_file("TEST.JOB")
-    .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;                                                                 // Service 0x16 (File saving command)
+// Send file to controller
+client.send_file("local_file.jbi").await?;
 
-println!("JOB file content:");
-println!("{}", job_content);
+// Receive file from controller
+client.recv_file("remote_file.jbi", "./downloads/").await?;
 
-// Read file content as bytes (for binary files) - Service 0x16
-let binary_content: Vec<u8> = client.read_file_as_bytes("DATA.BIN")
-    .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
-    .await?;                                                                 // Service 0x16 (File saving command)
-
-// Write file content (string for JOB files) - Service 0x15
-let new_job_content = r#"
-PROGRAM TEST
-    MOV P1
-    MOV P2
-    END
-"#.to_string();
-
-client.write_file("NEW_TEST.JOB", new_job_content)
-    .on_progress(|bytes_sent, bytes_total| {
-        println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
-    })
-    .await?;                                                                 // Service 0x15 (File loading command)
-
-// Write file content (bytes for binary files) - Service 0x15
-let binary_data = vec![0x01, 0x02, 0x03, 0x04];
-client.write_file_as_bytes("DATA.BIN", binary_data)
-    .on_progress(|bytes_sent, bytes_total| {
-        println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
-    })
-    .await?;                                                                 // Service 0x15 (File loading command)
-
-client.delete_file("TEST.JOB").await?;                                      // Service 0x09 (File delete)
+// Delete file on controller
+client.delete_file("unwanted_file.jbi").await?;
 ```
 
-### Job Operations
+### System Information and Management
 
 ```rust
-// Job execution - Command 0x86 (Start-up command)
-client.start_job().await?;
+// Get system information
+let system_info = client.get_system_info(11, SystemInfoType::SystemSoftwareVersion).await?;
+println!("System software version: {}", system_info.software_version);
+println!("Model name: {}", system_info.model);
+println!("Parameter version: {}", system_info.parameter_version);
 
-// Job selection - Command 0x87 (Job select command)
-client.select_job("MAIN.JOB", 1).await?; // job_name, line_number
-
-// Get executing job information - Command 0x73
-let job_info = client.get_executing_job_info(1, JobInfoAttribute::JobName).await?;
-println!("Current job: {}", job_info);
-
-let line_number = client.get_executing_job_info(1, JobInfoAttribute::LineNumber).await?;
-println!("Line number: {}", line_number);
-
-let step_number = client.get_executing_job_info(1, JobInfoAttribute::StepNumber).await?;
-println!("Step number: {}", step_number);
-
-let speed_override = client.get_executing_job_info(1, JobInfoAttribute::SpeedOverride).await?;
-println!("Speed override: {}", speed_override);
-
-// Get all job information at once
-let all_job_info = client.get_all_executing_job_info(1).await?;
-println!("Job: {}, Line: {}, Step: {}, Speed: {}",
-    all_job_info.job_name,
-    all_job_info.line_number,
-    all_job_info.step_number,
-    all_job_info.speed_override
-);
+// Get management time
+let time_info = client.get_management_time(ManagementTimeType::ControlPowerOn).await?;
+println!("Start time: {}", time_info.start);
+println!("Elapsed time: {}", time_info.elapse);
 ```
 
-### Move Operations
+### Power and Control Operations
 
 ```rust
-use moto_hses_client::{Speed, SpeedType, MoveFrame};
+// Power control
+client.switch_power(PowerType::Servo, PowerSwitch::On).await?;
 
-// Cartesian move - Command 0x8A
-let target = CartesianPosition::new(
-    100.0, 200.0, 300.0,  // X, Y, Z
-    0.0, 0.0, 0.0,        // RX, RY, RZ
+// Cycle selection
+client.select_cycle(CycleType::Continuous).await?;
+
+// Movement operations
+let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
+client.move_to_position(
+    MoveType::JointAbsolutePos,
     CoordinateSystem::Base,
-    PoseConfiguration::default(),
-    1
-);
-
-let speed = Speed::new(SpeedType::Translation, 100); // 10.0 mm/s
-client.move_cartesian(1, target, speed).await?;      // Command 0x8A (Move instruction - Cartesian)
-
-// Pulse move - Command 0x8B
-let target = PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1);
-let speed = Speed::new(SpeedType::Joint, 50); // 0.5% of max speed
-client.move_pulse(1, target, speed).await?;           // Command 0x8B (Move instruction - Pulse)
+    SpeedClass::Percent,
+    50.0,
+    position,
+    0, 0, 1, 0, 0, 0
+).await?;
 ```
+
+### Enhanced Error Handling
+
+```rust
+use moto_hses_client::{HsesClient, ClientError, ProtocolError};
+
+match client.read_variable(&mut var).await {
+    Ok(_) => println!("Variable read successfully"),
+    Err(ClientError::Proto(ProtocolError::InvalidVariableType)) => {
+        println!("Invalid variable type specified");
+    }
+    Err(ClientError::Proto(ProtocolError::PositionError(msg))) => {
+        println!("Position error: {}", msg);
+    }
+    Err(ClientError::Io(e)) => {
+        println!("IO error: {}", e);
+    }
+    Err(ClientError::Timeout) => {
+        println!("Operation timed out");
+    }
+}
+```
+
+### Configuration and Advanced Features
+
+```rust
+// Client configuration with retry logic
+let config = ClientConfig {
+    timeout: Duration::from_millis(1000),
+    retry_count: 3,
+    retry_delay: Duration::from_millis(100),
+    buffer_size: 8192,
+    enable_debug: true,
+    connection_pool_size: 5,
+};
+
+let client = HsesClient::connect_with_config("192.168.1.100:10040", config).await?;
+
+// Connection pooling for high-performance applications
+let pool = HsesClientPool::new(config, "192.168.1.100:10040").await?;
+let client = pool.get().await?;
+
+// Event-driven status monitoring
+let mut status_stream = client.status_stream().await?;
+while let Some(status) = status_stream.next().await {
+    match status {
+        Ok(status) => {
+            if status.has_alarm() {
+                println!("Alarm detected!");
+            }
+        }
+        Err(e) => println!("Status error: {}", e),
+    }
+}
+```
+
+## Performance Considerations
+
+### Efficient Variable Operations
+
+The library automatically optimizes multiple variable operations by grouping consecutive variables of the same type, incorporating efficient design patterns:
+
+```rust
+// This will be optimized to use the plural command (0x33)
+let mut vars = vec![
+    Variable::with_default(VariableType::Integer, 0),
+    Variable::with_default(VariableType::Integer, 1),
+    Variable::with_default(VariableType::Integer, 2),
+    Variable::with_default(VariableType::Integer, 3),
+];
+client.read_variables(&mut vars).await?;
+```
+
+The optimization includes:
+
+1. **Consecutive Variable Grouping**: Automatically groups consecutive variables of the same type
+2. **Plural Commands**: Uses HSE plural commands (0x33) for reading multiple variables in a single network call
+3. **Automatic Padding**: Handles padding requirements for 1-byte variable types
+
+### Connection Management
+
+```rust
+// Automatic connection management with pooling
+let pool = HsesClientPool::new(config, "192.168.1.100:10040").await?;
+
+// Concurrent operations
+let futures: Vec<_> = (0..10).map(|i| {
+    let pool = pool.clone();
+    async move {
+        let client = pool.get().await?;
+        let mut var = Variable::with_default(VariableType::Integer, i);
+        client.read_variable(&mut var).await?;
+        Ok::<_, ClientError>(var.value)
+    }
+}).collect();
+
+let results = futures::future::join_all(futures).await;
+```
+
+## Design Insights
+
+The API design incorporates successful patterns from existing implementations:
+
+### Variable Object Pattern
+
+The `Variable<T>` object pattern provides type safety while maintaining flexibility:
+
+```rust
+// Type-safe variable creation and operations
+let mut var = Variable::with_default(VariableType::Integer, 0);
+client.read_variable(&mut var).await?;
+println!("Value: {}", var.value);
+```
+
+### Efficient Batch Operations
+
+The library implements efficient batch operations that automatically optimize network usage:
+
+```rust
+// Automatic optimization of multiple variable operations
+let mut vars = vec![
+    Variable::with_default(VariableType::Integer, 0),
+    Variable::with_default(VariableType::Integer, 1),
+    Variable::with_default(VariableType::Integer, 2),
+    Variable::with_default(VariableType::Integer, 3),
+];
+
+// Automatically uses plural command for efficiency
+client.read_variables(&mut vars).await?;
+```
+
+This approach reduces network round trips and improves performance for applications that need to read multiple variables.
 
 ## Type Definitions
 
