@@ -2151,6 +2151,48 @@ File commands use a different port (10041) and have a simpler structure.
 - It takes about ten minutes to finish backing-up the data by using the batch data backup function
 - Refer to chapter 2.5 "Setting of a Batch Data Backup Function" for more detail
 
+## Variable Types
+
+### Supported Variable Types
+
+- `B variables`: Byte variables (Command 0x7A)
+  - 32-bit integer (4 bytes)
+  - Byte 0: B variable value
+  - Byte 1-3: Reserved
+  - Variable number range: 0 to 99
+- `I variables`: Integer type variables (Command 0x7B)
+  - 32-bit integer (4 bytes)
+  - Byte 0-3: I variable value
+  - Variable number range: 0 to 99
+- `D variables`: Double precision integer type variables (Command 0x7C)
+  - 32-bit integer (4 bytes)
+  - Byte 0-3: D variable value
+  - Variable number range: 0 to 99
+- `R variables`: Real type variables (Command 0x7D)
+  - 32-bit floating point (4 bytes)
+  - Variable number range: 0 to 99
+- `S variables`: Character type variables (Command 0x7E)
+  - 32-bit integer (4 bytes)
+  - Byte 0: S variable value
+  - Byte 1-3: Reserved
+  - Variable number range: 0 to 99
+- `P variables`: Robot position type variables (Command 0x7F)
+  - 13 × 32-bit integers (52 bytes): Position variable data
+  - Variable number range: 0 to 127
+- `Bp variables`: Base position type variables (Command 0x80)
+  - 9 × 32-bit integers (36 bytes): Base position variable data
+  - Variable number range: 0 to 127
+- `Ex variables`: External axis type variables (Command 0x81)
+  - 9 × 32-bit integers (36 bytes): External axis variable data
+  - Variable number range: 0 to 127
+
+### Variable Numbering
+
+- Variables are numbered starting from 0
+- Instance field contains the variable number
+- Different variable types use different commands and have different number ranges
+- Extended variables may have different ranges depending on the controller configuration
+
 ## Position Format
 
 ### Pulse Position
@@ -2367,45 +2409,3 @@ File commands use a different port (10041) and have a simpler structure.
 - `FFFE`: The remote mode is detected, and disconnect the communication
 
 **Note**: This list of Added Status Codes is based on the official HSES manual. However, error codes may vary depending on the controller model and firmware version. For the most accurate and up-to-date error codes, please refer to the official manual for your specific Yaskawa robot controller.
-
-## Variable Types
-
-### Supported Variable Types
-
-- `B variables`: 8-bit unsigned integers (std::uint8_t)
-- `I variables`: 16-bit signed integers (std::int16_t)
-- `D variables`: 32-bit signed integers (std::int32_t)
-- `R variables`: 32-bit floating point (float)
-- `P variables`: Robot positions (Position)
-- `S variables`: Strings (std::string)
-
-### Variable Numbering
-
-- Variables are numbered starting from 1
-- Instance field contains the variable number
-- Different variable types use different commands
-
-## Implementation Guidelines
-
-### Rust Implementation Considerations
-
-1. **Async Processing**: Asynchronous UDP communication using Tokio
-2. **Error Handling**: Type-safe error handling using thiserror
-3. **Memory Efficiency**: Zero-copy operations using the bytes crate
-4. **Type Safety**: Strong type system for safe API design
-5. **Little-endian**: All multi-byte values are little-endian
-
-### Recommended Architecture
-
-- **moto-hses-proto**: Protocol definitions and serialization
-- **moto-hses-client**: Asynchronous client implementation
-- **moto-hses-mock**: Mock server for testing
-
-### Key Implementation Notes
-
-1. **Header Size**: Always 32 bytes (0x20)
-2. **Max Payload**: 479 bytes (0x1DF)
-3. **Magic Bytes**: "YERC" at the beginning
-4. **Request ID**: Unique identifier for request/response matching
-5. **Division**: Distinguishes between robot and file commands
-6. **Service**: Defines the operation type (get, set, etc.)
