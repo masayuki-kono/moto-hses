@@ -266,6 +266,36 @@ File commands use a different port (10041) and have a simpler structure.
 
 **Note**: Command 5 is available for system software version FS1.14 or higher.
 
+### Representative Command Examples
+
+#### File Loading Command (Service 0x15)
+
+**Request Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x15 (File loading process)
+- **Payload**: Job name to be loaded
+  - 32-bit integer format
+  - Example: "TEST.JOB" (8 characters, 2 integers)
+    - Integer 1: "TEST" (T, E, S, T)
+    - Integer 2: "JOB." (J, O, B, .)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: No data part
+
 ## Position Format
 
 ### Pulse Position
