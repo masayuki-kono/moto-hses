@@ -2104,33 +2104,121 @@ The File Loading Command is not a single message but a protocol involving multip
 
 #### File Saving Command (Service 0x16)
 
+The File Saving Command is not a single message but a protocol involving multiple message exchanges.
+
+**Communication Flow:**
+
+1. **Saving Request (Request 1)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x00
+   - **Service**: 0x16 (File saving process)
+   - **Block No.**: 0x0000_0000
+   - **Payload**: File name to be saved
+     - 32-bit integer format
+     - Example: "TEST.JOB" (8 characters, 2 integers)
+       - Integer 1: "TEST" (T, E, S, T)
+       - Integer 2: "JOB." (J, O, B, .)
+
+2. **File Data Transfer (Data 1, Data 2, ..., Data N)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x16
+   - **Service**: 0x96
+   - **Block No.**: Increment by 1 from previous block number (1, 2, ..., N)
+   - **Payload**: File data blocks
+     - Data 1: First data block
+     - Data 2-N: Intermediate data blocks
+     - Data N: Last data block (Add 0x8000_0000 to the previous block number)
+
+3. **Data Acknowledgment (ACK 1, ACK 2, ..., ACK N)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x16
+   - **Service**: 0x00
+   - **Block No.**: Same as the corresponding data packet's block number
+   - Individual ACK response for each data block
+
 **Request Structure:**
 
 - **Command**: 0x00
 - **Instance**: 0x00
 - **Attribute**: 0x00
 - **Service**: 0x16 (File saving process)
-- **Payload**: Job name to be saved
+- **Block No.**: 0x0000_0000 (for initial request)
+- **Payload**: File name to be saved
   - 32-bit integer format
   - Example: "TEST.JOB" (8 characters, 2 integers)
     - Integer 1: "TEST" (T, E, S, T)
     - Integer 2: "JOB." (J, O, B, .)
 
+**Data Transfer Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x16
+- **Service**: 0x96
+- **Block No.**: Increment by 1 from previous block number
+  - Normal packets: 1, 2, ..., N
+  - Last packet: Add 0x8000_0000 to the previous block number
+- **Payload**: File data blocks
+  - Variable size data blocks
+  - Last block identified by adding 0x8000_0000 to the previous block number
+
 **Response Structure:**
 
-- **Status**: Command execution result
-  - `0x00`: Respond normally
-  - Other than `0x00`: Respond abnormally
-- **Added status size**: Size of additional status data
-  - `0`: No added status
-  - `1`: 1 WORD of added status data
-  - `2`: 2 WORD of added status data
-- **Added status**: Error code specified by the added status size
-  - 1 WORD error code if added status size is 1
-  - 2 WORD error code if added status size is 2
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x16
+- **Service**: 0x00
+- **Block No.**: Same as the corresponding data packet's block number
 - **Payload**: No data part
 
 #### File List Acquiring Command (Service 0x32)
+
+The File List Acquiring Command is not a single message but a protocol involving multiple message exchanges.
+
+**Communication Flow:**
+
+1. **File List Request (Request 1)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x00
+   - **Service**: 0x32 (File list acquiring process)
+   - **Block No.**: 0x0000_0000
+   - **Payload**: File type specification
+     - 32-bit integer format
+     - Example: "\*" (wildcard for all JBI files)
+       - Byte 0: "\*"
+       - Byte 1: "."
+       - Byte 2: "J"
+       - Byte 3: "B"
+       - Byte 4: "I"
+
+2. **File List Data Transfer (Data 1, Data 2, ..., Data N)**
+
+   - **Service**: 0xB2 (ACK service for 0x32)
+   - **Status**: 0x00 (Normal response)
+   - **Added status size**: 0x00
+   - **Added status**: 0x0000
+   - **Block No.**: Increment by 1 from previous block number (1, 2, ..., N)
+   - **Payload**: File list data blocks
+     - Data 1: First file list block
+     - Data 2-N: Intermediate file list blocks
+     - Data N: Last file list block (Add 0x8000_0000 to the previous block number)
+
+3. **Data Acknowledgment (ACK 1, ACK 2, ..., ACK N)**
+
+   - **Command**: 0x00
+   - **Instance**: 0x00
+   - **Attribute**: 0x00
+   - **Service**: 0x32
+   - **Block No.**: Same as the corresponding data packet's block number
+   - Individual ACK response for each data block
 
 **Request Structure:**
 
@@ -2138,13 +2226,15 @@ The File Loading Command is not a single message but a protocol involving multip
 - **Instance**: 0x00
 - **Attribute**: 0x00
 - **Service**: 0x32 (File list acquiring process)
+- **Block No.**: 0x0000_0000 (for initial request)
 - **Payload**: File type specification
   - 32-bit integer format
   - Example: "\*" (wildcard for all JBI files)
     - Byte 0: "\*"
-    - Byte 1: "-"
+    - Byte 1: "."
     - Byte 2: "J"
     - Byte 3: "B"
+    - Byte 4: "I"
 
 **File Type Specifications:**
 
@@ -2157,21 +2247,29 @@ The File Loading Command is not a single message but a protocol involving multip
 - `*.SYS`: SYS file list
 - `*.LST`: LST file list
 
-**Response Structure:**
+**Data Transfer Structure:**
 
-- **Status**: Command execution result
-  - `0x00`: Respond normally
-  - Other than `0x00`: Respond abnormally
-- **Added status size**: Size of additional status data
-  - `0`: No added status
-  - `1`: 1 WORD of added status data
-  - `2`: 2 WORD of added status data
-- **Added status**: Error code specified by the added status size
-  - 1 WORD error code if added status size is 1
-  - 2 WORD error code if added status size is 2
-- **Payload**: File list data
+- **Service**: 0xB2 (ACK service for 0x32)
+- **Status**: 0x00 (Normal response)
+- **Added status size**: 0x00
+- **Added status**: 0x0000
+- **Block No.**: Increment by 1 from previous block number
+  - Normal packets: 1, 2, ..., N
+  - Last packet: Add 0x8000_0000 to the previous block number
+- **Payload**: File list data blocks
+  - Variable size data blocks
   - File names terminated by `<CR><LF>`
   - 32-bit integer format for each file name
+  - Last block identified by adding 0x8000_0000 to the previous block number
+
+**Data Acknowledgment Structure:**
+
+- **Command**: 0x00
+- **Instance**: 0x00
+- **Attribute**: 0x00
+- **Service**: 0x32
+- **Block No.**: Same as the corresponding data packet's block number
+- **Payload**: No data part
 
 #### File Saving Command (Batch Data Backup) (Service 0x16)
 
