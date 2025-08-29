@@ -159,6 +159,89 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 ### Representative Command Examples
 
+#### Alarm Data Reading Command (Command 0x70)
+
+**Request Structure:**
+
+- **Command**: 0x70
+- **Instance**: Specifies which alarm to retrieve
+  - `1`: The latest alarm
+  - `2`: The second alarm from the latest
+  - `3`: The third alarm from the latest
+  - `4`: The fourth alarm from the latest
+  - _Note: Four alarms are displayed on the P.P display at a time. Specify one out of them._
+- **Attribute**: Specifies what type of alarm information to retrieve
+  - `1`: Alarm code
+  - `2`: Alarm data
+  - `3`: By alarm type
+  - `4`: Alarm occurring time
+  - `5`: Alarm character string name
+  - _Note: Alarm code means the alarm No. Alarm data means the sub code which supports the alarm contents. There are some cases that the sub code for the occurring alarm would not appear._
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all element numbers (specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Alarm data (32-bit integers, 4 bytes each)
+
+**Response Data Structure:**
+
+**Alarm Code (32-bit integer 1):**
+
+- Range: 0x0001 to 0x270F (decimal value: 9999)
+- Note: Setting values vary in accordance with the contents of the alarm type. Also, some alarms are not displayed with the sub code. In this case, the value is zero (0x0).
+
+**Alarm Data (32-bit integer 2):**
+
+- Additional data related to the alarm
+- Interpretation depends on the Alarm type
+
+**Alarm Type (32-bit integer 3):**
+
+- Specifies the type and format of the Alarm data
+- Values:
+  - `0`: No alarm
+  - `1`: Decimal UNSIGNED SHORT type (display: `[1]`)
+  - `2`: UNSIGNED CHAR bit pattern (display: `[0000_0001]`)
+  - `3`: User axis type (display: `[SLURBT]`)
+  - `4`: Spacial coordinate type (display: `[XYZ]`)
+  - `5`: Robot coordinate type (display: `[XYZRxRyRz]`)
+  - `6`: Conveyor characteristic file (display: `[123]`)
+  - `8`: Control group type (display: `[R1R2S1S2]`) for robot & station
+  - `9`: Decimal SHORT type (display: `[-1]`)
+  - `10`: UNSIGNED SHORT bit pattern (display: `[0000_0000_0000_0001]`)
+  - `11`: Control group type (display: `[R1]`) for robot only
+  - `12`: Control group type (display: `[R1S1B1]`) for robot, station and base
+  - `20`: Control group LOW/HIGH logical axis (display: `[R1:LOW SLURBT, HIGH SLURBT]`)
+  - `21`: Control group MIN/MAX logical axis (display: `[R1: MIN SLURBT, MAX SLURBT]`)
+  - `22`: Control group MIN/MAX spacial coordinate (display: `[R1: MIN XYZ, MAX XYZ]`)
+  - `23`: Logical axis of both control group 1 and control group 2 (display: `[R1: SLURBT, R2: SLURBT]`)
+  - `24`: Logical axis 1 and 2 of the control group (display: `[R1: SLURBT, SLURBT]`)
+  - `25`: Logical axis of the control group and UNSIGNED CHAR type (display: `[R1: SLURBT, 1]`)
+  - `27`: Control group and UNSIGNED CHAR type (display: `[R1: 1]`)
+
+**Alarm Occurring Time (32-bit integers 4-6):**
+
+- Format: Character strings of 16 letters
+- Example: "2011/10/10 15:49"
+
+**Alarm Character String Name (32-bit integers 8-15):**
+
+- Format: Character strings of 32 letters
+- Note: It is transmitted in the form of the character strings whose language code was selected by the programming pendant and half- and full-width characters are mixed.
+
+**Important Note**: For the alarm character strings name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant. Use the same language code as the FS100, or the characters corrupt in case the client side does not correspond to its language code.
+
 #### Read Status Information (Command 0x72)
 
 **Request Structure:**
