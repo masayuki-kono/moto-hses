@@ -157,7 +157,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - Command 43: Available from YBS3.10-00 onwards
 - Command 44: Available from YBS4.10-00 onwards
 
-### Representative Command Examples
+### Command details
 
 #### Alarm Data Reading Command (Command 0x70)
 
@@ -753,6 +753,1222 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 **Note**: For detailed specifications of all commands, refer to the official HSES manual. The above examples show the basic structure and common patterns used in robot control commands.
 
+#### Register Data Reading / Writing Command (Command 0x79)
+
+**Request Structure:**
+
+- **Command**: 0x79
+- **Instance**: Register number
+  - `0 to 999`: Register number (writable register: 0 to 559)
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out the specified register data
+  - `0x10` (Set_Attribute_Single): Register 0 to 559 is writable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): Register data
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): Register data
+  - Register data exists only when requested by the client
+
+#### Byte Variable (B) Reading / Writing Command (Command 0x7A)
+
+**Request Structure:**
+
+- **Command**: 0x7A
+- **Instance**: Variable number
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x10` (Set_Attribute_Single): Write the data to the specified variable
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): B variable data
+    - Byte 0: B variable
+    - Byte 1-3: Reserved
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): B variable data
+    - Byte 0: B variable
+    - Byte 1-3: Reserved
+  - The data exists only when requested by the client
+
+#### Integer Type Variable (I) Reading / Writing Command (Command 0x7B)
+
+**Request Structure:**
+
+- **Command**: 0x7B
+- **Instance**: Variable number
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x10` (Set_Attribute_Single): Write the data to the specified variable
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): I variable data
+    - Byte 0-3: I variable
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): I variable data
+    - Byte 0-3: I variable
+  - The data exists only when requested by the client
+
+#### Double Precision Integer Type Variable (D) Reading / Writing Command (Command 0x7C)
+
+**Request Structure:**
+
+- **Command**: 0x7C
+- **Instance**: Variable number
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x10` (Set_Attribute_Single): Write the data to the specified variable
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): D variable data
+    - Byte 0-3: D variable
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): D variable data
+    - Byte 0-3: D variable
+  - The data exists only when requested by the client
+
+#### Real Type Variable (R) Reading / Writing Command (Command 0x7D)
+
+**Request Structure:**
+
+- **Command**: 0x7D
+- **Instance**: Variable number
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x10` (Set_Attribute_Single): Write the data to the specified variable
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): R variable data
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): R variable data
+  - The data exists only when requested by the client
+
+#### Character Type Variable (S) Reading / Writing Command (Command 0x7E)
+
+**Request Structure:**
+
+- **Command**: 0x7E
+- **Instance**: Variable number
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x10` (Set_Attribute_Single): Write the data to the specified variable
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): S variable data
+    - Byte 0: S variable
+    - Byte 1-3: Reserved
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 32-bit integer (4 bytes): S variable data
+    - Byte 0: S variable
+    - Byte 1-3: Reserved
+  - The data exists only when requested by the client
+
+#### Robot Position Type Variable (P) Reading / Writing Command (Command 0x7F)
+
+**Request Structure:**
+
+- **Command**: 0x7F
+- **Instance**: Variable number
+  - `0 to 127`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Axis information data number
+  - `1`: Data type
+  - `2`: Form
+  - `3`: Tool number
+  - `4`: User coordinate number
+  - `5`: Extended form
+  - `6`: Coordinated data of the first axis
+  - `7`: Coordinated data of the second axis
+  - `8`: Coordinated data of the third axis
+  - `9`: Coordinated data of the fourth axis
+  - `10`: Coordinated data of the fifth axis
+  - `11`: Coordinated data of the sixth axis
+  - `12`: Coordinated data of the seventh axis
+  - `13`: Coordinated data of the eighth axis
+- **Service**:
+  - `0x01` (Get_Attribute_All): Read out data of the specified element number
+  - `0x02` (Set_Attribute_All): Write the data to the specified variable
+- **Payload**: Data exists during writing operation only
+  - 13 × 32-bit integers (52 bytes): Position variable data
+    - Integer 1: Data type
+      - `0`: Pulse value
+      - `16`: Base coordinated value
+      - `17`: Robot coordinated value
+      - `18`: Tool coordinated value
+      - `19`: User coordinated value
+    - Integer 2: Form (see Details of data)
+    - Integer 3: Tool number
+    - Integer 4: User coordinate number
+    - Integer 5: Extended form (see Details of data)
+    - Integers 6-13: Coordinate data (1st to 8th axis)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 13 × 32-bit integers (52 bytes): Position variable data
+    - Same structure as request payload
+  - The data exists only when requested by the client
+
+**Details of Data:**
+
+**Form (8 bits):**
+
+- `bit0`: 0: Front, 1: Back
+- `bit1`: 0: Upper arm, 1: Lower arm
+- `bit2`: 0: Flip, 1: No flip
+- `bit3`: 0: θR < 180, 1: θR ≥ 180
+- `bit4`: 0: θT < 180, 1: θT ≥ 180
+- `bit5`: 0: θS < 180, 1: θS ≥ 180
+- `bit6`: 0: Redundant front, 1: Redundant back
+- `bit7`: 0: Previous step regarded reverse conversion specified, 1: Form regarded reverse conversion specified
+
+**Extended form (8 bits):**
+
+- `bit0`: 0: θL < 180, 1: θL ≥ 180
+- `bit1`: 0: θU < 180, 1: θU ≥ 180
+- `bit2`: 0: θB < 180, 1: θB ≥ 180
+- `bit3`: 0: θE < 180, 1: θE ≥ 180
+- `bit4`: 0: θW < 180, 1: θW ≥ 180
+- `bit5-7`: Reserve
+
+**Note**: For detailed form specifications, refer to "3.9.4 Flip/ No flip" in "FS100 OPERATOR'S MANUAL" prepared for each application.
+
+#### Base Position Type Variable (Bp) Reading / Writing Command (Command 0x80)
+
+**Request Structure:**
+
+- **Command**: 0x80
+- **Instance**: Variable number
+  - `0 to 127`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Axis information data number
+  - `1`: Data type
+  - `2`: Coordinated data of the first axis
+  - `3`: Coordinated data of the second axis
+  - `4`: Coordinated data of the third axis
+  - `5`: Coordinated data of the fourth axis
+  - `6`: Coordinated data of the fifth axis
+  - `7`: Coordinated data of the sixth axis
+  - `8`: Coordinated data of the seventh axis
+  - `9`: Coordinated data of the eighth axis
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out the specified data
+  - `0x01` (Get_Attribute_All): Read out the data
+  - `0x10` (Set_Attribute_Single): Write a specified data. If it is not an object element, keep the data previous to writing operation
+  - `0x02` (Set_Attribute_All): Write the data
+- **Payload**: Data exists during writing operation only
+  - 9 × 32-bit integers (36 bytes): Base position variable data
+    - Integer 1: Data type
+      - `0`: Pulse value
+      - `16`: Base coordinated value
+    - Integers 2-9: Coordinate data (1st to 8th axis)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 9 × 32-bit integers (36 bytes): Base position variable data
+    - Same structure as request payload
+  - The data exists only when requested by the client
+
+#### External Axis Type Variable (Ex) Reading / Writing Command (Command 0x81)
+
+**Request Structure:**
+
+- **Command**: 0x81
+- **Instance**: Variable number
+  - `0 to 127`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
+- **Attribute**: Axis information data number
+  - `1`: Data type
+  - `2`: Coordinated data of the first axis
+  - `3`: Coordinated data of the second axis
+  - `4`: Coordinated data of the third axis
+  - `5`: Coordinated data of the fourth axis
+  - `6`: Coordinated data of the fifth axis
+  - `7`: Coordinated data of the sixth axis
+  - `8`: Coordinated data of the seventh axis
+  - `9`: Coordinated data of the eighth axis
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out the specified data
+  - `0x01` (Get_Attribute_All): Read out the data
+  - `0x10` (Set_Attribute_Single): Write a specified data. If it is not an object element, keep the data previous to writing operation
+  - `0x02` (Set_Attribute_All): Write the data
+- **Payload**: Data exists during writing operation only
+  - 9 × 32-bit integers (36 bytes): External axis variable data
+    - Integer 1: Data type
+      - `0`: Pulse value
+    - Integers 2-9: Coordinate data (1st to 8th axis)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 9 × 32-bit integers (36 bytes): External axis variable data
+    - Same structure as request payload
+  - The data exists only when requested by the client
+
+#### Alarm Reset / Error Cancel Command (Command 0x82)
+
+**Request Structure:**
+
+- **Command**: 0x82
+- **Instance**: Reset/Cancel type
+  - `1`: RESET (Alarm reset)
+  - `2`: CANCEL (Error cancel)
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x10` (Set_Attribute_Single): Execute the specified request
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): Fixed to 1
+    - Byte 0: Data 1
+    - Byte 1-3: Reserved
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+#### Hold / Servo On/off Command (Command 0x83)
+
+**Request Structure:**
+
+- **Command**: 0x83
+- **Instance**: Type of OFF/ON command
+  - `1`: HOLD
+  - `2`: Servo ON
+  - `3`: HLOCK (Refer to "Details of data" below)
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x10` (Set_Attribute_Single): Execute the specified request
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): ON/OFF specification
+    - `1`: ON
+    - `2`: OFF
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+**Details of Data (HLOCK):**
+
+This data interlocks the P.P (Programming Pendant) and I/O operation system signals. Only the following operations are available while the interlock operation is ON:
+
+- Emergency stop for the programming pendant
+- Inputting signals excluding I/O mode switching, external start, external servo ON, cycle switch, inhibit I/O, inhibit PP/PANEL and master calling up
+
+**Note**: HLOCK is invalid while the programming pendant is in edit mode or it is file accessing using other functions.
+
+#### Step / Cycle / Continuous Switching Command (Command 0x84)
+
+**Request Structure:**
+
+- **Command**: 0x84
+- **Instance**: Fixed to 2
+  - Details: Specifies the type of status switching command. `2`: CYCLE (STEP/CYCLE/CONTINUE switching)
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x10` (Set_Attribute_Single): Execute the specified request
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): CYCLE specification
+    - Byte 0: Data 1
+    - CYCLE = 1: STEP / 2: CYCLE / 3: CONTINUE
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+#### Character String Display Command To The Programming Pendant (Command 0x85)
+
+**Request Structure:**
+
+- **Command**: 0x85
+- **Instance**: Fixed to 1
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x10` (Set_Attribute_Single): Execute the specified request
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): Displaying message
+    - Byte 0: Displaying message
+    - Details: Set the character strings to be indicated on the programming pendant
+      - Half-width character: 30 characters
+      - Full-width character: 15 characters
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+**Note**:
+
+- For the alarm character strings name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant.
+- Use the same language code as the FS100, or the characters will be corrupt if the client side does not correspond to its language code.
+
+#### Start-up (Job Start) Command (Command 0x86)
+
+**Request Structure:**
+
+- **Command**: 0x86
+- **Instance**: Fixed to 1
+- **Attribute**: Fixed to 1
+- **Service**:
+  - `0x10` (Set_Attribute_Single): Execute the specified request
+- **Payload**: Data exists during writing operation only
+  - 32-bit integer (4 bytes): Fixed to 1
+    - Byte 0: Data 1
+    - Byte 1-3: Reserved
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+#### Job Select Command (Command 0x87)
+
+**Request Structure:**
+
+- **Command**: 0x87
+- **Instance**: Type of job to select
+  - `1`: Set the job in execution
+  - `10`: Set master job (Task 0)
+  - `11`: Set master job (Task 1)
+  - `12`: Set master job (Task 2)
+  - `13`: Set master job (Task 3)
+  - `14`: Set master job (Task 4)
+  - `15`: Set master job (Task 5)
+- **Attribute**: Setting content
+  - `1`: Job name
+  - `2`: Line number (Valid only when job setting is executed)
+- **Service**:
+  - `0x02` (Set_Attribute_All): Read out data of all the element number (In this case, specify 0 to the element number)
+- **Payload**: Data exists during writing operation only
+  - 9 × 32-bit integers (36 bytes): Job selection data
+    - Integers 1-8: Job name (Character strings: 32 characters)
+      - Half-width character: 32 characters
+      - Full-width character: 16 characters
+    - Integer 9: Line number (0 to 9999)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: No data part
+
+**Note**:
+
+- For the alarm character strings name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant.
+- Use the same language code as the FS100, or the characters will be corrupt if the client side does not correspond to its language code.
+
+#### Management Time Acquiring Command (Command 0x88)
+
+**Request Structure:**
+
+- **Command**: 0x88
+- **Instance**: Type of management time to acquire
+  - `1`: Control power ON time
+  - `10`: Servo power ON time (TOTAL)
+  - `11 to 12`: Servo power ON time (R1 to R2)
+  - `21 to 23`: Servo power ON time (S1 to S3)
+  - `110`: Play back time (TOTAL)
+  - `111 to 112`: Play back time (R1 to R2)
+  - `121 to 123`: Play back time (S1 to S3)
+  - `210`: Motion time (TOTAL)
+  - `211 to 212`: Motion time (R1 to R2)
+  - `221 to 223`: Motion time (S1 to S3)
+  - `301 to 308`: Operation time
+- **Attribute**: Type of the management time
+  - `1`: Operation start time
+  - `2`: Elapse time
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all the element numbers (In this case, specify 0 to the element number)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 5 × 32-bit integers (20 bytes): Management time data
+    - Integer 1: Operation start time (Character string of 16 characters)
+      - Example: `2011/10/10 15:49`
+    - Integer 5: Elapse time (Character string of 12 characters)
+      - Example: `000000:00'00`
+
+#### System Information Acquiring Command (Command 0x89)
+
+**Request Structure:**
+
+- **Command**: 0x89
+- **Instance**: System type
+  - `11 to 12`: Type information (R1 to R2)
+  - `21 to 23`: Type information (S1 to S3)
+  - `101`: Application information (User application only)
+- **Attribute**: System information type
+  - `1`: System software version
+  - `2`: Model name / application
+  - `3`: Parameter version
+- **Service**:
+  - `0x0E` (Get_Attribute_Single): Read out data of the specified element number
+  - `0x01` (Get_Attribute_All): Read out data of all the element numbers (In this case, specify 0 to the element number)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - 12 × 32-bit integers (48 bytes): System information data
+    - Integers 1-6: System software version (Character strings: 24 characters)
+      - Example: `FS1.03.00A (JP/US) -00`
+      - Same string is returned regardless of instance (11-12, 21-23, or 101)
+    - Integers 7-10: Model name / application (Character strings: 16 characters)
+      - Model name is returned for R1-R2, NULL characters for S1-S3
+      - Application name is returned when application is used
+      - Example: `MPP0003-A0*` (Model), `GENERAL` (Application)
+    - Integers 11-12: Parameter version (Character strings: 8 characters)
+      - R1-R2: Parameter version
+      - NULL characters returned for non-existent control groups
+      - Example: `12.34`
+
+#### Plural I/O Data Reading / Writing Command (Command 0x300)
+
+**Request Structure:**
+
+- **Command**: 0x300
+- **Instance**: Logical number of the I/O data (divided by 10)
+  - `1 to 128`: Robot user input
+  - `1001 to 1128`: Robot user output
+  - `2001 to 2128`: External input
+  - `2501 to 2628`: Network input
+  - `3001 to 3128`: External output
+  - `3501 to 3628`: Network output
+  - `4001 to 4160`: Robot system input
+  - `5001 to 5200`: Robot system output
+  - `6001 to 6064`: Interface panel input
+  - `7001 to 7999`: Auxiliary relay
+  - `8001 to 8064`: Robot control status signal
+  - `8201 to 8220`: Pseudo input
+- **Attribute**: Fixed to 0
+- **Service**:
+  - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
+  - `0x34`: Write plural data (Writes the fixed size specified by the data part)
+    - Note: Only the network input signal can be writable
+- **Payload**: Data exists during writing operation only
+  - 120 × 32-bit integers (480 bytes): Plural I/O data
+    - Integer 1: Number (Maximum value: 474, can only be specified by a multiple of 2)
+    - Integers 2-120: I/O data 1 to 474
+      - I/O data part is valid only when writing
+      - When reading, only the "Number" of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - I/O data exists only when requested by the client
+
+#### Plural Register Data Reading / Writing Command (Command 0x301)
+
+**Request Structure:**
+
+- **Command**: 0x301
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 999`: Register number (writable registers: 0 to 559)
+- **Attribute**: Fixed to 0
+- **Service**:
+  - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
+  - `0x34`: Write plural data (Writes the fixed size specified by the data part)
+- **Payload**: Data exists during writing operation only
+  - 120 × 32-bit integers (480 bytes): Plural register data
+    - Integer 1: Number (Maximum: 237)
+    - Integers 2-120: Register data 1 to 237
+      - Register data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - Register data exists only when requested by the client
+
+#### Plural Byte Type Variable (B) Reading / Writing Command (Command 0x302)
+
+**Request Structure:**
+
+- **Command**: 0x302
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 99`: For standard setting
+  - Note: Since the extended variable is an optional function, follow the numbers of the variable specified by the parameter
+- **Attribute**: Fixed to 0
+- **Service**:
+  - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
+  - `0x34`: Write plural data (Writes the fixed size specified by the data part)
+- **Payload**: Data exists during writing operation only
+  - 120 × 32-bit integers (480 bytes): Plural B variable data
+    - Integer 1: Number (Maximum: 474, can only be specified by a multiple of 2)
+    - Integers 2-120: B variable 1 to 474
+      - B variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - B variable data exists only when requested by the client
+
+#### Plural Integer Type Variable (I) Reading / Writing Command (Command 0x303)
+
+**Request Structure:**
+
+- **Command**: 0x303
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 99`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 120 × 32-bit integers (480 bytes): Plural I variable data
+    - Integer 1: Number (Maximum: 237)
+    - Integers 2-120: I variable 1 to 237
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - I variable data exists only when requested by the client
+
+#### Plural Double Precision Integer Type Variable (D) Reading / Writing Command (Command 0x304)
+
+**Request Structure:**
+
+- **Command**: 0x304
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 99`: For standard setting
+  - Note: For extended variables, the numbers specified by the parameter should be followed as it's an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 119 × 32-bit integers (476 bytes): Plural D variable data
+    - Integer 1: Number (Maximum: 118)
+    - Integers 2-119: D variable 1 to 118
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - D variable data exists only when requested by the client
+
+#### Plural Real Type Variable (R) Reading / Writing Command (Command 0x305)
+
+**Request Structure:**
+
+- **Command**: 0x305
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 99`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 119 × 32-bit integers (476 bytes): Plural R variable data
+    - Integer 1: Number (Maximum: 118)
+    - Integers 2-119: R variable 1 to 118
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - R variable data exists only when requested by the client
+
+#### Plural Character Type Variable (S) Reading / Writing Command (Command 0x306)
+
+**Request Structure:**
+
+- **Command**: 0x306
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 99`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 117 × 32-bit integers (468 bytes): Plural S variable data
+    - Integer 1: Number (Maximum: 29)
+    - Integers 2-117: S variable 1 to 29
+      - Each S variable spans 4 consecutive 32-bit integers (16 bytes)
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - S variable data exists only when requested by the client
+
+#### Plural Robot Position Type Variable (P) Reading / Writing Command (Command 0x307)
+
+**Request Structure:**
+
+- **Command**: 0x307
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 127`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 118 × 32-bit integers (472 bytes): Plural P variable data
+    - Integer 1: Number (Maximum: 9)
+    - Integers 2-118: P variable data
+      - Data type: 0 (Pulse value), 16 (Base coordinated value), 17 (Robot coordinated value), 18 (Tool coordinated value), 19 (User coordinated value)
+      - Form, Tool number, User coordinate number, Extended form
+      - First to Eighth coordinate data
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - P variable data exists only when requested by the client
+
+#### Plural Base Position Type Variable (Bp) Reading / Writing Command (Command 0x308)
+
+**Request Structure:**
+
+- **Command**: 0x308
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 127`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 118 × 32-bit integers (472 bytes): Plural Bp variable data
+    - Integer 1: Number (Maximum: 13)
+    - Integers 2-118: Bp variable data
+      - Data type: 0x00 (Pulse value), 0x10 (Base coordinate value)
+      - First to Eighth coordinate data
+      - Each Bp variable occupies 9 consecutive 32-bit integers (1 for Data type + 8 for coordinates)
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - Bp variable data exists only when requested by the client
+
+#### Plural External Axis Type Variable (Ex) Reading / Writing Command (Command 0x309)
+
+**Request Structure:**
+
+- **Command**: 0x309
+- **Instance**: Variable number (first number with which reading/writing is executed)
+  - `0 to 127`: For standard setting
+  - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
+- **Attribute**: Fixed to 0
+  - Note: Only batch access of all elements is valid
+- **Service**:
+  - `0x33`: Read plural data
+  - `0x34`: Write plural data
+- **Payload**: Data exists during writing operation only
+  - 118 × 32-bit integers (472 bytes): Plural Ex variable data
+    - Integer 1: Number (Maximum: 13)
+    - Integers 2-118: Ex variable data
+      - Data type: 0 (Pulse value)
+      - First to Eighth coordinate data
+      - Each Ex variable occupies 9 consecutive 32-bit integers (1 for Data type + 8 for coordinates)
+      - Variable data part is valid only when writing
+      - When reading, only the number of data is valid
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: No added status
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is 1
+  - 2 WORD error code if added status size is 2
+- **Payload**: Data exists during reading operation only
+  - Same structure as request payload
+  - Ex variable data exists only when requested by the client
+
+#### Alarm Data Reading Command (for Applying the Sub Code Character Strings) (Command 0x30A)
+
+**Request Structure:**
+
+- **Command**: 0x30A
+- **Instance**: Specifies which alarm to read
+  - `1`: The latest alarm
+  - `2`: The second alarm from the latest
+  - `3`: The third alarm from the latest
+  - `4`: The fourth alarm from the latest
+  - Note: Up to four alarms are displayed on the P.P display at the same time. The user must specify one of them
+- **Attribute**: Specifies the type of alarm information to retrieve
+  - `1`: Alarm code (means the alarm No.)
+  - `2`: Alarm data (means the sub code which supports the alarm contents; some alarms may not appear as the sub code)
+  - `3`: By alarm type
+  - `4`: Alarm occurring time
+  - `5`: Alarm character string name
+  - `6`: Sub code data additional information character strings (numbers of the Servo circuit boards [SV#*] where the alarms occurred; \* denotes number)
+  - `7`: Sub code data character strings
+  - `8`: Sub code data character strings reverse display information (sets [1] when characters are reverse)
+- **Service**:
+  - `0x0E`: Get_Attribute_Single (Read out data of the specified element number)
+  - `0x01`: Get_Attribute_All (Read out data of all the element number; in this case, specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status code is "1"
+  - 2 WORD error code if added status code is "2"
+- **Payload**: 67 × 32-bit integers (268 bytes): Alarm data
+  - Integer 1: Alarm code (0x0001 to 0x270F, decimal value: 9999)
+  - Integer 2: Alarm data (depends on alarm type, 0x0 if no sub-code)
+  - Integer 3: Alarm type (0: No alarm, 1: Decimal UNSIGNED SHORT, 2: UNSIGNED CHAR bit pattern, etc.)
+  - Integers 4-7: Alarm occurring time (16 letters, e.g., "2011/10/10 15:49")
+  - Integers 8-15: Alarm character strings name (32 letters, mixed half- and full-width characters)
+  - Integers 16-19: Sub code data additional information character strings (16 letters, e.g., "[SV#1]")
+  - Integers 20-43: Sub code data character strings (96 letters)
+  - Integers 44-67: Sub code data character strings reverse display information (96 letters, [0] for regular, [1] for reverse)
+
+**Note**: For the alarm character strings name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant. Use the same language code as the FS100, or the characters corrupt in case the client side does not correspond to its language code.
+
+#### Alarm History Reading Command (for Applying the Sub Code Character Strings) (Command 0x30B)
+
+**Request Structure:**
+
+- **Command**: 0x30B
+- **Instance**: Specifies which alarm history entry to read
+  - `1 to 100`: Major failure
+  - `1001 to 1100`: Monitor alarm
+  - `2001 to 2100`: User alarm (system)
+  - `3001 to 3100`: User alarm (user)
+  - `4001 to 4100`: OFF line alarm
+  - Note: This field specifies the alarm number within the history
+- **Attribute**: Specifies the type of alarm information to retrieve
+  - `1`: Alarm code (refers to the alarm number)
+  - `2`: Alarm data (refers to the sub code that supports the alarm content; some alarms may not appear as a sub code)
+  - `3`: Alarm type
+  - `4`: Alarm occurring time
+  - `5`: Alarm character strings name
+  - `6`: Sub code data additional information character strings (numbers of the Servo circuit boards [SV#*] where the alarms occurred; \* denotes number)
+  - `7`: Sub code data character strings
+  - `8`: Sub code data character strings reverse display information (sets [1] when characters are reverse)
+- **Service**:
+  - `0x0E`: Get_Attribute_Single (Read out data of the specified element number)
+  - `0x01`: Get_Attribute_All (Read out data of all elements; in this case, specify 0 to the element number)
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: 67 × 32-bit integers (268 bytes): Alarm history data
+  - Integer 1: Alarm code (0x0001 to 0x270F, decimal value: 9999)
+  - Integer 2: Alarm data (depends on alarm type, 0x0 if no sub-code)
+  - Integer 3: Alarm type (0: No alarm, 1: Decimal UNSIGNED SHORT, 2: UNSIGNED CHAR bit pattern, etc.)
+  - Integers 4-7: Alarm occurring time (16 letters, e.g., "2011/10/10 15:49")
+  - Integers 8-15: Alarm character strings name (32 letters, mixed half- and full-width characters)
+  - Integers 16-19: Sub code data additional information character strings (16 letters, e.g., "[SV#1]")
+  - Integers 20-43: Sub code data character strings (96 letters)
+  - Integers 44-67: Sub code data character strings reverse display information (96 letters, [0] for regular, [1] for reverse)
+
+**Note**: For the alarm character strings name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant. Use the same language code as the FS100, or the characters corrupt in case the client side does not correspond to its language code.
+
+#### Move Instruction Command (Type Cartesian coordinates) (Command 0x8A)
+
+**Request Structure:**
+
+- **Command**: 0x8A
+- **Instance**: Specifies the operation type
+  - `1`: Link absolute position operation
+  - `2`: Straight absolute position operation
+  - `3`: Straight increment value operation
+  - Note: Specify the operation number from 1 to 3
+- **Attribute**: Fixed to 1
+  - Note: Specify "1"
+- **Service**: 0x02 (Set_Attribute_All)
+  - Note: Write the data to the specified coordinate
+- **Payload**: 17 × 32-bit integers (68 bytes): Move instruction data
+  - Integer 1: Specifying control group (Robot) (1 to 2)
+  - Integer 2: Specifying control group (Station) (1 to 3)
+  - Integer 3: Specifying the classification in speed
+    - `0`: % (Link operation)
+    - `1`: V (Cartesian operation)
+    - `2`: VR (Cartesian operation)
+  - Integer 4: Specifying a speed
+    - Link operation: 0.01%
+    - Cartesian operation V speed: 0.1 mm/s
+    - Cartesian operation VR speed: 0.1 degree/s
+  - Integer 5: Specifying the operation coordinate
+    - `16`: Base coordinate
+    - `17`: Robot coordinate
+    - `18`: User coordinate
+    - `19`: Tool coordinate
+  - Integer 6: X coordinate value (unit: µm)
+  - Integer 7: Y coordinate value (unit: µm)
+  - Integer 8: Z coordinate value (unit: µm)
+  - Integer 9: Tx coordinate value (unit: 0.0001 degree)
+  - Integer 10: Ty coordinate value (unit: 0.0001 degree)
+  - Integer 11: Tz coordinate value (unit: 0.0001 degree)
+  - Integer 12: Reservation
+  - Integer 13: Reservation
+  - Integer 14: Type (Refer to following data for details)
+  - Integer 15: Expanded type
+  - Integer 16: Tool No. (0 to 63)
+  - Integer 17: User coordinate No. (1 to 63)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: No data part
+
+**Note**: Robot and station cannot be operated simultaneously. If both operations are set at the same time, FS100 returns a control group setting error (0xB008).
+
+#### Move Instruction Command (Type Pulse) (Command 0x8B)
+
+**Request Structure:**
+
+- **Command**: 0x8B
+- **Instance**: Specifies the operation number
+  - `1`: Link absolute position operation
+  - `2`: Straight absolute position operation
+- **Attribute**: Fixed to 1
+- **Service**: 0x02 (Set_Attribute_All)
+  - Note: Write the data to the specified coordinate
+- **Payload**: 22 × 32-bit integers (88 bytes): Move instruction data
+  - Integer 1: Specifying control group (Robot) (1 to 2)
+  - Integer 2: Specifying control group (Station) (1 to 3)
+  - Integer 3: Specifying the classification in speed
+    - `0`: % (Link operation)
+    - `1`: V (Cartesian operation)
+    - `2`: VR (Cartesian operation)
+  - Integer 4: Specifying a speed
+    - Link operation: 0.01%
+    - Cartesian operation V speed: 0.1 mm/s
+    - Cartesian operation VR speed: 0.1 degree/s
+  - Integer 5: Robot 1st axis pulse value
+  - Integer 6: Robot 2nd axis pulse value
+  - Integer 7: Robot 3rd axis pulse value
+  - Integer 8: Robot 4th axis pulse value
+  - Integer 9: Robot 5th axis pulse value
+  - Integer 10: Robot 6th axis pulse value
+  - Integer 11: Robot 7th axis pulse value
+  - Integer 12: Robot 8th axis pulse value
+  - Integer 13: Tool No. (0 to 63)
+  - Integer 14: Base 1st axis position (Pulse value)
+  - Integer 15: Base 2nd axis position (Pulse value)
+  - Integer 16: Base 3rd axis position (Pulse value)
+  - Integer 17: Station 1st axis position (pulse value)
+  - Integer 18: Station 2nd axis position (pulse value)
+  - Integer 19: Station 3rd axis position (pulse value)
+  - Integer 20: Station 4th axis position (pulse value)
+  - Integer 21: Station 5th axis position (pulse value)
+  - Integer 22: Station 6th axis position (pulse value)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: No data part
+
+**Note**: To move the base axis, specify the robot No. at the specifying control group, and input the each axis value. Robot and station cannot be operated simultaneously. If both operations are set at the same time, FS100 returns a control group setting error (0xB008).
+
 ## File Commands (Division = 0x02)
 
 File commands use a different port (10041) and have a simpler structure.
@@ -769,7 +1985,7 @@ File commands use a different port (10041) and have a simpler structure.
 
 **Note**: Command 5 is available for system software version FS1.14 or higher.
 
-### Representative Command Examples
+### Command details
 
 #### File Loading Command (Service 0x15)
 
