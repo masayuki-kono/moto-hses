@@ -53,6 +53,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client
     let client = HsesClient::new("192.168.1.100:10040").await?;
 
+    // Read robot status
+    let status = client.read_status().await?;
+    println!("Robot running: {}", status.is_running());
+
     // Read variable
     let value: i32 = client.read_variable(1, VariableType::Int32).await?;
     println!("D001: {}", value);
@@ -62,6 +66,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Execute job
     client.execute_job(1).await?;
+
+    // Read I/O data
+    let input = client.read_io(IoType::RobotUserInput, 1).await?;
+    println!("Input 1: {}", input);
 
     Ok(())
 }

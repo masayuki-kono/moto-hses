@@ -38,8 +38,8 @@ Core protocol definitions and serialization logic.
 
 2. **Serialization**
 
-   - `Serializer`: Big-endian serialization
-   - `Deserializer`: Big-endian deserialization
+   - `Serializer`: Little-endian serialization
+   - `Deserializer`: Little-endian deserialization
    - `MessageBuilder`: Fluent API for message construction
 
 3. **Error Types**
@@ -73,10 +73,15 @@ Asynchronous client implementation for HSES communication.
 
 2. **Commands**
 
-   - `ReadVariable`: Read robot variables
+   - `ReadStatus`: Read robot status information
+   - `ReadPosition`: Read robot position data
+   - `ReadVariable`: Read robot variables (D, R, S, P types)
    - `WriteVariable`: Write robot variables
    - `ExecuteJob`: Execute robot jobs
-   - `GetStatus`: Get robot status
+   - `StartJob`: Start job execution
+   - `ReadIO`: Read I/O data
+   - `WriteIO`: Write I/O data
+   - `FileOperations`: File loading, saving, deletion, listing
 
 3. **Error Handling**
    - `ClientError`: Client-specific errors

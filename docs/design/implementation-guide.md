@@ -33,64 +33,115 @@ pub enum Service {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum VariableType {
-    Byte = 0,
-    Integer = 1,
-    Double = 2,
-    Real = 3,
-    RobotPosition = 4,
-    BasePosition = 5,
-    StationPosition = 6,
-    String = 7,
+    Byte = 0,        // B variables
+    Integer = 1,     // I variables
+    Double = 2,      // D variables
+    Real = 3,        // R variables
+    RobotPosition = 4, // P variables
+    BasePosition = 5,  // BP variables
+    ExternalAxis = 6,  // EX variables
+    String = 7,      // S variables
 }
 
 #[derive(Debug, Clone)]
 pub struct RequestHeader {
-    pub payload_size: u16,
+    // Magic bytes (0-3): "YERC"
+    pub magic: [u8; 4],
+    // Header size (4-7): 0x20
+    pub header_size: u32,
+    // Payload size (8-11): Size of payload data
+    pub payload_size: u32,
+    // Reserved magic constant (12-15): 0x03
+    pub reserved_magic: u32,
+    // Division (16): 0x01 for Robot, 0x02 for File
     pub division: Division,
+    // ACK (17): 0x00 for Request, 0x01 for Response
     pub ack: bool,
+    // Request ID (18): Identifying ID for command session
     pub request_id: u8,
+    // Block number (19-22): 0 to 0x7fff_ffff for normal, 0x8000_0000+ for final
     pub block_number: u32,
+    // Reserved (23-30): "99999999"
+    pub reserved: [u8; 8],
+    // Sub-header (31-38): Command, Instance, Attribute, Service, Padding
     pub command: u16,
     pub instance: u16,
     pub attribute: u8,
     pub service: Service,
+    pub padding: [u8; 3],
 }
 
 #[derive(Debug, Clone)]
 pub struct ResponseHeader {
-    pub payload_size: u16,
+    // Magic bytes (0-3): "YERC"
+    pub magic: [u8; 4],
+    // Header size (4-7): 0x20
+    pub header_size: u32,
+    // Payload size (8-11): Size of payload data
+    pub payload_size: u32,
+    // Reserved magic constant (12-15): 0x03
+    pub reserved_magic: u32,
+    // Division (16): 0x01 for Robot, 0x02 for File
     pub division: Division,
+    // ACK (17): 0x00 for Request, 0x01 for Response
     pub ack: bool,
+    // Request ID (18): Identifying ID for command session
     pub request_id: u8,
+    // Block number (19-22): 0 to 0x7fff_ffff for normal, 0x8000_0000+ for final
     pub block_number: u32,
+    // Reserved (23-30): "99999999"
+    pub reserved: [u8; 8],
+    // Sub-header (31-38): Service, Status, Added status size, Reserved, Added status, Padding
     pub service: u8,
     pub status: u8,
-    pub extra_status: u16,
+    pub added_status_size: u8,
+    pub reserved_sub: u8,
+    pub added_status: u16,
+    pub padding: [u8; 2],
 }
 
 #[derive(Debug, Clone)]
 pub struct Position {
+    // Position type (0-3): 0x00 for pulse position
     pub position_type: u32,
+    // Joint configuration (4-7): 0x00
     pub joint_config: u32,
+    // Tool number (8-11)
     pub tool_number: u32,
+    // User coordinate (12-15): 0x00
     pub user_coordinate: u32,
+    // Extended joint configuration (16-19): 0x00
     pub extended_config: u32,
+    // Joints 1-8 (20-51): Pulse values
     pub joints: [i32; 8],
 }
 
 #[derive(Debug, Clone)]
 pub struct CartesianPosition {
+    // Position type (0-3): 0x10-0x22 for different frames
     pub position_type: u32,
+    // Joint configuration (4-7)
     pub joint_config: u32,
+    // Tool number (8-11)
     pub tool_number: u32,
+    // User coordinate number (12-15)
     pub user_coordinate: u32,
+    // Extended joint configuration (16-19): 0x00
     pub extended_config: u32,
-    pub x: i32, // micrometers
-    pub y: i32, // micrometers
-    pub z: i32, // micrometers
-    pub rx: i32, // millidegrees
-    pub ry: i32, // millidegrees
-    pub rz: i32, // millidegrees
+    // X coordinate (20-23): micrometers
+    pub x: i32,
+    // Y coordinate (24-27): micrometers
+    pub y: i32,
+    // Z coordinate (28-31): micrometers
+    pub z: i32,
+    // RX rotation (32-35): millidegrees
+    pub rx: i32,
+    // RY rotation (36-39): millidegrees
+    pub ry: i32,
+    // RZ rotation (40-43): millidegrees
+    pub rz: i32,
+    // Padding (44-51): 0x00
+    pub padding: [u32; 2],
 }
 
 #[derive(Error, Debug)]

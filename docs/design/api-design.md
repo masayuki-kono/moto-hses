@@ -24,6 +24,22 @@ let config = ClientConfig::default()
 let client = HsesClient::with_config("192.168.1.100:10040", config).await?;
 ```
 
+### Status and Position Operations
+
+#### Reading Status
+
+```rust
+// Read robot status information
+let status = client.read_status().await?;
+println!("Robot running: {}", status.is_running());
+println!("Servo ON: {}", status.is_servo_on());
+println!("In teach mode: {}", status.is_teach_mode());
+
+// Read robot position data
+let position = client.read_position(PositionType::RobotPulse).await?;
+println!("Joint 1: {} pulses", position.joints[0]);
+```
+
 ### Variable Operations
 
 #### Reading Variables
@@ -91,6 +107,36 @@ match status {
     JobStatus::Running => println!("Job is running"),
     JobStatus::Completed => println!("Job completed"),
     JobStatus::Error(e) => println!("Job failed: {}", e),
+}
+```
+
+### I/O Operations
+
+```rust
+// Read I/O data
+let input_value = client.read_io(IoType::RobotUserInput, 1).await?;
+let output_value = client.read_io(IoType::RobotUserOutput, 1001).await?;
+
+// Write I/O data (network input only)
+client.write_io(IoType::NetworkInput, 2501, true).await?;
+```
+
+### File Operations
+
+```rust
+// Load file from PC to robot
+client.load_file("TEST.JOB").await?;
+
+// Save file from robot to PC
+client.save_file("TEST.JOB").await?;
+
+// Delete file on robot
+client.delete_file("TEST.JOB").await?;
+
+// Get file list
+let files = client.list_files("*.JOB").await?;
+for file in files {
+    println!("File: {}", file.name);
 }
 ```
 
