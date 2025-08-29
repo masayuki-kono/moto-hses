@@ -20,7 +20,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Parse HSES message
         let message = match proto::HsesMessage::decode(&buf[..n]) {
             Ok(msg) => msg,
-            Err(_) => continue,
+            Err(e) => {
+                eprintln!("Failed to decode message: {:?}", e);
+                continue;
+            }
         };
         
         let command = message.sub_header.command;
@@ -32,7 +35,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             message.header.request_id,
             0
         );
-        
+
+        eprintln!("Received command: 0x{:02x} from {}", command, src);
+
         // Craft a canned payload by command
         let payload: Vec<u8> = match command {
             0x72 => vec![0x01, 0x00, 0x40, 0x00], // ReadStatus - running and servo on
@@ -41,10 +46,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             0x7b => vec![0x64, 0x00, 0x00, 0x00], // ReadVar<i32> - value 100
             0x7d => vec![0x00, 0x00, 0x20, 0x41], // ReadVar<f32> - value 10.0
             0x7f => vec![0u8; 52], // ReadVar<Position> - placeholder
-            _ => vec![],
+            _ => {
+                eprintln!("Unknown command: 0x{:02x}", command);
+                vec![]
+            },
         };
         
-        // Create response message
+        // Create response message with ACK (0x01)
         let response_message = proto::HsesMessage::new(
             message.header.division,
             0x01, // ACK
@@ -57,6 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         
         let response_data = response_message.encode();
+        eprintln!("Sending response: {} bytes", response_data.len());
         let _ = sock.send_to(&response_data, src).await?;
     }
 }
