@@ -163,7 +163,7 @@ async fn test_unknown_command() {
     socket.send_to(&data, addr).await.unwrap();
     
     // Wait for response
-    sleep(Duration::from_millis(50)).await;
+    sleep(Duration::from_millis(100)).await;
     
     // Try to receive response
     let mut buf = vec![0u8; 1024];

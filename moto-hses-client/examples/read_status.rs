@@ -7,12 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Connecting to controller at {}...", controller);
     let client = HsesClient::new(&controller).await?;
     
-    if client.is_connected() {
-        println!("Successfully connected to controller");
-    } else {
-        println!("Failed to connect to controller");
-        return Ok(());
-    }
+    println!("Successfully connected to controller");
 
     println!("Reading robot status...");
     let status = client.read_status().await?;

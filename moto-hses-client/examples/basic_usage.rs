@@ -17,7 +17,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 5,
         retry_delay: Duration::from_millis(200),
         buffer_size: 8192,
-        connection_timeout: Duration::from_secs(10),
     };
     
     // Connect to the controller
@@ -32,11 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     
-    // Check connection status
-    if !client.is_connected() {
-        eprintln!("✗ Client is not connected");
-        return Ok(());
-    }
+
     
     // Read robot status
     println!("\n--- Robot Status ---");

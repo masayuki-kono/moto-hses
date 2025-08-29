@@ -18,7 +18,6 @@ pub struct ClientConfig {
     pub retry_count: u32,
     pub retry_delay: Duration,
     pub buffer_size: usize,
-    pub connection_timeout: Duration,
 }
 
 impl Default for ClientConfig {
@@ -28,7 +27,6 @@ impl Default for ClientConfig {
             retry_count: 3,
             retry_delay: Duration::from_millis(100),
             buffer_size: 8192,
-            connection_timeout: Duration::from_secs(5),
         }
     }
 }
@@ -39,7 +37,6 @@ pub(crate) struct InnerClient {
     pub remote_addr: SocketAddr,
     pub request_id: AtomicU8,
     pub _pending_requests: Arc<Mutex<HashMap<u8, PendingRequest>>>,
-    pub connected: Arc<Mutex<bool>>,
 }
 
 /// Pending request tracking
@@ -67,8 +64,6 @@ pub enum ClientError {
     InvalidVariable(String),
     #[error("System error: {0}")]
     SystemError(String),
-    #[error("Not connected")]
-    NotConnected,
     #[error("Connection failed after {0} retries")]
     ConnectionFailed(u32),
 }

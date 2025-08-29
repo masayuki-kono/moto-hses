@@ -15,7 +15,6 @@ impl HsesClient {
     where
         T: VariableType,
     {
-        self.ensure_connected()?;
         let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
         self.send_command_with_retry(command).await
     }
@@ -24,46 +23,39 @@ impl HsesClient {
     where
         T: VariableType,
     {
-        self.ensure_connected()?;
         let command = WriteVar::<T> { index, value };
         self.send_command_with_retry(command).await
     }
 
     pub async fn read_status(&self) -> Result<Status, ClientError> {
-        self.ensure_connected()?;
         let result: StatusWrapper = self.send_command_with_retry(ReadStatus).await?;
         Ok(result.into())
     }
 
     pub async fn read_position(&self, control_group: u8, coord_system: CoordinateSystemType) -> Result<Position, ClientError> {
-        self.ensure_connected()?;
         let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
         self.send_command_with_retry(command).await
     }
 
     pub async fn read_io(&self, _io_type: u8, _index: u8) -> Result<bool, ClientError> {
-        self.ensure_connected()?;
         // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("I/O reading not yet implemented".to_string()))
     }
 
     pub async fn write_io(&self, _io_type: u8, _index: u8, _value: bool) -> Result<(), ClientError> {
-        self.ensure_connected()?;
         // TODO: Implement I/O writing command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("I/O writing not yet implemented".to_string()))
     }
 
     pub async fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
-        self.ensure_connected()?;
-        // TODO: Implement job execution command
+        // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("Job execution not yet implemented".to_string()))
     }
 
     pub async fn stop_job(&self) -> Result<(), ClientError> {
-        self.ensure_connected()?;
         // TODO: Implement job stop command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("Job stop not yet implemented".to_string()))

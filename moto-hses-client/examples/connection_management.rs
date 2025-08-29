@@ -17,7 +17,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
         buffer_size: 8192,
-        connection_timeout: Duration::from_secs(3),
     };
     
     // Attempt to connect with error handling
@@ -48,12 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Verify connection status
     println!("\n--- Connection Status ---");
-    if client.is_connected() {
-        println!("✓ Client reports connected");
-    } else {
-        println!("✗ Client reports not connected");
-        return Ok(());
-    }
+    println!("✓ Client created successfully");
     
     // Test basic communication
     println!("\n--- Communication Test ---");
@@ -76,15 +70,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Demonstrate reconnection
     println!("\n--- Reconnection Test ---");
-    println!("Attempting to reconnect...");
-    match client.reconnect().await {
-        Ok(()) => {
-            println!("✓ Reconnection successful");
-        }
-        Err(e) => {
-            eprintln!("✗ Reconnection failed: {}", e);
-        }
-    }
+    println!("UDP is connectionless, so reconnection is not applicable");
+    println!("✓ Client is ready for communication");
     
     // Test connection with invalid address
     println!("\n--- Invalid Address Test ---");
@@ -93,7 +80,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 1,
         retry_delay: Duration::from_millis(50),
         buffer_size: 8192,
-        connection_timeout: Duration::from_millis(1),
     };
     
     match HsesClient::new_with_config("192.168.1.999:10040", invalid_config).await {

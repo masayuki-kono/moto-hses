@@ -77,7 +77,17 @@ impl MockServer {
         let mut state = self.state.write().await;
         
         // Handle the command
-        let payload = self.handlers.handle(message, &mut state)?;
+        let payload = match self.handlers.handle(message, &mut state) {
+            Ok(payload) => payload,
+            Err(proto::ProtocolError::InvalidCommand) => {
+                // For unknown commands, return empty payload but still send response
+                vec![]
+            }
+            Err(e) => {
+                // For other errors, propagate them
+                return Err(Box::new(e));
+            }
+        };
         
         // Create response message
         let response_message = proto::HsesMessage::new(
