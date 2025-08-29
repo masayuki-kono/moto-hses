@@ -32,7 +32,12 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
         - 0x00: Request
         - 0x01: Response
 11:    Request ID (1 byte)
+        -  Identifying ID for command session (increment this ID every time the client side outputs a new command. In reply to this, server side answers the received value.)
 12-15: Block number (4 bytes, little-endian)
+        - Allocate the block number from 0 to0x7fff_ffff
+        - Request: 0
+        - Response(Data transmission other than last): add 1
+        - Response(Last): 0x8000_0000 to the last packet
 16-23: Reserved (8 bytes, always "99999999")
 24-31: Sub-header (8 bytes, structure differs for Request/Response)
 ```
