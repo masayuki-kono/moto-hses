@@ -1969,6 +1969,179 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 
 **Note**: To move the base axis, specify the robot No. at the specifying control group, and input the each axis value. Robot and station cannot be operated simultaneously. If both operations are set at the same time, FS100 returns a control group setting error (0xB008).
 
+#### 32-byte Character Variable (S) Read/Write Command (Command 0x8C)
+
+**Request Structure:**
+
+- **Command**: 0x8C
+- **Instance**: Specifies the variable number (0-99 for standard settings)
+  - Note: Variable extension is an optional feature, so follow the number of variables specified by the parameter
+- **Attribute**: Fixed to 1
+  - Note: Specify "1"
+- **Service**: Specifies the data access method
+  - `0x0E` (Get_Attribute_Single): Read data from the specified variable
+  - `0x01` (Get_Attribute_All): Read data from the specified variable
+  - `0x10` (Set_Attribute_Single): Write data to the specified variable
+  - `0x02` (Set_Attribute_All): Write data to the specified variable
+- **Payload**: 8 × 32-bit integers (32 bytes): S variable data (exists only during writing)
+  - Integer 1: S variable (Byte 0)
+  - Integer 2: S variable (Byte 1-4)
+  - Integer 3: S variable (Byte 5-8)
+  - Integer 4: S variable (Byte 9-12)
+  - Integer 5: S variable (Byte 13-16)
+  - Integer 6: S variable (Byte 17-20)
+  - Integer 7: S variable (Byte 21-24)
+  - Integer 8: S variable (Byte 25-28)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: 8 × 32-bit integers (32 bytes): S variable data (exists only during reading)
+  - Integer 1: S variable (Byte 0)
+  - Integer 2: S variable (Byte 1-4)
+  - Integer 3: S variable (Byte 5-8)
+  - Integer 4: S variable (Byte 9-12)
+  - Integer 5: S variable (Byte 13-16)
+  - Integer 6: S variable (Byte 17-20)
+  - Integer 7: S variable (Byte 21-24)
+  - Integer 8: S variable (Byte 25-28)
+
+**Note**: Data part exists only when a read request is made from the client. For writing operations, the data part is included in the request payload.
+
+#### 32-byte Character Variable (S) Multiple Read/Write Command (Command 0x30C)
+
+**Request Structure:**
+
+- **Command**: 0x30C
+- **Instance**: Specifies the variable number (0-99 for standard settings)
+  - Note: Variable extension is an optional feature, so follow the number of variables specified by the parameter
+  - This is the starting number for read/write operations
+- **Attribute**: Fixed to 0
+  - Note: Must be "0". Only all-element batch access is possible
+- **Service**: Specifies the data access method
+  - `0x33`: Multiple read
+  - `0x34`: Multiple write
+- **Payload**: Variable data structure
+  - Integer 1: Count (Maximum count is 14)
+  - Integer 2-9: S Variable 1 (32 bytes)
+  - Integer 10-17: S Variable 2 (32 bytes)
+  - Integer 18-25: S Variable 3 (32 bytes)
+  - Integer 26-33: S Variable 4 (32 bytes)
+  - Integer 34-41: S Variable 5 (32 bytes)
+  - Integer 42-49: S Variable 6 (32 bytes)
+  - Integer 50-57: S Variable 7 (32 bytes)
+  - Integer 58-65: S Variable 8 (32 bytes)
+  - Integer 66-73: S Variable 9 (32 bytes)
+  - Integer 74-81: S Variable 10 (32 bytes)
+  - Integer 82-89: S Variable 11 (32 bytes)
+  - Integer 90-97: S Variable 12 (32 bytes)
+  - Integer 98-105: S Variable 13 (32 bytes)
+  - Integer 106-113: S Variable 14 (32 bytes)
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: Variable data structure (same as request payload)
+  - Integer 1: Count (Maximum count is 14)
+  - Integer 2-113: S Variable data (up to 14 variables, 32 bytes each)
+
+**Note**: The variable data part is valid only during writing. During reading, only the count data is valid. Each S variable occupies 8 × 32-bit integers (32 bytes).
+
+#### Encoder Temperature Read Command (Command 0x0411)
+
+**Request Structure:**
+
+- **Command**: 0x0411
+- **Instance**: Specifies the control group
+  - `1-2`: R1-R2... Robot axis
+  - `11-12`: B1-B2... Base axis
+  - `21-23`: S1-S3... Station axis
+- **Attribute**: Fixed to 1
+  - Note: Specify "1"
+- **Service**: Specifies the data access method
+  - `0x0E` (Get_Attribute_Single): Read data for the specified robot axis
+  - `0x01` (Get_Attribute_All): Read data for the specified robot axis
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: 8 × 32-bit integers (32 bytes): Encoder temperature data
+  - Integer 1: 1st axis encoder temperature data
+  - Integer 2: 2nd axis encoder temperature data
+  - Integer 3: 3rd axis encoder temperature data
+  - Integer 4: 4th axis encoder temperature data
+  - Integer 5: 5th axis encoder temperature data
+  - Integer 6: 6th axis encoder temperature data
+  - Integer 7: 7th axis encoder temperature data
+  - Integer 8: 8th axis encoder temperature data
+
+**Note**: This command is available for YBS3.10-00 and later versions. The encoder temperature for each axis is set in the response payload.
+
+#### Converter Temperature Read Command (Command 0x0413)
+
+**Request Structure:**
+
+- **Command**: 0x0413
+- **Instance**: Specifies the servo board number
+  - `1`: Servo board 1
+  - `2`: Servo board 2
+- **Attribute**: Fixed to 1
+  - Note: Specify "1"
+- **Service**: Specifies the data access method
+  - `0x0E` (Get_Attribute_Single): Read converter temperature for the specified servo board
+  - `0x01` (Get_Attribute_All): Read converter temperature for the specified servo board
+- **Payload**: No data part
+
+**Response Structure:**
+
+- **Status**: Command execution result
+  - `0x00`: Respond normally
+  - Other than `0x00`: Respond abnormally
+- **Added status size**: Size of additional status data
+  - `0`: Not specified
+  - `1`: 1 WORD of added status data
+  - `2`: 2 WORD of added status data
+- **Added status**: Error code specified by the added status size
+  - 1 WORD error code if added status size is "1"
+  - 2 WORD error code if added status size is "2"
+- **Payload**: 6 × 32-bit integers (24 bytes): Converter temperature data
+  - Integer 1: Converter No. 1 data (converter temperature for the specified servo board)
+  - Integer 2: Reserved
+  - Integer 3: Reserved
+  - Integer 4: Reserved
+  - Integer 5: Reserved
+  - Integer 6: Reserved
+
+**Note**: This command is available for YBS4.10-00 and later versions. The converter temperature corresponding to the specified servo board is set in the response payload.
+
 ## File Commands (Division = 0x02)
 
 File commands use a different port (10041) and have a simpler structure.
