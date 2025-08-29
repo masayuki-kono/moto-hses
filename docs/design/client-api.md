@@ -133,16 +133,46 @@ let io_values = client.read_multiple_io(&[
 ### File Operations
 
 ```rust
-// File operations with progress callbacks
-client.read_file_list("*.JOB")
+// File list operations - returns Vec<String> of filenames
+let job_files: Vec<String> = client.read_file_list("*.JOB")
     .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
     .await?;
 
-client.read_file("TEST.JOB")
+println!("Found JOB files:");
+for filename in &job_files {
+    println!("  - {}", filename);
+}
+
+// Read file content as string (for JOB files)
+let job_content: String = client.read_file("TEST.JOB")
     .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
     .await?;
 
-client.write_file("TEST.JOB", file_content)
+println!("JOB file content:");
+println!("{}", job_content);
+
+// Read file content as bytes (for binary files)
+let binary_content: Vec<u8> = client.read_file_as_bytes("DATA.BIN")
+    .on_progress(|bytes_received| println!("Received: {} bytes", bytes_received))
+    .await?;
+
+// Write file content (string for JOB files)
+let new_job_content = r#"
+PROGRAM TEST
+    MOV P1
+    MOV P2
+    END
+"#.to_string();
+
+client.write_file("NEW_TEST.JOB", new_job_content)
+    .on_progress(|bytes_sent, bytes_total| {
+        println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
+    })
+    .await?;
+
+// Write file content (bytes for binary files)
+let binary_data = vec![0x01, 0x02, 0x03, 0x04];
+client.write_file_as_bytes("DATA.BIN", binary_data)
     .on_progress(|bytes_sent, bytes_total| {
         println!("Sent: {}/{} bytes", bytes_sent, bytes_total);
     })
@@ -402,6 +432,92 @@ impl Default for PoseConfiguration {
 }
 ```
 
+### File Operation Types
+
+````rust
+#[derive(Debug, Clone)]
+pub struct FileInfo {
+    pub filename: String,
+    pub size: u64,
+    pub modified_time: Option<SystemTime>,
+}
+
+impl FileInfo {
+    pub fn new(filename: String, size: u64) -> Self {
+        Self {
+            filename,
+            size,
+            modified_time: None,
+        }
+    }
+
+    pub fn with_modified_time(mut self, time: SystemTime) -> Self {
+        self.modified_time = Some(time);
+        self
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FileOperationBuilder<T> {
+    client: HsesClient,
+    filename: String,
+    content: T,
+    progress_callback: Option<Box<dyn Fn(u64) + Send + Sync>>,
+}
+
+impl<T> FileOperationBuilder<T> {
+    pub fn on_progress<F>(mut self, callback: F) -> Self
+    where
+        F: Fn(u64) + Send + Sync + 'static,
+    {
+        self.progress_callback = Some(Box::new(callback));
+        self
+    }
+
+    pub async fn execute(self) -> Result<T, ClientError> {
+        // Implementation would handle the actual file operation
+        // with progress reporting
+        todo!("Implementation needed")
+    }
+}
+
+// Specialized builders for different content types
+pub struct StringFileBuilder {
+    inner: FileOperationBuilder<String>,
+}
+
+impl StringFileBuilder {
+    pub fn on_progress<F>(mut self, callback: F) -> Self
+    where
+        F: Fn(u64) + Send + Sync + 'static,
+    {
+        self.inner = self.inner.on_progress(callback);
+        self
+    }
+
+    pub async fn execute(self) -> Result<String, ClientError> {
+        self.inner.execute().await
+    }
+}
+
+pub struct BytesFileBuilder {
+    inner: FileOperationBuilder<Vec<u8>>,
+}
+
+impl BytesFileBuilder {
+    pub fn on_progress<F>(mut self, callback: F) -> Self
+    where
+        F: Fn(u64) + Send + Sync + 'static,
+    {
+        self.inner = self.inner.on_progress(callback);
+        self
+    }
+
+    pub async fn execute(self) -> Result<Vec<u8>, ClientError> {
+        self.inner.execute().await
+    }
+}
+
 ## Error Types
 
 ```rust
@@ -427,6 +543,18 @@ pub enum ClientError {
 
     #[error("Robot error: {0}")]
     RobotError(String),
+
+    #[error("File error: {0}")]
+    FileError(String),
+
+    #[error("File not found: {0}")]
+    FileNotFound(String),
+
+    #[error("File access denied: {0}")]
+    FileAccessDenied(String),
+
+    #[error("Invalid file encoding: {0}")]
+    InvalidFileEncoding(String),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -452,7 +580,7 @@ pub enum ProtocolError {
     #[error("Invalid variable type: {0}")]
     InvalidVariableType(String),
 }
-```
+````
 
 ## Best Practices
 
