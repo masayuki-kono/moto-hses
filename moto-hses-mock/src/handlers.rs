@@ -670,7 +670,7 @@ impl CommandHandler for PmovHandler {
 pub struct SelectCycleHandler;
 
 impl CommandHandler for SelectCycleHandler {
-    fn handle(&self, message: &proto::HsesRequestMessage, state: &mut MockState) -> Result<Vec<u8>, proto::ProtocolError> {
+    fn handle(&self, message: &proto::HsesRequestMessage, _state: &mut MockState) -> Result<Vec<u8>, proto::ProtocolError> {
         let service = message.sub_header.service;
         
         match service {
@@ -728,8 +728,8 @@ impl CommandHandler for FileControlHandler {
             }
             0x15 => { // Send file (Python client uses this)
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                if let Some(_filename_pos) = message.payload.iter().position(|&b| b == 0) {
+                    let _filename = String::from_utf8_lossy(&message.payload[.._filename_pos]).to_string();
                     // For now, just acknowledge the file send request
                     Ok(vec![])
                 } else {
@@ -743,8 +743,8 @@ impl CommandHandler for FileControlHandler {
             }
             0x16 => { // Receive file (Python client uses this)
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                if let Some(_filename_pos) = message.payload.iter().position(|&b| b == 0) {
+                    let _filename = String::from_utf8_lossy(&message.payload[.._filename_pos]).to_string();
                     // For now, just acknowledge the file receive request
                     Ok(vec![])
                 } else {
@@ -753,8 +753,8 @@ impl CommandHandler for FileControlHandler {
             }
             0x09 => { // Delete file (Python client uses this)
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                if let Some(_filename_pos) = message.payload.iter().position(|&b| b == 0) {
+                    let _filename = String::from_utf8_lossy(&message.payload[.._filename_pos]).to_string();
                     // For now, just acknowledge the file delete request
                     Ok(vec![])
                 } else {

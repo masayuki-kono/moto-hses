@@ -136,3 +136,113 @@ impl Command for ReadCurrentPosition {
         Ok(Vec::new())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_variable_creation() {
+        let var = Variable::new(VarType::Byte, 1, 42u8);
+        assert_eq!(var.var_type, VarType::Byte);
+        assert_eq!(var.index, 1);
+        assert_eq!(var.value, 42);
+    }
+
+    #[test]
+    fn test_variable_with_default() {
+        let var = Variable::<u8>::with_default(VarType::Byte, 1);
+        assert_eq!(var.var_type, VarType::Byte);
+        assert_eq!(var.index, 1);
+        assert_eq!(var.value, 0u8);
+    }
+
+    #[test]
+    fn test_division_enum() {
+        assert_eq!(Division::Robot as u8, 1);
+        assert_eq!(Division::File as u8, 2);
+    }
+
+    #[test]
+    fn test_service_enum() {
+        assert_eq!(Service::GetSingle as u8, 0x0e);
+        assert_eq!(Service::SetSingle as u8, 0x10);
+        assert_eq!(Service::GetAll as u8, 0x01);
+        assert_eq!(Service::SetAll as u8, 0x02);
+    }
+
+    #[test]
+    fn test_coordinate_system_enum() {
+        assert_eq!(CoordinateSystem::Base, CoordinateSystem::Base);
+        assert_eq!(CoordinateSystem::Robot, CoordinateSystem::Robot);
+        assert_eq!(CoordinateSystem::Tool, CoordinateSystem::Tool);
+        assert_eq!(CoordinateSystem::User(1), CoordinateSystem::User(1));
+    }
+
+    #[test]
+    fn test_coordinate_system_type_enum() {
+        assert_eq!(CoordinateSystemType::RobotPulse as u8, 0);
+        assert_eq!(CoordinateSystemType::BasePulse as u8, 1);
+        assert_eq!(CoordinateSystemType::StationPulse as u8, 3);
+        assert_eq!(CoordinateSystemType::RobotCartesian as u8, 4);
+    }
+
+    #[test]
+    fn test_read_var_command() {
+        let read_cmd = ReadVar::<u8> { index: 1, _phantom: PhantomData };
+        assert_eq!(ReadVar::<u8>::command_id(), 0x7a); // ByteVar command ID
+        let serialized = read_cmd.serialize().unwrap();
+        assert_eq!(serialized, Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_write_var_command() {
+        let write_cmd = WriteVar::<u8> { index: 1, value: 42 };
+        assert_eq!(WriteVar::<u8>::command_id(), 0x7a); // ByteVar command ID
+        let serialized = write_cmd.serialize().unwrap();
+        assert_eq!(serialized, vec![42, 0, 0, 0]); // u8 is serialized as 4 bytes in HSES protocol
+    }
+
+    #[test]
+    fn test_read_status_command() {
+        let read_status = ReadStatus;
+        assert_eq!(ReadStatus::command_id(), 0x72);
+        let serialized = read_status.serialize().unwrap();
+        assert_eq!(serialized, Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_read_current_position_command() {
+        let read_pos = ReadCurrentPosition {
+            control_group: 1,
+            coordinate_system: CoordinateSystemType::RobotPulse,
+        };
+        assert_eq!(ReadCurrentPosition::command_id(), 0x75);
+        let serialized = read_pos.serialize().unwrap();
+        assert_eq!(serialized, Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_variable_type_serialization() {
+        let value: u8 = 42;
+        let serialized = value.serialize().unwrap();
+        let deserialized = u8::deserialize(&serialized).unwrap();
+        assert_eq!(value, deserialized);
+    }
+
+    #[test]
+    fn test_variable_type_serialization_i32() {
+        let value: i32 = 12345;
+        let serialized = value.serialize().unwrap();
+        let deserialized = i32::deserialize(&serialized).unwrap();
+        assert_eq!(value, deserialized);
+    }
+
+    #[test]
+    fn test_variable_type_serialization_f32() {
+        let value: f32 = 3.14159;
+        let serialized = value.serialize().unwrap();
+        let deserialized = f32::deserialize(&serialized).unwrap();
+        assert!((value - deserialized).abs() < f32::EPSILON);
+    }
+}

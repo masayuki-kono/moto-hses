@@ -19,12 +19,17 @@ impl MockServer {
     /// Create a new mock server
     pub async fn new(config: crate::MockConfig) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         let robot_socket = Arc::new(UdpSocket::bind(config.bind_addr).await?);
-        let file_socket = Arc::new(UdpSocket::bind("127.0.0.1:10041").await?);
+        
+        // Use configured file port or fallback to bind_addr.port() + 1
+        let file_port = config.file_port.unwrap_or(config.bind_addr.port() + 1);
+        let file_addr: SocketAddr = format!("127.0.0.1:{}", file_port).parse()?;
+        let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
+        
         let state = SharedState::new(MockState::default());
         let handlers = CommandHandlerRegistry::default();
         
         eprintln!("Mock server listening on {}", config.bind_addr);
-        eprintln!("Mock server listening on 127.0.0.1:10041");
+        eprintln!("Mock server listening on {}", file_addr);
         
         Ok(Self {
             robot_socket,
@@ -217,11 +222,6 @@ impl MockServer {
         Ok(())
     }
     
-    /// Handle a single message
-    async fn handle_message(&self, message: &proto::HsesRequestMessage) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
-        Self::handle_message_internal(message, &self.state, &self.handlers).await
-    }
-    
     /// Internal message handler (static method for use in tasks)
     async fn handle_message_internal(
         message: &proto::HsesRequestMessage, 
@@ -309,6 +309,11 @@ impl MockServerBuilder {
     
     pub fn bind_addr(mut self, addr: SocketAddr) -> Self {
         self.config.bind_addr = addr;
+        self
+    }
+    
+    pub fn file_port(mut self, port: u16) -> Self {
+        self.config.file_port = Some(port);
         self
     }
     

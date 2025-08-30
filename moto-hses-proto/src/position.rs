@@ -130,3 +130,56 @@ impl VariableType for Position {
         Position::deserialize(data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::CoordinateSystem;
+
+    #[test]
+    fn test_pulse_position_creation() {
+        let joints = [1000, 2000, 3000, 0, 0, 0, 0, 0];
+        let position = PulsePosition::new(joints, 1);
+        assert_eq!(position.joints, joints);
+        assert_eq!(position.control_group, 1);
+    }
+
+    #[test]
+    fn test_cartesian_position_creation() {
+        let position = CartesianPosition::new(100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, CoordinateSystem::Base);
+        assert_eq!(position.x, 100.0);
+        assert_eq!(position.y, 200.0);
+        assert_eq!(position.z, 300.0);
+        assert_eq!(position.tool_no, 1);
+        assert_eq!(position.user_coord_no, 0);
+        assert_eq!(position.coordinate_system, CoordinateSystem::Base);
+    }
+
+    #[test]
+    fn test_position_serialization() {
+        let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
+        let serialized = position.serialize().unwrap();
+        let deserialized = Position::deserialize(&serialized).unwrap();
+        assert_eq!(position, deserialized);
+    }
+
+    #[test]
+    fn test_cartesian_position_serialization() {
+        let position = Position::Cartesian(CartesianPosition::new(
+            100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, CoordinateSystem::Base
+        ));
+        let serialized = position.serialize().unwrap();
+        let deserialized = Position::deserialize(&serialized).unwrap();
+        assert_eq!(position, deserialized);
+    }
+
+    #[test]
+    fn test_position_variable_type_trait() {
+        let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
+        assert_eq!(Position::command_id(), 0x7f);
+        
+        let serialized = position.serialize().unwrap();
+        let deserialized = Position::deserialize(&serialized).unwrap();
+        assert_eq!(position, deserialized);
+    }
+}

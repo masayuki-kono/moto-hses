@@ -16,6 +16,7 @@ pub use handlers::CommandHandler;
 #[derive(Debug, Clone)]
 pub struct MockConfig {
     pub bind_addr: SocketAddr,
+    pub file_port: Option<u16>, // Optional file port, if None, will use bind_addr.port() + 1
     pub default_status: proto::Status,
     pub default_position: proto::Position,
     pub variables: HashMap<u8, Vec<u8>>,
@@ -35,6 +36,7 @@ impl Default for MockConfig {
 
         Self {
             bind_addr: "127.0.0.1:10040".parse().unwrap(),
+            file_port: Some(10041), // Default file port
             default_status: proto::Status {
                 step: false,
                 one_cycle: false,
@@ -68,12 +70,30 @@ pub mod test_utils {
 
     /// Start a mock server for testing
     pub async fn start_test_server() -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>> {
-        // Use a random port to avoid conflicts
-        let config = MockConfig {
+        // Use a high port number to avoid conflicts and permission issues
+        let _config = MockConfig {
             bind_addr: "127.0.0.1:0".parse().unwrap(),
             ..Default::default()
         };
-        let server = MockServer::new(config).await?;
+        
+        // Try to bind to a specific high port first
+        let mut port = 49152; // Start from dynamic port range
+        let mut server = None;
+        
+        while port < 65535 && server.is_none() {
+            let test_config = MockConfig {
+                bind_addr: format!("127.0.0.1:{}", port).parse().unwrap(),
+                file_port: Some(port + 1), // Use next port for file control
+                ..Default::default()
+            };
+            
+            match MockServer::new(test_config).await {
+                Ok(s) => server = Some(s),
+                Err(_) => port += 2, // Skip 2 ports since we need both robot and file ports
+            }
+        }
+        
+        let server = server.ok_or("Could not find available port")?;
         let addr = server.local_addr()?;
         
         let handle = tokio::spawn(async move {
@@ -83,7 +103,7 @@ pub mod test_utils {
         });
 
         // Give server time to start
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(200)).await;
         
         Ok((addr, handle))
     }

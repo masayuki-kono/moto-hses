@@ -109,3 +109,125 @@ impl From<StatusWrapper> for Status {
         wrapper.0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_status_from_bytes() {
+        let data = vec![0x01, 0x00, 0x40, 0x00];
+        let status = Status::from_bytes(&data).unwrap();
+        assert!(status.step);
+        assert!(status.servo_on);
+        assert!(!status.running);
+        assert!(!status.alarm);
+    }
+
+    #[test]
+    fn test_status_serialization() {
+        let status = Status {
+            step: true,
+            one_cycle: false,
+            continuous: false,
+            running: false,
+            speed_limited: false,
+            teach: false,
+            play: false,
+            remote: false,
+            teach_pendant_hold: false,
+            external_hold: false,
+            command_hold: false,
+            alarm: false,
+            error: false,
+            servo_on: true,
+        };
+        
+        let serialized = status.serialize().unwrap();
+        let deserialized = Status::deserialize(&serialized).unwrap();
+        assert_eq!(status.step, deserialized.step);
+        assert_eq!(status.servo_on, deserialized.servo_on);
+        assert_eq!(status.running, deserialized.running);
+    }
+
+    #[test]
+    fn test_status_helper_methods() {
+        let status = Status {
+            step: false,
+            one_cycle: false,
+            continuous: false,
+            running: true,
+            speed_limited: false,
+            teach: true,
+            play: false,
+            remote: false,
+            teach_pendant_hold: false,
+            external_hold: false,
+            command_hold: false,
+            alarm: false,
+            error: false,
+            servo_on: true,
+        };
+        
+        assert!(status.is_running());
+        assert!(status.is_servo_on());
+        assert!(!status.has_alarm());
+        assert!(status.is_teach_mode());
+        assert!(!status.is_play_mode());
+        assert!(!status.is_remote_mode());
+    }
+
+    #[test]
+    fn test_status_variable_type_trait() {
+        assert_eq!(Status::command_id(), 0x72);
+        
+        let status = Status {
+            step: true,
+            one_cycle: false,
+            continuous: false,
+            running: false,
+            speed_limited: false,
+            teach: false,
+            play: false,
+            remote: false,
+            teach_pendant_hold: false,
+            external_hold: false,
+            command_hold: false,
+            alarm: false,
+            error: false,
+            servo_on: false,
+        };
+        
+        let serialized = status.serialize().unwrap();
+        let deserialized = Status::deserialize(&serialized).unwrap();
+        assert_eq!(status.step, deserialized.step);
+    }
+
+    #[test]
+    fn test_status_wrapper() {
+        let status = Status {
+            step: true,
+            one_cycle: false,
+            continuous: false,
+            running: false,
+            speed_limited: false,
+            teach: false,
+            play: false,
+            remote: false,
+            teach_pendant_hold: false,
+            external_hold: false,
+            command_hold: false,
+            alarm: false,
+            error: false,
+            servo_on: false,
+        };
+        
+        let wrapper = StatusWrapper(status.clone());
+        assert_eq!(StatusWrapper::command_id(), 0x72);
+        
+        let serialized = wrapper.serialize().unwrap();
+        let deserialized = StatusWrapper::deserialize(&serialized).unwrap();
+        let deserialized_status: Status = deserialized.into();
+        assert_eq!(status.step, deserialized_status.step);
+    }
+}

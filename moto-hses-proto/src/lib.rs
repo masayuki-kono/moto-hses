@@ -7,8 +7,6 @@ pub mod status;
 pub mod message;
 pub mod variables;
 pub mod alarm;
-#[cfg(test)]
-pub mod tests;
 
 // Re-export commonly used items for convenience
 pub use error::ProtocolError;

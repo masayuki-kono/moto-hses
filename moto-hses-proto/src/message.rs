@@ -257,3 +257,149 @@ impl HsesResponseMessage {
         Ok(Self { header, sub_header, payload })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bytes::BytesMut;
+
+    #[test]
+    fn test_hses_common_header_creation() {
+        let header = HsesCommonHeader::new(1, 0, 1, 10);
+        assert_eq!(header.magic, *b"YERC");
+        assert_eq!(header.header_size, 0x20);
+        assert_eq!(header.division, 1);
+        assert_eq!(header.ack, 0);
+        assert_eq!(header.request_id, 1);
+        assert_eq!(header.payload_size, 10);
+    }
+
+    #[test]
+    fn test_hses_common_header_encode_decode() {
+        let header = HsesCommonHeader::new(1, 0, 1, 10);
+        let mut buf = BytesMut::new();
+        header.encode(&mut buf);
+        
+        let mut data = &buf[..];
+        let decoded = HsesCommonHeader::decode(&mut data).unwrap();
+        
+        assert_eq!(header.magic, decoded.magic);
+        assert_eq!(header.header_size, decoded.header_size);
+        assert_eq!(header.division, decoded.division);
+        assert_eq!(header.ack, decoded.ack);
+        assert_eq!(header.request_id, decoded.request_id);
+        assert_eq!(header.payload_size, decoded.payload_size);
+    }
+
+    #[test]
+    fn test_hses_request_sub_header_creation() {
+        let sub_header = HsesRequestSubHeader::new(0x0070, 1, 0, 1);
+        assert_eq!(sub_header.command, 0x0070);
+        assert_eq!(sub_header.instance, 1);
+        assert_eq!(sub_header.attribute, 0);
+        assert_eq!(sub_header.service, 1);
+        assert_eq!(sub_header.padding, 0);
+    }
+
+    #[test]
+    fn test_hses_request_sub_header_encode_decode() {
+        let sub_header = HsesRequestSubHeader::new(0x0070, 1, 0, 1);
+        let mut buf = BytesMut::new();
+        sub_header.encode(&mut buf);
+        
+        let mut data = &buf[..];
+        let decoded = HsesRequestSubHeader::decode(&mut data).unwrap();
+        
+        assert_eq!(sub_header.command, decoded.command);
+        assert_eq!(sub_header.instance, decoded.instance);
+        assert_eq!(sub_header.attribute, decoded.attribute);
+        assert_eq!(sub_header.service, decoded.service);
+        assert_eq!(sub_header.padding, decoded.padding);
+    }
+
+    #[test]
+    fn test_hses_response_sub_header_creation() {
+        let sub_header = HsesResponseSubHeader::new(1, 0, 0x0000);
+        assert_eq!(sub_header.service, 0x81); // 0x80 + 1
+        assert_eq!(sub_header.status, 0);
+        assert_eq!(sub_header.added_status_size, 2);
+        assert_eq!(sub_header.added_status, 0x0000);
+    }
+
+    #[test]
+    fn test_hses_response_sub_header_encode_decode() {
+        let sub_header = HsesResponseSubHeader::new(1, 0, 0x0000);
+        let mut buf = BytesMut::new();
+        sub_header.encode(&mut buf);
+        
+        let mut data = &buf[..];
+        let decoded = HsesResponseSubHeader::decode(&mut data).unwrap();
+        
+        assert_eq!(sub_header.service, decoded.service);
+        assert_eq!(sub_header.status, decoded.status);
+        assert_eq!(sub_header.added_status_size, decoded.added_status_size);
+        assert_eq!(sub_header.added_status, decoded.added_status);
+    }
+
+    #[test]
+    fn test_hses_request_message_creation() {
+        let payload = vec![1, 2, 3];
+        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone());
+        assert_eq!(message.header.division, 1);
+        assert_eq!(message.header.ack, 0);
+        assert_eq!(message.header.request_id, 1);
+        assert_eq!(message.header.payload_size, 3);
+        assert_eq!(message.sub_header.command, 0x0070);
+        assert_eq!(message.sub_header.service, 1);
+        assert_eq!(message.payload, payload);
+    }
+
+    #[test]
+    fn test_hses_request_message_encode_decode() {
+        let payload = vec![1, 2, 3];
+        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone());
+        let encoded = message.encode();
+        
+        let decoded = HsesRequestMessage::decode(&encoded).unwrap();
+        
+        assert_eq!(message.header.division, decoded.header.division);
+        assert_eq!(message.header.ack, decoded.header.ack);
+        assert_eq!(message.header.request_id, decoded.header.request_id);
+        assert_eq!(message.header.payload_size, decoded.header.payload_size);
+        assert_eq!(message.sub_header.command, decoded.sub_header.command);
+        assert_eq!(message.sub_header.service, decoded.sub_header.service);
+        assert_eq!(message.payload, decoded.payload);
+    }
+
+    #[test]
+    fn test_hses_response_message_creation() {
+        let payload = vec![1, 2, 3];
+        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone());
+        assert_eq!(message.header.division, 1);
+        assert_eq!(message.header.ack, 1);
+        assert_eq!(message.header.request_id, 1);
+        assert_eq!(message.header.payload_size, 3);
+        assert_eq!(message.sub_header.service, 0x81); // 0x80 + 1
+        assert_eq!(message.sub_header.status, 0);
+        assert_eq!(message.sub_header.added_status, 0x0000);
+        assert_eq!(message.payload, payload);
+    }
+
+    #[test]
+    fn test_hses_response_message_encode_decode() {
+        let payload = vec![1, 2, 3];
+        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone());
+        let encoded = message.encode();
+        
+        let decoded = HsesResponseMessage::decode(&encoded).unwrap();
+        
+        assert_eq!(message.header.division, decoded.header.division);
+        assert_eq!(message.header.ack, decoded.header.ack);
+        assert_eq!(message.header.request_id, decoded.header.request_id);
+        assert_eq!(message.header.payload_size, decoded.header.payload_size);
+        assert_eq!(message.sub_header.service, decoded.sub_header.service);
+        assert_eq!(message.sub_header.status, decoded.sub_header.status);
+        assert_eq!(message.sub_header.added_status, decoded.sub_header.added_status);
+        assert_eq!(message.payload, decoded.payload);
+    }
+}
