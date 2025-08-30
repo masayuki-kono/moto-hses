@@ -17,16 +17,29 @@ impl CommandHandler for AlarmDataHandler {
         let instance = message.sub_header.instance as usize;
         let attribute = message.sub_header.attribute;
         
+        // Python client expects 60 bytes: 4+4+4+16+32
+        let mut data = vec![0u8; 60];
+        
         if instance == 0 || instance > state.alarms.len() {
-            // Return default alarm data when no alarms exist
-            let mut data = vec![0u8; 8];
+            // Default alarm data when no alarms exist
             data[0..4].copy_from_slice(&0u32.to_le_bytes()); // Default alarm code
             data[4..8].copy_from_slice(&0u32.to_le_bytes()); // Default alarm data
-            return Ok(data);
+            data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
+            // data[12..28] and data[28..60] remain 0 (default time and name)
+        } else {
+            let alarm = &state.alarms[instance - 1];
+            let alarm_data = alarm.serialize(attribute)?;
+            
+            // Copy alarm data to appropriate positions
+            if alarm_data.len() >= 8 {
+                data[0..8].copy_from_slice(&alarm_data[0..8]);
+            }
+            // Fill remaining fields with default values
+            data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
+            // data[12..28] and data[28..60] remain 0 (default time and name)
         }
         
-        let alarm = &state.alarms[instance - 1];
-        alarm.serialize(attribute)
+        Ok(data)
     }
 }
 
@@ -154,10 +167,15 @@ impl CommandHandler for IntegerVarHandler {
         match service {
             0x0e => { // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    Ok(value.clone())
+                    // Python client expects 2 bytes
+                    if value.len() >= 2 {
+                        Ok(value[0..2].to_vec())
+                    } else {
+                        Ok(vec![0, 0])
+                    }
                 } else {
-                    // Return 4 bytes for integer variable
-                    Ok(vec![0, 0, 0, 0])
+                    // Return 2 bytes for integer variable as expected by Python client
+                    Ok(vec![0, 0])
                 }
             }
             0x10 => { // Write
@@ -182,9 +200,17 @@ impl CommandHandler for RealVarHandler {
         match service {
             0x0e => { // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    Ok(value.clone())
+                    // Python client expects 4 bytes
+                    if value.len() >= 4 {
+                        Ok(value[0..4].to_vec())
+                    } else {
+                        // Extend existing value to 4 bytes
+                        let mut extended_value = value.clone();
+                        extended_value.extend(vec![0u8; 4 - value.len()]);
+                        Ok(extended_value)
+                    }
                 } else {
-                    // Return 4 bytes for real variable
+                    // Return 4 bytes for real variable as expected by Python client
                     Ok(vec![0, 0, 0, 0])
                 }
             }
@@ -325,16 +351,29 @@ impl CommandHandler for AlarmInfoHandler {
         let alarm_number = message.sub_header.instance as usize;
         let attribute = message.sub_header.attribute;
         
+        // Python client expects 60 bytes: 4+4+4+16+32
+        let mut data = vec![0u8; 60];
+        
         if alarm_number == 0 || alarm_number > state.alarms.len() {
-            // Return default alarm data when no alarms exist
-            let mut data = vec![0u8; 8];
+            // Default alarm data when no alarms exist
             data[0..4].copy_from_slice(&0u32.to_le_bytes()); // Default alarm code
             data[4..8].copy_from_slice(&0u32.to_le_bytes()); // Default alarm data
-            return Ok(data);
+            data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
+            // data[12..28] and data[28..60] remain 0 (default time and name)
+        } else {
+            let alarm = &state.alarms[alarm_number - 1];
+            let alarm_data = alarm.serialize(attribute)?;
+            
+            // Copy alarm data to appropriate positions
+            if alarm_data.len() >= 8 {
+                data[0..8].copy_from_slice(&alarm_data[0..8]);
+            }
+            // Fill remaining fields with default values
+            data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
+            // data[12..28] and data[28..60] remain 0 (default time and name)
         }
         
-        let alarm = &state.alarms[alarm_number - 1];
-        alarm.serialize(attribute)
+        Ok(data)
     }
 }
 
@@ -425,10 +464,15 @@ impl CommandHandler for DoubleVarHandler {
         match service {
             0x0e => { // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    Ok(value.clone())
+                    // Python client expects 4 bytes
+                    if value.len() >= 4 {
+                        Ok(value[0..4].to_vec())
+                    } else {
+                        Ok(vec![0, 0, 0, 0])
+                    }
                 } else {
-                    // Return 8 bytes for double variable
-                    Ok(vec![0, 0, 0, 0, 0, 0, 0, 0])
+                    // Return 4 bytes for double variable as expected by Python client
+                    Ok(vec![0, 0, 0, 0])
                 }
             }
             0x10 => { // Write
