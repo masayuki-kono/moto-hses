@@ -1,13 +1,13 @@
 //! Mock HSES UDP server
 //! Usage: cargo run -p moto-hses-mock -- [addr:port]
-//! Default: 127.0.0.1:12222
+//! Default: 127.0.0.1:10040
 
 use std::net::SocketAddr;
 use moto_hses_mock::MockServer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let bind: SocketAddr = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:12222".to_string()).parse()?;
+    let bind: SocketAddr = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:10040".to_string()).parse()?;
     
     // Create and run mock server
     let server = MockServer::new(moto_hses_mock::MockConfig {

@@ -2,7 +2,7 @@ use moto_hses_client::HsesClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let controller = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:12222".to_string());
+    let controller = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:10040".to_string());
     
     println!("Connecting to controller at {}...", controller);
     let client = HsesClient::new(&controller).await?;

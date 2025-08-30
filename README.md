@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 cargo run -p moto-hses-mock
 
 # Terminal 2: Run client example against mock
-cargo run -p moto-hses-client --example read_status -- 127.0.0.1:12222
+cargo run -p moto-hses-client --example read_status -- 127.0.0.1:10040
 ```
 
 ## Implementation Status

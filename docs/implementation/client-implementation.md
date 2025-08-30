@@ -207,7 +207,7 @@ cargo test -p moto-hses-client
 cargo run -p moto-hses-mock
 
 # Run client examples against mock
-cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1:12222
+cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1:10040
 ```
 
 ## Future Enhancements

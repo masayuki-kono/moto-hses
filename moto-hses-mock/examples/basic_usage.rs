@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     
     // Create server configuration
     let config = MockConfig {
-        bind_addr: "127.0.0.1:12222".parse().unwrap(),
+        bind_addr: "127.0.0.1:10040".parse().unwrap(),
         ..Default::default()
     };
     

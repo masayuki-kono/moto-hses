@@ -34,7 +34,7 @@ impl Default for MockConfig {
         io_states.insert(1001, false); // Robot user output 1
 
         Self {
-            bind_addr: "127.0.0.1:12222".parse().unwrap(),
+            bind_addr: "127.0.0.1:10040".parse().unwrap(),
             default_status: proto::Status {
                 step: false,
                 one_cycle: false,

@@ -6,7 +6,7 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:12222".to_string()).clone();
+    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:10040".to_string()).clone();
     
     println!("HSES Client Basic Usage Example");
     println!("Connecting to controller at: {}", controller_addr);

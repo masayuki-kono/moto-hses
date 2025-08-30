@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PORT=${1:-12222}
+PORT=${1:-10040}
 ADDR=127.0.0.1:$PORT
 
 # Run mock in background

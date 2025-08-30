@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:12222".to_string()).clone();
+    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:10040".to_string()).clone();
     
     println!("Target controller: {}", controller_addr);
     
