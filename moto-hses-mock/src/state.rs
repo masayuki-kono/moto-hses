@@ -17,6 +17,7 @@ pub struct MockState {
     pub current_job: Option<String>,
     pub servo_on: bool,
     pub hold_state: bool,
+    pub files: HashMap<String, Vec<u8>>,
 }
 
 impl Default for MockState {
@@ -33,6 +34,9 @@ impl Default for MockState {
         let mut registers = HashMap::new();
         registers.insert(0, 0);
         registers.insert(1, 100);
+
+        let mut files = HashMap::new();
+        files.insert("TEST.JOB".to_string(), b"/JOB\r\n//NAME TEST.JOB\r\n//POS\r\n///NPOS 0,0,0,0,0,0\r\n//INST\r\n///DATE 2022/12/23 15:58\r\n///ATTR SC,RW\r\n///GROUP1 RB1\r\nNOP\r\nEND\r\n".to_vec());
 
         Self {
             status: proto::Status {
@@ -62,6 +66,7 @@ impl Default for MockState {
             current_job: Some("TEST.JOB".to_string()),
             servo_on: true,
             hold_state: false,
+            files,
         }
     }
 }
@@ -135,6 +140,29 @@ impl MockState {
     pub fn update_position(&mut self, position: proto::Position) {
         self.position = position;
     }
+
+    /// Get file list
+    pub fn get_file_list(&self, pattern: &str) -> Vec<String> {
+        self.files.keys()
+            .filter(|name| name.contains(pattern.trim_matches('*')))
+            .cloned()
+            .collect()
+    }
+
+    /// Get file content
+    pub fn get_file(&self, filename: &str) -> Option<&Vec<u8>> {
+        self.files.get(filename)
+    }
+
+    /// Set file content
+    pub fn set_file(&mut self, filename: String, content: Vec<u8>) {
+        self.files.insert(filename, content);
+    }
+
+    /// Delete file
+    pub fn delete_file(&mut self, filename: &str) -> bool {
+        self.files.remove(filename).is_some()
+    }
 }
 
 /// Thread-safe state wrapper
@@ -166,5 +194,13 @@ impl SharedState {
 impl Default for SharedState {
     fn default() -> Self {
         Self::new(MockState::default())
+    }
+}
+
+impl Clone for SharedState {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
     }
 }

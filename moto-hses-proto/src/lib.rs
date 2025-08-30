@@ -20,5 +20,5 @@ pub use types::{
 };
 pub use position::{Position, PulsePosition, CartesianPosition};
 pub use status::{Status, StatusWrapper};
-pub use message::{HsesMessage, HsesHeader, HsesSubHeader};
+pub use message::{HsesRequestMessage, HsesResponseMessage, HsesCommonHeader, HsesRequestSubHeader, HsesResponseSubHeader};
 pub use alarm::{Alarm, AlarmAttribute};

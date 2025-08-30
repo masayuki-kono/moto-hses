@@ -3,9 +3,9 @@
 use bytes::{Buf, BufMut, BytesMut};
 use crate::error::ProtocolError;
 
-// HSES Message Structure
+// HSES Common Header (0-23 bytes)
 #[derive(Debug, Clone)]
-pub struct HsesHeader {
+pub struct HsesCommonHeader {
     pub magic: [u8; 4],
     pub header_size: u16,
     pub payload_size: u16,
@@ -17,7 +17,7 @@ pub struct HsesHeader {
     pub reserved: [u8; 8],
 }
 
-impl HsesHeader {
+impl HsesCommonHeader {
     pub fn new(division: u8, ack: u8, request_id: u8, payload_size: u16) -> Self {
         Self {
             magic: *b"YERC",
@@ -81,8 +81,9 @@ impl HsesHeader {
     }
 }
 
+// Request Sub-header (24-31 bytes)
 #[derive(Debug, Clone)]
-pub struct HsesSubHeader {
+pub struct HsesRequestSubHeader {
     pub command: u16,
     pub instance: u16,
     pub attribute: u8,
@@ -90,7 +91,7 @@ pub struct HsesSubHeader {
     pub padding: u16,
 }
 
-impl HsesSubHeader {
+impl HsesRequestSubHeader {
     pub fn new(command: u16, instance: u16, attribute: u8, service: u8) -> Self {
         Self {
             command,
@@ -133,17 +134,76 @@ impl HsesSubHeader {
     }
 }
 
+// Response Sub-header (24-31 bytes)
 #[derive(Debug, Clone)]
-pub struct HsesMessage {
-    pub header: HsesHeader,
-    pub sub_header: HsesSubHeader,
+pub struct HsesResponseSubHeader {
+    pub service: u8,
+    pub status: u8,
+    pub added_status_size: u8,
+    pub padding1: u8,
+    pub added_status: u16,
+    pub padding2: u16,
+}
+
+impl HsesResponseSubHeader {
+    pub fn new(service: u8, status: u8, added_status: u16) -> Self {
+        Self {
+            service: service + 0x80, // Add 0x80 to service for response
+            status,
+            added_status_size: 2, // 16-bit added_status
+            padding1: 0,
+            added_status,
+            padding2: 0,
+        }
+    }
+
+    pub fn encode(&self, dst: &mut BytesMut) {
+        dst.put_u8(self.service);
+        dst.put_u8(self.status);
+        dst.put_u8(self.added_status_size);
+        dst.put_u8(self.padding1);
+        dst.put_u16_le(self.added_status);
+        dst.put_u16_le(self.padding2);
+    }
+
+    pub fn decode(src: &mut &[u8]) -> Result<Self, ProtocolError> {
+        if src.len() < 8 {
+            return Err(ProtocolError::Underflow);
+        }
+
+        let mut buf = *src;
+        let service = buf.get_u8();
+        let status = buf.get_u8();
+        let added_status_size = buf.get_u8();
+        let padding1 = buf.get_u8();
+        let added_status = buf.get_u16_le();
+        let padding2 = buf.get_u16_le();
+
+        *src = &buf[..];
+
+        Ok(Self {
+            service,
+            status,
+            added_status_size,
+            padding1,
+            added_status,
+            padding2,
+        })
+    }
+}
+
+// Request Message
+#[derive(Debug, Clone)]
+pub struct HsesRequestMessage {
+    pub header: HsesCommonHeader,
+    pub sub_header: HsesRequestSubHeader,
     pub payload: Vec<u8>,
 }
 
-impl HsesMessage {
+impl HsesRequestMessage {
     pub fn new(division: u8, ack: u8, request_id: u8, command: u16, instance: u16, attribute: u8, service: u8, payload: Vec<u8>) -> Self {
-        let header = HsesHeader::new(division, ack, request_id, payload.len() as u16);
-        let sub_header = HsesSubHeader::new(command, instance, attribute, service);
+        let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
+        let sub_header = HsesRequestSubHeader::new(command, instance, attribute, service);
         Self { header, sub_header, payload }
     }
 
@@ -157,8 +217,41 @@ impl HsesMessage {
 
     pub fn decode(src: &[u8]) -> Result<Self, ProtocolError> {
         let mut buf = src;
-        let header = HsesHeader::decode(&mut buf)?;
-        let sub_header = HsesSubHeader::decode(&mut buf)?;
+        let header = HsesCommonHeader::decode(&mut buf)?;
+        let sub_header = HsesRequestSubHeader::decode(&mut buf)?;
+        let payload = buf.to_vec();
+        
+        Ok(Self { header, sub_header, payload })
+    }
+}
+
+// Response Message
+#[derive(Debug, Clone)]
+pub struct HsesResponseMessage {
+    pub header: HsesCommonHeader,
+    pub sub_header: HsesResponseSubHeader,
+    pub payload: Vec<u8>,
+}
+
+impl HsesResponseMessage {
+    pub fn new(division: u8, ack: u8, request_id: u8, service: u8, status: u8, added_status: u16, payload: Vec<u8>) -> Self {
+        let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
+        let sub_header = HsesResponseSubHeader::new(service, status, added_status);
+        Self { header, sub_header, payload }
+    }
+
+    pub fn encode(&self) -> BytesMut {
+        let mut buf = BytesMut::with_capacity(32 + self.payload.len());
+        self.header.encode(&mut buf);
+        self.sub_header.encode(&mut buf);
+        buf.extend_from_slice(&self.payload);
+        buf
+    }
+
+    pub fn decode(src: &[u8]) -> Result<Self, ProtocolError> {
+        let mut buf = src;
+        let header = HsesCommonHeader::decode(&mut buf)?;
+        let sub_header = HsesResponseSubHeader::decode(&mut buf)?;
         let payload = buf.to_vec();
         
         Ok(Self { header, sub_header, payload })
