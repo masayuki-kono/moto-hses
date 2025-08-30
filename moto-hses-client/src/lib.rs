@@ -4,8 +4,6 @@ pub mod types;
 pub mod connection;
 pub mod protocol;
 pub mod convenience;
-#[cfg(test)]
-pub mod tests;
 
 // Re-export main types for convenience
 pub use types::{HsesClient, ClientConfig, ClientError};
