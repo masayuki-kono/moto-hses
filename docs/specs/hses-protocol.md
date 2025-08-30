@@ -736,6 +736,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Only network input signal is writable
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): I/O data
+    - Byte 0 : IO Data
+    - Byte 1-3: Reserved
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -749,6 +752,8 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
   - 32-bit integer (4 bytes): I/O data
+    - Byte 0 : IO Data
+    - Byte 1-3: Reserved
   - I/O data exists only when requested by the client
 
 **Note**: For detailed specifications of all commands, refer to the official HSES manual. The above examples show the basic structure and common patterns used in robot control commands.
@@ -766,6 +771,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Register 0 to 559 is writable
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): Register data
+    - Byte 0-1: Register Data
+    - Byte 2-3: Reserved
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -779,6 +787,8 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
   - 32-bit integer (4 bytes): Register data
+    - Byte 0-1: Register Data
+    - Byte 2-3: Reserved
   - Register data exists only when requested by the client
 
 #### Byte Variable (B) Reading / Writing Command (Command 0x7A)
@@ -799,6 +809,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - 32-bit integer (4 bytes): B variable data
     - Byte 0: B variable
     - Byte 1-3: Reserved
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -812,7 +823,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
   - 32-bit integer (4 bytes): B variable data
-    - Byte 0: B variable
+    - Byte 0 : B variable
     - Byte 1-3: Reserved
   - The data exists only when requested by the client
 
@@ -832,7 +843,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): I variable data
-    - Byte 0-3: I variable
+    - Byte 0-1: I variable
+    - Byte 2-3: Reserved
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -844,9 +857,10 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
+- **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): I variable data
-    - Byte 0-3: I variable
+    - Byte 0-1: I variable
+    - Byte 2-3: Reserved
   - The data exists only when requested by the client
 
 #### Double Precision Integer Type Variable (D) Reading / Writing Command (Command 0x7C)
@@ -866,6 +880,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): D variable data
     - Byte 0-3: D variable
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -898,6 +913,8 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): R variable data
+    - Byte 0-3: R variable
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -911,6 +928,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
   - 32-bit integer (4 bytes): R variable data
+    - Byte 0-3: R variable
   - The data exists only when requested by the client
 
 #### Character Type Variable (S) Reading / Writing Command (Command 0x7E)
@@ -928,9 +946,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 32-bit integer (4 bytes): S variable data
-    - Byte 0: S variable
-    - Byte 1-3: Reserved
+  - 32-bit integer (4 bytes)x4: S variable data
+    - Byte 0-11: S variable
+  - Data exists during the writing operation only
 
 **Response Structure:**
 
@@ -943,9 +961,8 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 32-bit integer (4 bytes): S variable data
-    - Byte 0: S variable
-    - Byte 1-3: Reserved
+  - 32-bit integer (4 bytes)x4: S variable data
+    - Byte 0-11: S variable
   - The data exists only when requested by the client
 
 #### Robot Position Type Variable (P) Reading / Writing Command (Command 0x7F)
