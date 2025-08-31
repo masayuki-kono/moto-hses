@@ -6,7 +6,6 @@ license = "Apache-2.0"
 
 [dependencies]
 tokio = { workspace = true }
-bytes = { workspace = true }
 thiserror = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
 
