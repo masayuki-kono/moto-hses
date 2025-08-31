@@ -1,0 +1,196 @@
+# Pre-Push and Pull Request Rules
+
+## Pre-Push Checklist
+
+Before pushing code to any branch, especially before creating pull requests, ensure all local checks pass:
+
+### 1. Code Formatting
+
+```bash
+cargo fmt --all -- --check
+```
+
+- **Required**: All code must be properly formatted
+- **Fix if needed**: `cargo fmt --all`
+
+### 2. Static Analysis
+
+```bash
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+- **Required**: No Clippy warnings or errors
+- **Fix if needed**: Address all warnings before pushing
+
+### 3. Tests
+
+```bash
+cargo test --all-features --workspace
+```
+
+- **Required**: All tests must pass
+- **Coverage**: Ensure new functionality has appropriate test coverage
+
+### 4. Security Audit
+
+```bash
+cargo audit
+```
+
+- **Required**: No known security vulnerabilities
+- **Action**: Update dependencies if vulnerabilities are found
+
+### 5. Dependency Check
+
+```bash
+cargo outdated
+```
+
+- **Recommended**: Check for outdated dependencies
+- **Action**: Update dependencies when safe to do so
+
+## Pull Request Requirements
+
+### Title Format
+
+Follow conventional commit format:
+
+```
+type: brief description
+```
+
+Examples:
+
+- `feat: implement comprehensive file operations`
+- `fix: resolve file handling issues`
+- `refactor: improve mock server architecture`
+
+### Description Template
+
+Use this structured format for all pull requests:
+
+```markdown
+## Overview
+
+Brief description of what this PR accomplishes.
+
+## Major Changes
+
+- ✨ **Feature**: Description of new features
+- 🔧 **Improvement**: Description of improvements
+- 🐛 **Fix**: Description of bug fixes
+- 🏗️ **Refactor**: Description of refactoring
+
+## Technical Details
+
+- Specific implementation details
+- Architecture changes
+- Performance improvements
+
+## Testing
+
+- How to test the changes
+- Test coverage information
+- Manual testing steps if applicable
+
+## Breaking Changes
+
+- List any breaking changes
+- Migration steps if needed
+
+## Related Issues
+
+- Closes #123
+- Fixes #456
+- Related to #789
+```
+
+### Required Sections
+
+- **Overview**: Clear summary of changes
+- **Major Changes**: Categorized list of changes
+- **Testing**: How changes were tested
+- **Breaking Changes**: If any (or "None" if none)
+
+### Optional Sections
+
+- **Technical Details**: For complex changes
+- **Screenshots**: For UI changes
+- **Performance Impact**: For performance-related changes
+
+## Code Review Standards
+
+### Before Requesting Review
+
+1. ✅ All pre-push checks pass
+2. ✅ Self-review completed
+3. ✅ Tests written and passing
+4. ✅ Documentation updated
+5. ✅ No TODO comments or debug code
+
+### Review Request
+
+- Tag appropriate reviewers
+- Provide context for complex changes
+- Highlight areas needing special attention
+
+## CI/CD Integration
+
+### Required Checks
+
+The following GitHub Actions must pass before merging:
+
+- **Rust Tests**: Code formatting, Clippy, unit tests
+- **Security Audit**: Security vulnerability checks
+
+### Branch Protection
+
+- Pull request reviews required
+- Status checks must pass
+- Branches must be up to date
+
+## Quality Gates
+
+### Code Quality
+
+- No Clippy warnings
+- Proper error handling
+- Meaningful variable names
+- Clear function documentation
+
+### Testing Quality
+
+- Unit tests for new functionality
+- Integration tests for API changes
+- Test coverage maintained or improved
+
+### Documentation Quality
+
+- README updates for user-facing changes
+- Code comments for complex logic
+- API documentation for public interfaces
+
+## Emergency Procedures
+
+### Hotfixes
+
+For critical bug fixes:
+
+1. Create `hotfix/description` branch from main
+2. Follow all pre-push checks
+3. Expedited review process
+4. Merge to main and backport to development branches
+
+### Rollbacks
+
+If issues are discovered after merge:
+
+1. Create `revert/commit-hash` branch
+2. Revert problematic changes
+3. Follow normal PR process
+4. Investigate root cause separately
+   description:
+   globs:
+   alwaysApply: true
+
+---
