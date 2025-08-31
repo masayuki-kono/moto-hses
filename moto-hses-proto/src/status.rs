@@ -1,8 +1,8 @@
 //! Status data structures and operations
 
-use bytes::Buf;
 use crate::error::ProtocolError;
 use crate::types::VariableType;
+use bytes::Buf;
 
 // Enhanced status structure
 #[derive(Debug, Clone)]
@@ -51,37 +51,79 @@ impl Status {
         })
     }
 
-    pub fn is_running(&self) -> bool { self.running }
-    pub fn is_servo_on(&self) -> bool { self.servo_on }
-    pub fn has_alarm(&self) -> bool { self.alarm }
-    pub fn is_teach_mode(&self) -> bool { self.teach }
-    pub fn is_play_mode(&self) -> bool { self.play }
-    pub fn is_remote_mode(&self) -> bool { self.remote }
+    pub fn is_running(&self) -> bool {
+        self.running
+    }
+    pub fn is_servo_on(&self) -> bool {
+        self.servo_on
+    }
+    pub fn has_alarm(&self) -> bool {
+        self.alarm
+    }
+    pub fn is_teach_mode(&self) -> bool {
+        self.teach
+    }
+    pub fn is_play_mode(&self) -> bool {
+        self.play
+    }
+    pub fn is_remote_mode(&self) -> bool {
+        self.remote
+    }
 }
 
 impl VariableType for Status {
-    fn command_id() -> u16 { 0x72 }
+    fn command_id() -> u16 {
+        0x72
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
         let mut status_word1 = 0u16;
         let mut status_word2 = 0u16;
-        
-        if self.step { status_word1 |= 0x0001; }
-        if self.one_cycle { status_word1 |= 0x0002; }
-        if self.continuous { status_word1 |= 0x0004; }
-        if self.running { status_word1 |= 0x0008; }
-        if self.speed_limited { status_word1 |= 0x0010; }
-        if self.teach { status_word1 |= 0x0020; }
-        if self.play { status_word1 |= 0x0040; }
-        if self.remote { status_word1 |= 0x0080; }
-        
-        if self.teach_pendant_hold { status_word2 |= 0x0002; }
-        if self.external_hold { status_word2 |= 0x0004; }
-        if self.command_hold { status_word2 |= 0x0008; }
-        if self.alarm { status_word2 |= 0x0010; }
-        if self.error { status_word2 |= 0x0020; }
-        if self.servo_on { status_word2 |= 0x0040; }
-        
+
+        if self.step {
+            status_word1 |= 0x0001;
+        }
+        if self.one_cycle {
+            status_word1 |= 0x0002;
+        }
+        if self.continuous {
+            status_word1 |= 0x0004;
+        }
+        if self.running {
+            status_word1 |= 0x0008;
+        }
+        if self.speed_limited {
+            status_word1 |= 0x0010;
+        }
+        if self.teach {
+            status_word1 |= 0x0020;
+        }
+        if self.play {
+            status_word1 |= 0x0040;
+        }
+        if self.remote {
+            status_word1 |= 0x0080;
+        }
+
+        if self.teach_pendant_hold {
+            status_word2 |= 0x0002;
+        }
+        if self.external_hold {
+            status_word2 |= 0x0004;
+        }
+        if self.command_hold {
+            status_word2 |= 0x0008;
+        }
+        if self.alarm {
+            status_word2 |= 0x0010;
+        }
+        if self.error {
+            status_word2 |= 0x0020;
+        }
+        if self.servo_on {
+            status_word2 |= 0x0040;
+        }
+
         data.extend_from_slice(&status_word1.to_le_bytes());
         data.extend_from_slice(&status_word2.to_le_bytes());
         Ok(data)
@@ -95,7 +137,9 @@ impl VariableType for Status {
 pub struct StatusWrapper(pub Status);
 
 impl VariableType for StatusWrapper {
-    fn command_id() -> u16 { 0x72 }
+    fn command_id() -> u16 {
+        0x72
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         self.0.serialize()
     }
@@ -142,7 +186,7 @@ mod tests {
             error: false,
             servo_on: true,
         };
-        
+
         let serialized = status.serialize().unwrap();
         let deserialized = Status::deserialize(&serialized).unwrap();
         assert_eq!(status.step, deserialized.step);
@@ -168,7 +212,7 @@ mod tests {
             error: false,
             servo_on: true,
         };
-        
+
         assert!(status.is_running());
         assert!(status.is_servo_on());
         assert!(!status.has_alarm());
@@ -180,7 +224,7 @@ mod tests {
     #[test]
     fn test_status_variable_type_trait() {
         assert_eq!(Status::command_id(), 0x72);
-        
+
         let status = Status {
             step: true,
             one_cycle: false,
@@ -197,7 +241,7 @@ mod tests {
             error: false,
             servo_on: false,
         };
-        
+
         let serialized = status.serialize().unwrap();
         let deserialized = Status::deserialize(&serialized).unwrap();
         assert_eq!(status.step, deserialized.step);
@@ -221,10 +265,10 @@ mod tests {
             error: false,
             servo_on: false,
         };
-        
+
         let wrapper = StatusWrapper(status.clone());
         assert_eq!(StatusWrapper::command_id(), 0x72);
-        
+
         let serialized = wrapper.serialize().unwrap();
         let deserialized = StatusWrapper::deserialize(&serialized).unwrap();
         let deserialized_status: Status = deserialized.into();

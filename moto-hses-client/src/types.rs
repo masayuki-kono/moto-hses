@@ -1,13 +1,13 @@
 //! Type definitions for HSES client
 
-use std::time::Duration;
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::atomic::AtomicU8;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::collections::HashMap;
-use std::sync::atomic::AtomicU8;
-use tokio::net::UdpSocket;
+use std::time::Duration;
 use thiserror::Error;
+use tokio::net::UdpSocket;
 
 use moto_hses_proto::ProtocolError;
 
@@ -85,7 +85,7 @@ mod tests {
     fn test_client_error_display() {
         let error = ClientError::TimeoutError("test timeout".to_string());
         assert_eq!(error.to_string(), "Timeout error: test timeout");
-        
+
         let error = ClientError::SystemError("test error".to_string());
         assert_eq!(error.to_string(), "System error: test error");
     }

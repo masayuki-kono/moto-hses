@@ -2,16 +2,18 @@ use moto_hses_client::HsesClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let controller = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:10040".to_string());
-    
+    let controller = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:10040".to_string());
+
     println!("Connecting to controller at {}...", controller);
     let client = HsesClient::new(&controller).await?;
-    
+
     println!("Successfully connected to controller");
 
     println!("Reading robot status...");
     let status = client.read_status().await?;
-    
+
     println!("Status: {:?}", status);
     println!("Running: {}", status.is_running());
     println!("Servo on: {}", status.is_servo_on());
@@ -19,6 +21,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Error: {}", status.error);
     println!("Play mode: {}", status.is_play_mode());
     println!("Teach mode: {}", status.is_teach_mode());
-    
+
     Ok(())
 }

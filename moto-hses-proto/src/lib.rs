@@ -1,22 +1,23 @@
 //! moto-hses-proto - HSES (High Speed Ethernet Server) protocol implementation
 
+pub mod alarm;
 pub mod error;
-pub mod types;
+pub mod message;
 pub mod position;
 pub mod status;
-pub mod message;
+pub mod types;
 pub mod variables;
-pub mod alarm;
 
 // Re-export commonly used items for convenience
-pub use error::ProtocolError;
-pub use types::{
-    Command, VariableType, VarType, Variable,
-    Division, Service, CoordinateSystem, CoordinateSystemType,
-    ReadVar, WriteVar, ReadStatus, ReadCurrentPosition,
-    DEFAULT_PORT, FILE_PORT,
-};
-pub use position::{Position, PulsePosition, CartesianPosition};
-pub use status::{Status, StatusWrapper};
-pub use message::{HsesRequestMessage, HsesResponseMessage, HsesCommonHeader, HsesRequestSubHeader, HsesResponseSubHeader};
 pub use alarm::{Alarm, AlarmAttribute};
+pub use error::ProtocolError;
+pub use message::{
+    HsesCommonHeader, HsesRequestMessage, HsesRequestSubHeader, HsesResponseMessage,
+    HsesResponseSubHeader,
+};
+pub use position::{CartesianPosition, Position, PulsePosition};
+pub use status::{Status, StatusWrapper};
+pub use types::{
+    Command, CoordinateSystem, CoordinateSystemType, Division, ReadCurrentPosition, ReadStatus,
+    ReadVar, Service, VarType, Variable, VariableType, WriteVar, DEFAULT_PORT, FILE_PORT,
+};

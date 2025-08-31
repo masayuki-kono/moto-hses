@@ -1,9 +1,9 @@
 //! Mock server state management
 
+use moto_hses_proto as proto;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use moto_hses_proto as proto;
 
 /// Mock server state
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ impl Default for MockState {
         variables.insert(2, vec![0x00, 0x00, 0x20, 0x41]); // D002 = 10.0
 
         let mut io_states = HashMap::new();
-        io_states.insert(1, true);   // Robot user input 1
+        io_states.insert(1, true); // Robot user input 1
         io_states.insert(1001, false); // Robot user output 1
 
         let mut registers = HashMap::new();
@@ -57,7 +57,7 @@ impl Default for MockState {
             },
             position: proto::Position::Pulse(proto::PulsePosition::new(
                 [0, 0, 0, 0, 0, 0, 0, 0],
-                1
+                1,
             )),
             variables,
             io_states,
@@ -143,7 +143,8 @@ impl MockState {
 
     /// Get file list
     pub fn get_file_list(&self, pattern: &str) -> Vec<String> {
-        self.files.keys()
+        self.files
+            .keys()
             .filter(|name| name.contains(pattern.trim_matches('*')))
             .cloned()
             .collect()

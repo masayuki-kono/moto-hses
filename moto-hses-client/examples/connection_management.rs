@@ -1,16 +1,19 @@
-use moto_hses_client::{HsesClient, ClientConfig, ClientError};
+use moto_hses_client::{ClientConfig, ClientError, HsesClient};
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("HSES Client Connection Management Example");
-    
+
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:10040".to_string()).clone();
-    
+    let controller_addr = args
+        .get(1)
+        .unwrap_or(&"127.0.0.1:10040".to_string())
+        .clone();
+
     println!("Target controller: {}", controller_addr);
-    
+
     // Create configuration with aggressive retry settings
     let config = ClientConfig {
         timeout: Duration::from_millis(200),
@@ -18,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_delay: Duration::from_millis(100),
         buffer_size: 8192,
     };
-    
+
     // Attempt to connect with error handling
     println!("\n--- Connection Attempt ---");
     let client = match HsesClient::new_with_config(&controller_addr, config).await {
@@ -44,11 +47,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
     };
-    
+
     // Verify connection status
     println!("\n--- Connection Status ---");
     println!("✓ Client created successfully");
-    
+
     // Test basic communication
     println!("\n--- Communication Test ---");
     match client.read_status().await {
@@ -67,12 +70,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Communication failed: {}", e);
         }
     }
-    
+
     // Demonstrate reconnection
     println!("\n--- Reconnection Test ---");
     println!("UDP is connectionless, so reconnection is not applicable");
     println!("✓ Client is ready for communication");
-    
+
     // Test connection with invalid address
     println!("\n--- Invalid Address Test ---");
     let invalid_config = ClientConfig {
@@ -81,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_delay: Duration::from_millis(50),
         buffer_size: 8192,
     };
-    
+
     match HsesClient::new_with_config("192.168.1.999:10040", invalid_config).await {
         Ok(_) => {
             println!("✓ Unexpectedly connected to invalid address");
@@ -96,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✓ Failed as expected: {}", e);
         }
     }
-    
+
     println!("\n--- Connection management example completed ---");
     Ok(())
 }
