@@ -20,17 +20,16 @@ impl MockServer {
     pub async fn new(
         config: crate::MockConfig,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let robot_socket = Arc::new(UdpSocket::bind(config.bind_addr).await?);
+        let robot_addr = config.robot_addr();
+        let file_addr = config.file_addr();
 
-        // Use configured file port or fallback to bind_addr.port() + 1
-        let file_port = config.file_port.unwrap_or(config.bind_addr.port() + 1);
-        let file_addr: SocketAddr = format!("127.0.0.1:{}", file_port).parse()?;
+        let robot_socket = Arc::new(UdpSocket::bind(robot_addr).await?);
         let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
 
         let state = SharedState::new(MockState::default());
         let handlers = CommandHandlerRegistry::default();
 
-        eprintln!("Mock server listening on {}", config.bind_addr);
+        eprintln!("Mock server listening on {}", robot_addr);
         eprintln!("Mock server listening on {}", file_addr);
 
         Ok(Self {
@@ -312,13 +311,18 @@ impl MockServerBuilder {
         }
     }
 
-    pub fn bind_addr(mut self, addr: SocketAddr) -> Self {
-        self.config.bind_addr = addr;
+    pub fn host(mut self, host: impl Into<String>) -> Self {
+        self.config.host = host.into();
+        self
+    }
+
+    pub fn robot_port(mut self, port: u16) -> Self {
+        self.config.robot_port = port;
         self
     }
 
     pub fn file_port(mut self, port: u16) -> Self {
-        self.config.file_port = Some(port);
+        self.config.file_port = port;
         self
     }
 
