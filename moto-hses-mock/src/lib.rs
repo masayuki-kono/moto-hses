@@ -15,16 +15,18 @@ pub use state::MockState;
 /// Mock server configuration
 #[derive(Debug, Clone)]
 pub struct MockConfig {
-    pub bind_addr: SocketAddr,
-    pub file_port: Option<u16>, // Optional file port, if None, will use bind_addr.port() + 1
+    pub host: String,
+    pub robot_port: u16,
+    pub file_port: u16,
     pub default_status: proto::Status,
     pub default_position: proto::Position,
     pub variables: HashMap<u8, Vec<u8>>,
     pub io_states: HashMap<u16, bool>,
 }
 
-impl Default for MockConfig {
-    fn default() -> Self {
+impl MockConfig {
+    /// Create a new MockConfig with specified host and ports
+    pub fn new(host: impl Into<String>, robot_port: u16, file_port: u16) -> Self {
         let mut variables = HashMap::new();
         variables.insert(0, vec![0x01, 0x00, 0x00, 0x00]); // D000 = 1
         variables.insert(1, vec![0x64, 0x00, 0x00, 0x00]); // D001 = 100
@@ -35,8 +37,9 @@ impl Default for MockConfig {
         io_states.insert(1001, false); // Robot user output 1
 
         Self {
-            bind_addr: "127.0.0.1:10040".parse().unwrap(),
-            file_port: Some(10041), // Default file port
+            host: host.into(),
+            robot_port,
+            file_port,
             default_status: proto::Status {
                 step: false,
                 one_cycle: false,
@@ -61,6 +64,34 @@ impl Default for MockConfig {
             io_states,
         }
     }
+
+    /// Get robot control socket address
+    pub fn robot_addr(&self) -> SocketAddr {
+        format!("{}:{}", self.host, self.robot_port)
+            .parse()
+            .unwrap()
+    }
+
+    /// Get file control socket address
+    pub fn file_addr(&self) -> SocketAddr {
+        format!("{}:{}", self.host, self.file_port).parse().unwrap()
+    }
+
+    /// Get robot control socket address as string
+    pub fn robot_addr_string(&self) -> String {
+        format!("{}:{}", self.host, self.robot_port)
+    }
+
+    /// Get file control socket address as string
+    pub fn file_addr_string(&self) -> String {
+        format!("{}:{}", self.host, self.file_port)
+    }
+}
+
+impl Default for MockConfig {
+    fn default() -> Self {
+        Self::new("127.0.0.1", 10040, 10041)
+    }
 }
 
 /// Test utilities for mock server
@@ -72,22 +103,12 @@ pub mod test_utils {
     pub async fn start_test_server(
     ) -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
     {
-        // Use a high port number to avoid conflicts and permission issues
-        let _config = MockConfig {
-            bind_addr: "127.0.0.1:0".parse().unwrap(),
-            ..Default::default()
-        };
-
         // Try to bind to a specific high port first
         let mut port = 49152; // Start from dynamic port range
         let mut server = None;
 
         while port < 65535 && server.is_none() {
-            let test_config = MockConfig {
-                bind_addr: format!("127.0.0.1:{}", port).parse().unwrap(),
-                file_port: Some(port + 1), // Use next port for file control
-                ..Default::default()
-            };
+            let test_config = MockConfig::new("127.0.0.1", port, port + 1);
 
             match MockServer::new(test_config).await {
                 Ok(s) => server = Some(s),

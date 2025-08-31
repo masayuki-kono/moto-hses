@@ -6,13 +6,24 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let controller_addr = args
-        .get(1)
-        .unwrap_or(&"127.0.0.1:10040".to_string())
-        .clone();
+
+    let (host, robot_port) = match args.as_slice() {
+        [_, host, robot_port] => {
+            // Format: [host] [robot_port]
+            let robot_port: u16 = robot_port
+                .parse()
+                .map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+
+            (host.to_string(), robot_port)
+        }
+        _ => {
+            // Default: 127.0.0.1:10040
+            ("127.0.0.1".to_string(), 10040)
+        }
+    };
 
     println!("HSES Client Basic Usage Example");
-    println!("Connecting to controller at: {}", controller_addr);
+    println!("Connecting to controller at: {}:{}", host, robot_port);
 
     // Create custom configuration
     let config = ClientConfig {
@@ -23,16 +34,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Connect to the controller
-    let client = match HsesClient::new_with_config(&controller_addr, config).await {
-        Ok(client) => {
-            println!("✓ Successfully connected to controller");
-            client
-        }
-        Err(e) => {
-            eprintln!("✗ Failed to connect: {}", e);
-            return Ok(());
-        }
-    };
+    let client =
+        match HsesClient::new_with_config(&format!("{}:{}", host, robot_port), config).await {
+            Ok(client) => {
+                println!("✓ Successfully connected to controller");
+                client
+            }
+            Err(e) => {
+                eprintln!("✗ Failed to connect: {}", e);
+                return Ok(());
+            }
+        };
 
     // Read robot status
     println!("\n--- Robot Status ---");
