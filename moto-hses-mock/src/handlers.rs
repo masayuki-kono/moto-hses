@@ -140,9 +140,17 @@ impl CommandHandler for ByteVarHandler {
         match service {
             0x0e => { // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    Ok(value.clone())
+                    // Protocol specification compliant: 4 bytes (Byte 0: B variable, Byte 1-3: Reserved)
+                    if !value.is_empty() {
+                        let mut response = vec![0u8; 4];
+                        response[0] = value[0];
+                        Ok(response)
+                    } else {
+                        Ok(vec![0, 0, 0, 0])
+                    }
                 } else {
-                    Ok(vec![0])
+                    // Protocol specification compliant: 4 bytes (Byte 0: B variable, Byte 1-3: Reserved)
+                    Ok(vec![0, 0, 0, 0])
                 }
             }
             0x10 => { // Write
@@ -167,15 +175,17 @@ impl CommandHandler for IntegerVarHandler {
         match service {
             0x0e => { // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    // Python client expects 2 bytes
+                    // Protocol specification compliant: 4 bytes (Byte 0-1: I variable, Byte 2-3: Reserved)
                     if value.len() >= 2 {
-                        Ok(value[0..2].to_vec())
+                        let mut response = vec![0u8; 4];
+                        response[0..2].copy_from_slice(&value[0..2]);
+                        Ok(response)
                     } else {
-                        Ok(vec![0, 0])
+                        Ok(vec![0, 0, 0, 0])
                     }
                 } else {
-                    // Return 2 bytes for integer variable as expected by Python client
-                    Ok(vec![0, 0])
+                    // Protocol specification compliant: 4 bytes (Byte 0-1: I variable, Byte 2-3: Reserved)
+                    Ok(vec![0, 0, 0, 0])
                 }
             }
             0x10 => { // Write
