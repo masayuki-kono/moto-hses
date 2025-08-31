@@ -18,14 +18,23 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-audit
-        uses: taiki-e/install-action@cargo-audit
+      - name: Install cargo tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+          args: --version
 
       - name: Install cargo-outdated
-        uses: taiki-e/install-action@cargo-outdated
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-outdated
+          args: --version
 
       - name: Install cargo-machete
-        uses: taiki-e/install-action@cargo-machete
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-machete
+          args: --version
 
       - name: Run security audit
         run: cargo audit
