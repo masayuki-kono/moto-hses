@@ -413,15 +413,12 @@ impl CommandHandler for JobSelectHandler {
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let select_type = message.sub_header.instance;
 
-        match select_type {
-            1 => {
-                // Set execution job
-                if message.payload.len() >= 4 {
-                    // In a real implementation, this would parse the job name
-                    state.set_current_job(Some("SELECTED.JOB".to_string()));
-                }
+        if select_type == 1 {
+            // Set execution job
+            if message.payload.len() >= 4 {
+                // In a real implementation, this would parse the job name
+                state.set_current_job(Some("SELECTED.JOB".to_string()));
             }
-            _ => {}
         }
 
         Ok(vec![])
