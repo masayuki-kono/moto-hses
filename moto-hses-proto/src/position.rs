@@ -34,6 +34,7 @@ pub struct CartesianPosition {
 }
 
 impl CartesianPosition {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         x: f32,
         y: f32,
@@ -116,8 +117,8 @@ impl Position {
                 let _extended_form = buf.get_u32_le();
 
                 let mut joints = [0i32; 8];
-                for i in 0..8 {
-                    joints[i] = buf.get_i32_le();
+                for joint in &mut joints {
+                    *joint = buf.get_i32_le();
                 }
 
                 Ok(Position::Pulse(PulsePosition::new(joints, control_group)))

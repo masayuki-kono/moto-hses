@@ -65,7 +65,7 @@ impl HsesCommonHeader {
         let mut reserved = [0u8; 8];
         buf.copy_to_slice(&mut reserved);
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             magic,
@@ -122,7 +122,7 @@ impl HsesRequestSubHeader {
         let service = buf.get_u8();
         let padding = buf.get_u16_le();
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             command,
@@ -179,7 +179,7 @@ impl HsesResponseSubHeader {
         let added_status = buf.get_u16_le();
         let padding2 = buf.get_u16_le();
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             service,
@@ -201,6 +201,7 @@ pub struct HsesRequestMessage {
 }
 
 impl HsesRequestMessage {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         division: u8,
         ack: u8,
@@ -219,6 +220,8 @@ impl HsesRequestMessage {
             payload,
         }
     }
+
+
 
     pub fn encode(&self) -> BytesMut {
         let mut buf = BytesMut::with_capacity(32 + self.payload.len());

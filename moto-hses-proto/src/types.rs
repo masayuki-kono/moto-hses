@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_variable_type_serialization_f32() {
-        let value: f32 = 3.14159;
+        let value: f32 = std::f32::consts::PI;
         let serialized = value.serialize().unwrap();
         let deserialized = f32::deserialize(&serialized).unwrap();
         assert!((value - deserialized).abs() < f32::EPSILON);
