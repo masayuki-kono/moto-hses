@@ -1,0 +1,3 @@
+[submodule "third-party/fs100"]
+	path = third-party/fs100
+	url = https://github.com/hsinkoyu/fs100.git
