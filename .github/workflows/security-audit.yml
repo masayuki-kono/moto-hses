@@ -21,26 +21,28 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Install cargo-audit
-        uses: actions-rs/install@v1
+      - name: Cache cargo tools
+        uses: actions/cache@v3
         with:
-          crate: cargo-audit
-          version: latest
-          use-tool-cache: true
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-tools-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-tools-
 
-      - name: Install cargo-outdated
-        uses: actions-rs/install@v1
-        with:
-          crate: cargo-outdated
-          version: latest
-          use-tool-cache: true
-
-      - name: Install cargo-machete
-        uses: actions-rs/install@v1
-        with:
-          crate: cargo-machete
-          version: latest
-          use-tool-cache: true
+      - name: Install cargo tools
+        run: |
+          if ! command -v cargo-audit &> /dev/null; then
+            cargo install cargo-audit
+          fi
+          if ! command -v cargo-outdated &> /dev/null; then
+            cargo install cargo-outdated
+          fi
+          if ! command -v cargo-machete &> /dev/null; then
+            cargo install cargo-machete
+          fi
 
       - name: Run security audit
         run: cargo audit
