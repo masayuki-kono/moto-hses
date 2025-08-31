@@ -18,28 +18,14 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo tools
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-tools-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-tools-
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
 
-      - name: Install cargo tools
-        run: |
-          if ! command -v cargo-audit &> /dev/null; then
-            cargo install cargo-audit
-          fi
-          if ! command -v cargo-outdated &> /dev/null; then
-            cargo install cargo-outdated
-          fi
-          if ! command -v cargo-machete &> /dev/null; then
-            cargo install cargo-machete
-          fi
+      - name: Install cargo-outdated
+        uses: taiki-e/install-action@cargo-outdated
+
+      - name: Install cargo-machete
+        uses: taiki-e/install-action@cargo-machete
 
       - name: Run security audit
         run: cargo audit
