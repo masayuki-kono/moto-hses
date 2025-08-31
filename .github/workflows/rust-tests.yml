@@ -28,7 +28,9 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Clippy check
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        uses: giraffate/clippy-action@v2
+        with:
+          args: --all-targets --all-features -- -D warnings
 
       - name: Run tests
         run: cargo test --all-features --workspace
