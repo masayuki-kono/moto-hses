@@ -4,7 +4,7 @@ Rust implementation of Yaskawa High-Speed Ethernet Server (HSES) client library.
 
 ## Overview
 
-This library provides a type-safe, asynchronous Rust client for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol. Based on the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet).
+This library provides a type-safe, asynchronous Rust client for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol.
 
 ## Features
 
