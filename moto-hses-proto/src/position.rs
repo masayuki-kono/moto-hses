@@ -1,8 +1,8 @@
 //! Position data structures and operations
 
-use bytes::Buf;
 use crate::error::ProtocolError;
 use crate::types::{CoordinateSystem, VariableType};
+use bytes::Buf;
 
 // Position data structures
 #[derive(Debug, Clone, PartialEq)]
@@ -13,7 +13,10 @@ pub struct PulsePosition {
 
 impl PulsePosition {
     pub fn new(joints: [i32; 8], control_group: u8) -> Self {
-        Self { joints, control_group }
+        Self {
+            joints,
+            control_group,
+        }
     }
 }
 
@@ -31,8 +34,29 @@ pub struct CartesianPosition {
 }
 
 impl CartesianPosition {
-    pub fn new(x: f32, y: f32, z: f32, rx: f32, ry: f32, rz: f32, tool_no: u8, user_coord_no: u8, coordinate_system: CoordinateSystem) -> Self {
-        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, coordinate_system }
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        x: f32,
+        y: f32,
+        z: f32,
+        rx: f32,
+        ry: f32,
+        rz: f32,
+        tool_no: u8,
+        user_coord_no: u8,
+        coordinate_system: CoordinateSystem,
+    ) -> Self {
+        Self {
+            x,
+            y,
+            z,
+            rx,
+            ry,
+            rz,
+            tool_no,
+            user_coord_no,
+            coordinate_system,
+        }
     }
 }
 
@@ -45,7 +69,7 @@ pub enum Position {
 impl Position {
     pub fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        
+
         match self {
             Position::Pulse(pulse) => {
                 data.extend_from_slice(&0u32.to_le_bytes());
@@ -73,7 +97,7 @@ impl Position {
                 data.extend_from_slice(&0u32.to_le_bytes());
             }
         }
-        
+
         Ok(data)
     }
 
@@ -84,19 +108,19 @@ impl Position {
 
         let mut buf = data;
         let position_type = buf.get_u32_le();
-        
+
         match position_type {
             0 => {
                 let _form = buf.get_u32_le();
                 let control_group = buf.get_u32_le() as u8;
                 let _user_coord = buf.get_u32_le();
                 let _extended_form = buf.get_u32_le();
-                
+
                 let mut joints = [0i32; 8];
-                for i in 0..8 {
-                    joints[i] = buf.get_i32_le();
+                for joint in &mut joints {
+                    *joint = buf.get_i32_le();
                 }
-                
+
                 Ok(Position::Pulse(PulsePosition::new(joints, control_group)))
             }
             16 => {
@@ -104,25 +128,38 @@ impl Position {
                 let tool_no = buf.get_u32_le() as u8;
                 let user_coord_no = buf.get_u32_le() as u8;
                 let _extended_form = buf.get_u32_le();
-                
+
                 let x = buf.get_f32_le() / 1000.0;
                 let y = buf.get_f32_le() / 1000.0;
                 let z = buf.get_f32_le() / 1000.0;
                 let rx = buf.get_f32_le() / 1000.0;
                 let ry = buf.get_f32_le() / 1000.0;
                 let rz = buf.get_f32_le() / 1000.0;
-                
+
                 Ok(Position::Cartesian(CartesianPosition::new(
-                    x, y, z, rx, ry, rz, tool_no, user_coord_no, CoordinateSystem::Base
+                    x,
+                    y,
+                    z,
+                    rx,
+                    ry,
+                    rz,
+                    tool_no,
+                    user_coord_no,
+                    CoordinateSystem::Base,
                 )))
             }
-            _ => Err(ProtocolError::PositionError(format!("Unknown position type: {}", position_type))),
+            _ => Err(ProtocolError::PositionError(format!(
+                "Unknown position type: {}",
+                position_type
+            ))),
         }
     }
 }
 
 impl VariableType for Position {
-    fn command_id() -> u16 { 0x7f }
+    fn command_id() -> u16 {
+        0x7f
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         self.serialize()
     }
@@ -146,7 +183,17 @@ mod tests {
 
     #[test]
     fn test_cartesian_position_creation() {
-        let position = CartesianPosition::new(100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, CoordinateSystem::Base);
+        let position = CartesianPosition::new(
+            100.0,
+            200.0,
+            300.0,
+            0.0,
+            0.0,
+            0.0,
+            1,
+            0,
+            CoordinateSystem::Base,
+        );
         assert_eq!(position.x, 100.0);
         assert_eq!(position.y, 200.0);
         assert_eq!(position.z, 300.0);
@@ -166,7 +213,15 @@ mod tests {
     #[test]
     fn test_cartesian_position_serialization() {
         let position = Position::Cartesian(CartesianPosition::new(
-            100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, CoordinateSystem::Base
+            100.0,
+            200.0,
+            300.0,
+            0.0,
+            0.0,
+            0.0,
+            1,
+            0,
+            CoordinateSystem::Base,
         ));
         let serialized = position.serialize().unwrap();
         let deserialized = Position::deserialize(&serialized).unwrap();
@@ -177,7 +232,7 @@ mod tests {
     fn test_position_variable_type_trait() {
         let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
         assert_eq!(Position::command_id(), 0x7f);
-        
+
         let serialized = position.serialize().unwrap();
         let deserialized = Position::deserialize(&serialized).unwrap();
         assert_eq!(position, deserialized);

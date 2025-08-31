@@ -1,13 +1,14 @@
 //! Variable type implementations
 
-use bytes::Buf;
 use crate::error::ProtocolError;
 use crate::types::VariableType;
-
+use bytes::Buf;
 
 // Implementations for basic variable types
 impl VariableType for u8 {
-    fn command_id() -> u16 { 0x7a }
+    fn command_id() -> u16 {
+        0x7a
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = vec![0u8; 4];
         data[0] = *self;
@@ -22,7 +23,9 @@ impl VariableType for u8 {
 }
 
 impl VariableType for i32 {
-    fn command_id() -> u16 { 0x7b }
+    fn command_id() -> u16 {
+        0x7b
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(self.to_le_bytes().to_vec())
     }
@@ -36,7 +39,9 @@ impl VariableType for i32 {
 }
 
 impl VariableType for f32 {
-    fn command_id() -> u16 { 0x7d }
+    fn command_id() -> u16 {
+        0x7d
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(self.to_le_bytes().to_vec())
     }
@@ -49,11 +54,11 @@ impl VariableType for f32 {
     }
 }
 
-
-
 // Unit type implementation for write operations
 impl VariableType for () {
-    fn command_id() -> u16 { 0x00 }
+    fn command_id() -> u16 {
+        0x00
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }

@@ -1,7 +1,7 @@
 //! HSES message structures and operations
 
-use bytes::{Buf, BufMut, BytesMut};
 use crate::error::ProtocolError;
+use bytes::{Buf, BufMut, BytesMut};
 
 // HSES Common Header (0-23 bytes)
 #[derive(Debug, Clone)]
@@ -65,7 +65,7 @@ impl HsesCommonHeader {
         let mut reserved = [0u8; 8];
         buf.copy_to_slice(&mut reserved);
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             magic,
@@ -122,7 +122,7 @@ impl HsesRequestSubHeader {
         let service = buf.get_u8();
         let padding = buf.get_u16_le();
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             command,
@@ -179,7 +179,7 @@ impl HsesResponseSubHeader {
         let added_status = buf.get_u16_le();
         let padding2 = buf.get_u16_le();
 
-        *src = &buf[..];
+        *src = buf;
 
         Ok(Self {
             service,
@@ -201,10 +201,24 @@ pub struct HsesRequestMessage {
 }
 
 impl HsesRequestMessage {
-    pub fn new(division: u8, ack: u8, request_id: u8, command: u16, instance: u16, attribute: u8, service: u8, payload: Vec<u8>) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        division: u8,
+        ack: u8,
+        request_id: u8,
+        command: u16,
+        instance: u16,
+        attribute: u8,
+        service: u8,
+        payload: Vec<u8>,
+    ) -> Self {
         let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
         let sub_header = HsesRequestSubHeader::new(command, instance, attribute, service);
-        Self { header, sub_header, payload }
+        Self {
+            header,
+            sub_header,
+            payload,
+        }
     }
 
     pub fn encode(&self) -> BytesMut {
@@ -220,8 +234,12 @@ impl HsesRequestMessage {
         let header = HsesCommonHeader::decode(&mut buf)?;
         let sub_header = HsesRequestSubHeader::decode(&mut buf)?;
         let payload = buf.to_vec();
-        
-        Ok(Self { header, sub_header, payload })
+
+        Ok(Self {
+            header,
+            sub_header,
+            payload,
+        })
     }
 }
 
@@ -234,10 +252,22 @@ pub struct HsesResponseMessage {
 }
 
 impl HsesResponseMessage {
-    pub fn new(division: u8, ack: u8, request_id: u8, service: u8, status: u8, added_status: u16, payload: Vec<u8>) -> Self {
+    pub fn new(
+        division: u8,
+        ack: u8,
+        request_id: u8,
+        service: u8,
+        status: u8,
+        added_status: u16,
+        payload: Vec<u8>,
+    ) -> Self {
         let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
         let sub_header = HsesResponseSubHeader::new(service, status, added_status);
-        Self { header, sub_header, payload }
+        Self {
+            header,
+            sub_header,
+            payload,
+        }
     }
 
     pub fn encode(&self) -> BytesMut {
@@ -253,8 +283,12 @@ impl HsesResponseMessage {
         let header = HsesCommonHeader::decode(&mut buf)?;
         let sub_header = HsesResponseSubHeader::decode(&mut buf)?;
         let payload = buf.to_vec();
-        
-        Ok(Self { header, sub_header, payload })
+
+        Ok(Self {
+            header,
+            sub_header,
+            payload,
+        })
     }
 }
 
@@ -279,10 +313,10 @@ mod tests {
         let header = HsesCommonHeader::new(1, 0, 1, 10);
         let mut buf = BytesMut::new();
         header.encode(&mut buf);
-        
+
         let mut data = &buf[..];
         let decoded = HsesCommonHeader::decode(&mut data).unwrap();
-        
+
         assert_eq!(header.magic, decoded.magic);
         assert_eq!(header.header_size, decoded.header_size);
         assert_eq!(header.division, decoded.division);
@@ -306,10 +340,10 @@ mod tests {
         let sub_header = HsesRequestSubHeader::new(0x0070, 1, 0, 1);
         let mut buf = BytesMut::new();
         sub_header.encode(&mut buf);
-        
+
         let mut data = &buf[..];
         let decoded = HsesRequestSubHeader::decode(&mut data).unwrap();
-        
+
         assert_eq!(sub_header.command, decoded.command);
         assert_eq!(sub_header.instance, decoded.instance);
         assert_eq!(sub_header.attribute, decoded.attribute);
@@ -331,10 +365,10 @@ mod tests {
         let sub_header = HsesResponseSubHeader::new(1, 0, 0x0000);
         let mut buf = BytesMut::new();
         sub_header.encode(&mut buf);
-        
+
         let mut data = &buf[..];
         let decoded = HsesResponseSubHeader::decode(&mut data).unwrap();
-        
+
         assert_eq!(sub_header.service, decoded.service);
         assert_eq!(sub_header.status, decoded.status);
         assert_eq!(sub_header.added_status_size, decoded.added_status_size);
@@ -359,9 +393,9 @@ mod tests {
         let payload = vec![1, 2, 3];
         let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone());
         let encoded = message.encode();
-        
+
         let decoded = HsesRequestMessage::decode(&encoded).unwrap();
-        
+
         assert_eq!(message.header.division, decoded.header.division);
         assert_eq!(message.header.ack, decoded.header.ack);
         assert_eq!(message.header.request_id, decoded.header.request_id);
@@ -390,16 +424,19 @@ mod tests {
         let payload = vec![1, 2, 3];
         let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone());
         let encoded = message.encode();
-        
+
         let decoded = HsesResponseMessage::decode(&encoded).unwrap();
-        
+
         assert_eq!(message.header.division, decoded.header.division);
         assert_eq!(message.header.ack, decoded.header.ack);
         assert_eq!(message.header.request_id, decoded.header.request_id);
         assert_eq!(message.header.payload_size, decoded.header.payload_size);
         assert_eq!(message.sub_header.service, decoded.sub_header.service);
         assert_eq!(message.sub_header.status, decoded.sub_header.status);
-        assert_eq!(message.sub_header.added_status, decoded.sub_header.added_status);
+        assert_eq!(
+            message.sub_header.added_status,
+            decoded.sub_header.added_status
+        );
         assert_eq!(message.payload, decoded.payload);
     }
 }

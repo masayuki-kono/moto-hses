@@ -1,6 +1,6 @@
 //! Convenience methods for HSES client
 
-use crate::types::{HsesClient, ClientError};
+use crate::types::{ClientError, HsesClient};
 
 impl HsesClient {
     /// Read an integer variable

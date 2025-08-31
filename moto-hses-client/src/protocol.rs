@@ -1,13 +1,13 @@
 //! Protocol communication for HSES client
 
-use tokio::time::{timeout, sleep};
-use std::sync::atomic::Ordering;
 use moto_hses_proto::{
-    Command, VariableType, Position, Status, StatusWrapper, ReadStatus, ReadCurrentPosition,
-    ReadVar, WriteVar, CoordinateSystemType
+    Command, CoordinateSystemType, Position, ReadCurrentPosition, ReadStatus, ReadVar, Status,
+    StatusWrapper, VariableType, WriteVar,
 };
+use std::sync::atomic::Ordering;
+use tokio::time::{sleep, timeout};
 
-use crate::types::{HsesClient, ClientError};
+use crate::types::{ClientError, HsesClient};
 
 impl HsesClient {
     // High-level API methods
@@ -15,7 +15,10 @@ impl HsesClient {
     where
         T: VariableType,
     {
-        let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
+        let command = ReadVar::<T> {
+            index,
+            _phantom: std::marker::PhantomData,
+        };
         self.send_command_with_retry(command).await
     }
 
@@ -32,37 +35,60 @@ impl HsesClient {
         Ok(result.into())
     }
 
-    pub async fn read_position(&self, control_group: u8, coord_system: CoordinateSystemType) -> Result<Position, ClientError> {
-        let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
+    pub async fn read_position(
+        &self,
+        control_group: u8,
+        coord_system: CoordinateSystemType,
+    ) -> Result<Position, ClientError> {
+        let command = ReadCurrentPosition {
+            control_group,
+            coordinate_system: coord_system,
+        };
         self.send_command_with_retry(command).await
     }
 
     pub async fn read_io(&self, _io_type: u8, _index: u8) -> Result<bool, ClientError> {
         // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
-        Err(ClientError::SystemError("I/O reading not yet implemented".to_string()))
+        Err(ClientError::SystemError(
+            "I/O reading not yet implemented".to_string(),
+        ))
     }
 
-    pub async fn write_io(&self, _io_type: u8, _index: u8, _value: bool) -> Result<(), ClientError> {
+    pub async fn write_io(
+        &self,
+        _io_type: u8,
+        _index: u8,
+        _value: bool,
+    ) -> Result<(), ClientError> {
         // TODO: Implement I/O writing command
         // For now, return a placeholder implementation
-        Err(ClientError::SystemError("I/O writing not yet implemented".to_string()))
+        Err(ClientError::SystemError(
+            "I/O writing not yet implemented".to_string(),
+        ))
     }
 
     pub async fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
         // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
-        Err(ClientError::SystemError("Job execution not yet implemented".to_string()))
+        Err(ClientError::SystemError(
+            "Job execution not yet implemented".to_string(),
+        ))
     }
 
     pub async fn stop_job(&self) -> Result<(), ClientError> {
         // TODO: Implement job stop command
         // For now, return a placeholder implementation
-        Err(ClientError::SystemError("Job stop not yet implemented".to_string()))
+        Err(ClientError::SystemError(
+            "Job stop not yet implemented".to_string(),
+        ))
     }
 
     // Generic command sending with retry logic
-    async fn send_command_with_retry<C: Command>(&self, command: C) -> Result<C::Response, ClientError> 
+    async fn send_command_with_retry<C: Command>(
+        &self,
+        command: C,
+    ) -> Result<C::Response, ClientError>
     where
         C::Response: VariableType,
     {
@@ -75,7 +101,7 @@ impl HsesClient {
                 Err(e) => {
                     last_error = Some(e);
                     attempts += 1;
-                    
+
                     if attempts < self.config.retry_count {
                         sleep(self.config.retry_delay).await;
                     }
@@ -87,7 +113,7 @@ impl HsesClient {
     }
 
     // Generic command sending
-    async fn send_command<C: Command>(&self, command: &C) -> Result<C::Response, ClientError> 
+    async fn send_command<C: Command>(&self, command: &C) -> Result<C::Response, ClientError>
     where
         C::Response: VariableType,
     {
@@ -96,8 +122,15 @@ impl HsesClient {
 
         // Create and send message
         let message = self.create_message(C::command_id(), request_id, payload)?;
-        eprintln!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
-        self.inner.socket.send_to(&message, self.inner.remote_addr).await?;
+        eprintln!(
+            "Sending message to {}: {} bytes",
+            self.inner.remote_addr,
+            message.len()
+        );
+        self.inner
+            .socket
+            .send_to(&message, self.inner.remote_addr)
+            .await?;
 
         // Wait for response
         let response = self.wait_for_response(request_id).await?;
@@ -106,7 +139,12 @@ impl HsesClient {
         self.deserialize_response::<C::Response>(&response)
     }
 
-    fn create_message(&self, command: u16, request_id: u8, payload: Vec<u8>) -> Result<Vec<u8>, ClientError> {
+    fn create_message(
+        &self,
+        command: u16,
+        request_id: u8,
+        payload: Vec<u8>,
+    ) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
         // Magic bytes "YERC"
@@ -161,11 +199,15 @@ impl HsesClient {
         let mut buffer = vec![0u8; self.config.buffer_size];
 
         loop {
-            let (len, _addr) = timeout(self.config.timeout, self.inner.socket.recv_from(&mut buffer)).await
-                .map_err(|_| ClientError::TimeoutError("Response timeout".to_string()))??;
+            let (len, _addr) = timeout(
+                self.config.timeout,
+                self.inner.socket.recv_from(&mut buffer),
+            )
+            .await
+            .map_err(|_| ClientError::TimeoutError("Response timeout".to_string()))??;
 
             let response_data = &buffer[..len];
-            
+
             // Debug: Log received data
             eprintln!("Received response: {} bytes", len);
             if len >= 4 {
@@ -202,14 +244,14 @@ impl HsesClient {
 
             // Extract payload size (bytes 6-7)
             let payload_size = u16::from_le_bytes([response_data[6], response_data[7]]) as usize;
-            
+
             // Ensure we have enough data
             if response_data.len() < 32 + payload_size {
                 continue;
             }
 
             // Extract payload (starting from byte 32)
-            let payload = response_data[32..32+payload_size].to_vec();
+            let payload = response_data[32..32 + payload_size].to_vec();
 
             return Ok(payload);
         }

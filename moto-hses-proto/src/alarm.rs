@@ -39,96 +39,114 @@ impl Alarm {
     /// Serialize alarm data for response
     pub fn serialize(&self, attribute: u8) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        
+
         match attribute {
-            1 => { // Alarm code
+            1 => {
+                // Alarm code
                 data.extend_from_slice(&self.code.to_le_bytes());
             }
-            2 => { // Alarm data
+            2 => {
+                // Alarm data
                 data.extend_from_slice(&self.data.to_le_bytes());
             }
-            3 => { // Alarm type
+            3 => {
+                // Alarm type
                 data.extend_from_slice(&self.alarm_type.to_le_bytes());
             }
-            4 => { // Alarm time
+            4 => {
+                // Alarm time
                 let time_bytes = self.time.as_bytes();
                 let mut padded_time = vec![0u8; 16];
-                padded_time[..time_bytes.len().min(16)].copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
+                padded_time[..time_bytes.len().min(16)]
+                    .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
                 data.extend_from_slice(&padded_time);
             }
-            5 => { // Alarm name
+            5 => {
+                // Alarm name
                 let name_bytes = self.name.as_bytes();
                 let mut padded_name = vec![0u8; 32];
-                padded_name[..name_bytes.len().min(32)].copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
+                padded_name[..name_bytes.len().min(32)]
+                    .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
                 data.extend_from_slice(&padded_name);
             }
-            6 => { // Sub code info
+            6 => {
+                // Sub code info
                 let info_bytes = self.sub_code_info.as_bytes();
                 let mut padded_info = vec![0u8; 16];
-                padded_info[..info_bytes.len().min(16)].copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
+                padded_info[..info_bytes.len().min(16)]
+                    .copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
                 data.extend_from_slice(&padded_info);
             }
-            7 => { // Sub code data
+            7 => {
+                // Sub code data
                 let data_bytes = self.sub_code_data.as_bytes();
                 let mut padded_data = vec![0u8; 96];
-                padded_data[..data_bytes.len().min(96)].copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
+                padded_data[..data_bytes.len().min(96)]
+                    .copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
                 data.extend_from_slice(&padded_data);
             }
-            8 => { // Sub code reverse
+            8 => {
+                // Sub code reverse
                 let reverse_bytes = self.sub_code_reverse.as_bytes();
                 let mut padded_reverse = vec![0u8; 96];
-                padded_reverse[..reverse_bytes.len().min(96)].copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
+                padded_reverse[..reverse_bytes.len().min(96)]
+                    .copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
                 data.extend_from_slice(&padded_reverse);
             }
             _ => {
                 return Err(ProtocolError::InvalidAttribute);
             }
         }
-        
+
         Ok(data)
     }
 
     /// Serialize complete alarm data (all attributes)
     pub fn serialize_complete(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        
+
         // Alarm code
         data.extend_from_slice(&self.code.to_le_bytes());
         // Alarm data
         data.extend_from_slice(&self.data.to_le_bytes());
         // Alarm type
         data.extend_from_slice(&self.alarm_type.to_le_bytes());
-        
+
         // Alarm time (16 bytes)
         let time_bytes = self.time.as_bytes();
         let mut padded_time = vec![0u8; 16];
-        padded_time[..time_bytes.len().min(16)].copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
+        padded_time[..time_bytes.len().min(16)]
+            .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
         data.extend_from_slice(&padded_time);
-        
+
         // Alarm name (32 bytes)
         let name_bytes = self.name.as_bytes();
         let mut padded_name = vec![0u8; 32];
-        padded_name[..name_bytes.len().min(32)].copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
+        padded_name[..name_bytes.len().min(32)]
+            .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
         data.extend_from_slice(&padded_name);
-        
+
         // Sub code info (16 bytes)
         let info_bytes = self.sub_code_info.as_bytes();
         let mut padded_info = vec![0u8; 16];
-        padded_info[..info_bytes.len().min(16)].copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
+        padded_info[..info_bytes.len().min(16)]
+            .copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
         data.extend_from_slice(&padded_info);
-        
+
         // Sub code data (96 bytes)
         let data_bytes = self.sub_code_data.as_bytes();
         let mut padded_data = vec![0u8; 96];
-        padded_data[..data_bytes.len().min(96)].copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
+        padded_data[..data_bytes.len().min(96)]
+            .copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
         data.extend_from_slice(&padded_data);
-        
+
         // Sub code reverse (96 bytes)
         let reverse_bytes = self.sub_code_reverse.as_bytes();
         let mut padded_reverse = vec![0u8; 96];
-        padded_reverse[..reverse_bytes.len().min(96)].copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
+        padded_reverse[..reverse_bytes.len().min(96)]
+            .copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
         data.extend_from_slice(&padded_reverse);
-        
+
         Ok(data)
     }
 }
@@ -188,7 +206,8 @@ pub mod test_alarms {
             1,
             "2024/01/01 12:00".to_string(),
             "Servo Error".to_string(),
-        ).with_sub_code(
+        )
+        .with_sub_code(
             "[SV#1]".to_string(),
             "Servo amplifier error".to_string(),
             "0".to_string(),
@@ -212,7 +231,8 @@ pub mod test_alarms {
             2,
             "2024/01/01 12:02".to_string(),
             "Safety Error".to_string(),
-        ).with_sub_code(
+        )
+        .with_sub_code(
             "[SV#2]".to_string(),
             "Safety circuit error".to_string(),
             "1".to_string(),

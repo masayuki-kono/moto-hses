@@ -1,7 +1,7 @@
 //! Basic types and traits for HSES protocol
 
-use std::marker::PhantomData;
 use crate::error::ProtocolError;
+use std::marker::PhantomData;
 
 pub const DEFAULT_PORT: u16 = 10040;
 pub const FILE_PORT: u16 = 10041;
@@ -16,7 +16,9 @@ pub trait Command {
 pub trait VariableType: Send + Sync + 'static {
     fn command_id() -> u16;
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> where Self: Sized;
+    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>
+    where
+        Self: Sized;
 }
 
 // Variable type definitions
@@ -44,12 +46,22 @@ pub struct Variable<T> {
 
 impl<T> Variable<T> {
     pub fn new(var_type: VarType, index: u8, value: T) -> Self {
-        Self { var_type, index, value }
+        Self {
+            var_type,
+            index,
+            value,
+        }
     }
 
     pub fn with_default(var_type: VarType, index: u8) -> Self
-    where T: Default {
-        Self { var_type, index, value: T::default() }
+    where
+        T: Default,
+    {
+        Self {
+            var_type,
+            index,
+            value: T::default(),
+        }
     }
 }
 
@@ -100,7 +112,9 @@ pub struct WriteVar<T> {
 // Generic Command implementations for ReadVar and WriteVar
 impl<T: VariableType> Command for ReadVar<T> {
     type Response = T;
-    fn command_id() -> u16 { T::command_id() }
+    fn command_id() -> u16 {
+        T::command_id()
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }
@@ -108,7 +122,9 @@ impl<T: VariableType> Command for ReadVar<T> {
 
 impl<T: VariableType> Command for WriteVar<T> {
     type Response = ();
-    fn command_id() -> u16 { T::command_id() }
+    fn command_id() -> u16 {
+        T::command_id()
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         self.value.serialize()
     }
@@ -123,7 +139,9 @@ pub struct ReadCurrentPosition {
 // Command implementations
 impl Command for ReadStatus {
     type Response = crate::status::StatusWrapper;
-    fn command_id() -> u16 { 0x72 }
+    fn command_id() -> u16 {
+        0x72
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }
@@ -131,7 +149,9 @@ impl Command for ReadStatus {
 
 impl Command for ReadCurrentPosition {
     type Response = crate::position::Position;
-    fn command_id() -> u16 { 0x75 }
+    fn command_id() -> u16 {
+        0x75
+    }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }
@@ -189,7 +209,10 @@ mod tests {
 
     #[test]
     fn test_read_var_command() {
-        let read_cmd = ReadVar::<u8> { index: 1, _phantom: PhantomData };
+        let read_cmd = ReadVar::<u8> {
+            index: 1,
+            _phantom: PhantomData,
+        };
         assert_eq!(ReadVar::<u8>::command_id(), 0x7a); // ByteVar command ID
         let serialized = read_cmd.serialize().unwrap();
         assert_eq!(serialized, Vec::<u8>::new());
@@ -197,7 +220,10 @@ mod tests {
 
     #[test]
     fn test_write_var_command() {
-        let write_cmd = WriteVar::<u8> { index: 1, value: 42 };
+        let write_cmd = WriteVar::<u8> {
+            index: 1,
+            value: 42,
+        };
         assert_eq!(WriteVar::<u8>::command_id(), 0x7a); // ByteVar command ID
         let serialized = write_cmd.serialize().unwrap();
         assert_eq!(serialized, vec![42, 0, 0, 0]); // u8 is serialized as 4 bytes in HSES protocol
@@ -240,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_variable_type_serialization_f32() {
-        let value: f32 = 3.14159;
+        let value: f32 = std::f32::consts::PI;
         let serialized = value.serialize().unwrap();
         let deserialized = f32::deserialize(&serialized).unwrap();
         assert!((value - deserialized).abs() < f32::EPSILON);

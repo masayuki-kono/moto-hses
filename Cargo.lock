@@ -131,7 +131,6 @@ dependencies = [
 name = "moto-hses-client"
 version = "0.0.1"
 dependencies = [
- "bytes",
  "moto-hses-proto",
  "thiserror",
  "tokio",
@@ -141,7 +140,6 @@ dependencies = [
 name = "moto-hses-mock"
 version = "0.0.1"
 dependencies = [
- "bytes",
  "moto-hses-proto",
  "tokio",
  "tokio-test",

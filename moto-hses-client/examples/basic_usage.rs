@@ -1,4 +1,4 @@
-use moto_hses_client::{HsesClient, ClientConfig};
+use moto_hses_client::{ClientConfig, HsesClient};
 use moto_hses_proto::CoordinateSystemType;
 use std::time::Duration;
 
@@ -6,11 +6,14 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
-    let controller_addr = args.get(1).unwrap_or(&"127.0.0.1:10040".to_string()).clone();
-    
+    let controller_addr = args
+        .get(1)
+        .unwrap_or(&"127.0.0.1:10040".to_string())
+        .clone();
+
     println!("HSES Client Basic Usage Example");
     println!("Connecting to controller at: {}", controller_addr);
-    
+
     // Create custom configuration
     let config = ClientConfig {
         timeout: Duration::from_millis(500),
@@ -18,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_delay: Duration::from_millis(200),
         buffer_size: 8192,
     };
-    
+
     // Connect to the controller
     let client = match HsesClient::new_with_config(&controller_addr, config).await {
         Ok(client) => {
@@ -30,9 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
     };
-    
 
-    
     // Read robot status
     println!("\n--- Robot Status ---");
     match client.read_status().await {
@@ -49,10 +50,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to read status: {}", e);
         }
     }
-    
+
     // Read current position
     println!("\n--- Current Position ---");
-    match client.read_position(1, CoordinateSystemType::RobotPulse).await {
+    match client
+        .read_position(1, CoordinateSystemType::RobotPulse)
+        .await
+    {
         Ok(position) => {
             println!("✓ Position read successfully");
             println!("  Position: {:?}", position);
@@ -61,10 +65,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to read position: {}", e);
         }
     }
-    
+
     // Read variables
     println!("\n--- Variable Operations ---");
-    
+
     // Read integer variable
     match client.read_int(0).await {
         Ok(value) => {
@@ -74,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to read D000: {}", e);
         }
     }
-    
+
     // Read float variable
     match client.read_float(0).await {
         Ok(value) => {
@@ -84,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to read R000: {}", e);
         }
     }
-    
+
     // Read byte variable
     match client.read_byte(0).await {
         Ok(value) => {
@@ -94,11 +98,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to read B000: {}", e);
         }
     }
-    
+
     // Write variables (commented out for safety)
     /*
     println!("\n--- Writing Variables ---");
-    
+
     // Write integer variable
     match client.write_int(1, 42).await {
         Ok(()) => {
@@ -108,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to write to D001: {}", e);
         }
     }
-    
+
     // Write float variable
     match client.write_float(1, 3.14159).await {
         Ok(()) => {
@@ -118,7 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to write to R001: {}", e);
         }
     }
-    
+
     // Write byte variable
     match client.write_byte(1, 255).await {
         Ok(()) => {
@@ -129,10 +133,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     */
-    
+
     // Convenience methods
     println!("\n--- Convenience Methods ---");
-    
+
     match client.is_running().await {
         Ok(running) => {
             println!("✓ Robot running: {}", running);
@@ -141,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to check running status: {}", e);
         }
     }
-    
+
     match client.is_servo_on().await {
         Ok(servo_on) => {
             println!("✓ Servo on: {}", servo_on);
@@ -150,7 +154,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to check servo status: {}", e);
         }
     }
-    
+
     match client.has_alarm().await {
         Ok(has_alarm) => {
             println!("✓ Has alarm: {}", has_alarm);
@@ -159,7 +163,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("✗ Failed to check alarm status: {}", e);
         }
     }
-    
+
     println!("\n--- Example completed successfully ---");
     Ok(())
 }
