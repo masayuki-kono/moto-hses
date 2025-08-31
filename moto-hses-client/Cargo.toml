@@ -14,7 +14,7 @@ name = "read_status"
 path = "examples/read_status.rs"
 
 [[example]]
-name = "client_basic_usage"
+name = "basic_usage"
 path = "examples/basic_usage.rs"
 
 [[example]]
