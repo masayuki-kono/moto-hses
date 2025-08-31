@@ -221,8 +221,6 @@ impl HsesRequestMessage {
         }
     }
 
-
-
     pub fn encode(&self) -> BytesMut {
         let mut buf = BytesMut::with_capacity(32 + self.payload.len());
         self.header.encode(&mut buf);
