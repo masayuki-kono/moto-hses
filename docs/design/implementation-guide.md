@@ -29,9 +29,9 @@ pub trait VariableType: Send + Sync + 'static {
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>;
 }
 
-// Variable type definitions incorporating design insights from Python implementation
+// Variable type definitions
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum VariableType {
+pub enum VarType {
     Io = 0x78,           // 1 byte
     Register = 0x79,     // 2 bytes
     Byte = 0x7a,         // 1 byte
@@ -47,17 +47,17 @@ pub enum VariableType {
 // Variable object for type-safe operations
 #[derive(Debug, Clone)]
 pub struct Variable<T> {
-    pub var_type: VariableType,
+    pub var_type: VarType,
     pub index: u8,
     pub value: T,
 }
 
 impl<T> Variable<T> {
-    pub fn new(var_type: VariableType, index: u8, value: T) -> Self {
+    pub fn new(var_type: VarType, index: u8, value: T) -> Self {
         Self { var_type, index, value }
     }
 
-    pub fn with_default(var_type: VariableType, index: u8) -> Self
+    pub fn with_default(var_type: VarType, index: u8) -> Self
     where T: Default {
         Self { var_type, index, value: T::default() }
     }
