@@ -23,7 +23,7 @@ use moto_hses_client::{HsesClient, ClientConfig};
 use std::time::Duration;
 
 // Basic client creation
-let client = HsesClient::connect("192.168.1.100:10040").await?;
+let client = HsesClient::new("192.168.1.100:10040").await?;
 
 // With custom configuration
 let config = ClientConfig {
@@ -32,7 +32,7 @@ let config = ClientConfig {
     retry_delay: Duration::from_millis(100),
     buffer_size: 8192,
 };
-let client = HsesClient::connect_with_config("192.168.1.100:10040", config).await?;
+let client = HsesClient::new_with_config("192.168.1.100:10040", config).await?;
 ```
 
 ### Enhanced Variable Operations
@@ -102,14 +102,22 @@ println!("Teach mode: {}", status.is_teach_mode());
 println!("Play mode: {}", status.is_play_mode());
 println!("Remote mode: {}", status.is_remote_mode());
 
-// Read position with detailed information
-let position_info = client.read_position(1).await?;
-println!("Position type: {}", position_info.data_type);
-println!("Form: {}", position_info.form);
-println!("Tool number: {}", position_info.tool_no);
-println!("User coordinate: {}", position_info.user_coor_no);
-println!("Extended form: {}", position_info.extended_form);
-println!("Position: {:?}", position_info.pos);
+// Read current position
+let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
+println!("Current position: {:?}", position);
+
+// Access position properties based on type
+match position {
+    Position::Pulse(pulse_pos) => {
+        println!("Joint values: {:?}", pulse_pos.joints());
+        println!("Tool number: {}", pulse_pos.tool());
+    }
+    Position::Cartesian(cart_pos) => {
+        println!("X: {}, Y: {}, Z: {}", cart_pos.x(), cart_pos.y(), cart_pos.z());
+        println!("RX: {}, RY: {}, RZ: {}", cart_pos.rx(), cart_pos.ry(), cart_pos.rz());
+        println!("Tool number: {}", cart_pos.tool());
+    }
+}
 
 // Read position error data
 let error_data = client.read_position_error(1).await?;

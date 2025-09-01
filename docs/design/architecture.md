@@ -203,7 +203,7 @@ impl HsesClient {
 
     // Status and position operations
     pub async fn read_status(&mut self) -> Result<Status, ClientError>;
-    pub async fn read_position(&mut self, robot_no: u8) -> Result<PositionInfo, ClientError>;
+    pub async fn read_position(&mut self, control_group: u8, coord_system: CoordinateSystemType) -> Result<Position, ClientError>;
     pub async fn read_position_error(&mut self, robot_no: u8) -> Result<PositionError, ClientError>;
     pub async fn read_torque(&mut self, robot_no: u8) -> Result<TorqueData, ClientError>;
 
@@ -273,14 +273,15 @@ impl MockServer {
 Incorporating design insights from both C++ templates and Python's Variable class:
 
 ```rust
-// Type-safe variable creation
-let mut var_b0 = Variable::with_default(VariableType::Byte, 0);
-let mut var_i1 = Variable::new(VariableType::Integer, 1, 0i16);
-let mut var_r2 = Variable::new(VariableType::Real, 2, 0.0f32);
+// Type-safe variable reading
+let int_value: i32 = client.read_variable::<i32>(0).await?;
+let float_value: f32 = client.read_variable::<f32>(1).await?;
+let byte_value: u8 = client.read_variable::<u8>(2).await?;
 
-// Type-safe operations
-client.read_variable(&mut var_b0).await?;
-client.write_variable(&var_i1).await?;
+// Type-safe variable writing
+client.write_variable(0, 42i32).await?;
+client.write_variable(1, 3.14f32).await?;
+client.write_variable(2, 255u8).await?;
 ```
 
 ### 2. Efficient Batch Operations
@@ -366,13 +367,10 @@ The library implements efficient batch operations that automatically optimize ne
 
 ## Future Enhancements
 
-1. **WebSocket Support**: Real-time status streaming
-2. **GraphQL Interface**: Modern API querying
-3. **Plugin System**: Extensible command support
-4. **Performance Monitoring**: Built-in metrics and profiling
-5. **Configuration Management**: YAML/JSON configuration files
-6. **Logging Integration**: Structured logging with tracing
-7. **Security Features**: TLS encryption and authentication
+1. **Plugin System**: Extensible command support
+2. **Performance Monitoring**: Built-in metrics and profiling
+3. **Configuration Management**: YAML/JSON configuration files
+4. **Logging Integration**: Structured logging with tracing
 
 ## Testing Strategy
 
