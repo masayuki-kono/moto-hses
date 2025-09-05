@@ -19,5 +19,6 @@ pub use position::{CartesianPosition, Position, PulsePosition};
 pub use status::{Status, StatusData1, StatusData2, StatusWrapper};
 pub use types::{
     Command, CoordinateSystem, CoordinateSystemType, Division, ReadCurrentPosition, ReadStatus,
-    ReadStatusData1, ReadStatusData2, ReadVar, Service, VarType, Variable, VariableType, WriteVar, DEFAULT_PORT, FILE_PORT,
+    ReadStatusData1, ReadStatusData2, ReadVar, Service, VarType, Variable, VariableType, WriteVar,
+    DEFAULT_PORT, FILE_PORT,
 };

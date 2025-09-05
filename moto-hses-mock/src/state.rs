@@ -22,25 +22,13 @@ pub struct MockState {
 }
 
 /// Alarm history organized by categories
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AlarmHistory {
     pub major_failure: Vec<proto::Alarm>,     // 1-100
     pub monitor_alarm: Vec<proto::Alarm>,     // 1001-1100
     pub user_alarm_system: Vec<proto::Alarm>, // 2001-2100
     pub user_alarm_user: Vec<proto::Alarm>,   // 3001-3100
     pub offline_alarm: Vec<proto::Alarm>,     // 4001-4100
-}
-
-impl Default for AlarmHistory {
-    fn default() -> Self {
-        Self {
-            major_failure: vec![],
-            monitor_alarm: vec![],
-            user_alarm_system: vec![],
-            user_alarm_user: vec![],
-            offline_alarm: vec![],
-        }
-    }
 }
 
 impl AlarmHistory {

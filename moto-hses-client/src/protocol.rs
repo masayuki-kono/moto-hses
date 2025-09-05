@@ -405,7 +405,7 @@ impl HsesClient {
                     0x0e // Get_Attribute_Single
                 }
             }
-            0x7A | 0x7B | 0x7C | 0x7D | 0x7E | 0x7F | 0x80 | 0x81 => {
+            0x7A..=0x81 => {
                 // Variable read/write commands - attribute is always 1
                 // For now, assume read operations (0x0E)
                 // TODO: Add support for write operations (0x10, 0x02)
