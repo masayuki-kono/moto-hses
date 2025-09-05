@@ -156,22 +156,26 @@ impl Default for MockState {
         );
 
         Self {
-            status: proto::Status {
-                step: false,
-                one_cycle: false,
-                continuous: true,
-                running: true,
-                speed_limited: false,
-                teach: false,
-                play: true,
-                remote: false,
-                teach_pendant_hold: false,
-                external_hold: false,
-                command_hold: false,
-                alarm: true,
-                error: false,
-                servo_on: true,
-            },
+            status: proto::Status::new(
+                proto::StatusData1 {
+                    step: false,
+                    one_cycle: false,
+                    continuous: true,
+                    running: true,
+                    speed_limited: false,
+                    teach: false,
+                    play: true,
+                    remote: false,
+                },
+                proto::StatusData2 {
+                    teach_pendant_hold: false,
+                    external_hold: false,
+                    command_hold: false,
+                    alarm: true,
+                    error: false,
+                    servo_on: true,
+                },
+            ),
             position: proto::Position::Pulse(proto::PulsePosition::new(
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 1,
@@ -223,30 +227,30 @@ impl MockState {
     /// Add alarm
     pub fn add_alarm(&mut self, alarm: proto::Alarm) {
         self.alarms.push(alarm);
-        self.status.alarm = true;
+        self.status.data2.alarm = true;
     }
 
     /// Clear alarms
     pub fn clear_alarms(&mut self) {
         self.alarms.clear();
-        self.status.alarm = false;
+        self.status.data2.alarm = false;
     }
 
     /// Set servo state
     pub fn set_servo(&mut self, on: bool) {
         self.servo_on = on;
-        self.status.servo_on = on;
+        self.status.data2.servo_on = on;
     }
 
     /// Set hold state
     pub fn set_hold(&mut self, hold: bool) {
         self.hold_state = hold;
-        self.status.command_hold = hold;
+        self.status.data2.command_hold = hold;
     }
 
     /// Set running state
     pub fn set_running(&mut self, running: bool) {
-        self.status.running = running;
+        self.status.data1.running = running;
     }
 
     /// Set current job

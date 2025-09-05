@@ -141,7 +141,7 @@ impl CommandHandler for AlarmResetHandler {
             }
             2 => {
                 // CANCEL
-                state.status.error = false;
+                state.status.data2.error = false;
             }
             _ => {}
         }

@@ -3,7 +3,8 @@
 use moto_hses_proto::alarm::ReadAlarmHistory;
 use moto_hses_proto::{
     Alarm, Command, CoordinateSystemType, Position, ReadAlarmData, ReadCurrentPosition, ReadStatus,
-    ReadVar, Status, StatusWrapper, VariableType, WriteVar,
+    ReadStatusData1, ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, StatusWrapper,
+    VariableType, WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -33,10 +34,24 @@ impl HsesClient {
         self.deserialize_response(&response)
     }
 
+    /// Read complete status information (both Data 1 and Data 2) efficiently
+    /// Uses service=0x01 (Get_Attribute_All) with attribute=0 to get both data in one request
     pub async fn read_status(&self) -> Result<Status, ClientError> {
         let response = self.send_command_with_retry(ReadStatus).await?;
         let result: StatusWrapper = self.deserialize_response(&response)?;
         Ok(result.into())
+    }
+
+    /// Read status data 1 (basic status information)
+    pub async fn read_status_data1(&self) -> Result<StatusData1, ClientError> {
+        let response = self.send_command_with_retry(ReadStatusData1).await?;
+        self.deserialize_response(&response)
+    }
+
+    /// Read status data 2 (additional status information)
+    pub async fn read_status_data2(&self) -> Result<StatusData2, ClientError> {
+        let response = self.send_command_with_retry(ReadStatusData2).await?;
+        self.deserialize_response(&response)
     }
 
     pub async fn read_position(
