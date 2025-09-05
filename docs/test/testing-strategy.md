@@ -7,18 +7,20 @@ This document outlines the comprehensive testing strategy for the Rust HSES clie
 ## Testing Pyramid
 
 ```
-    E2E Tests (Few)
+    End-to-End Tests (Few)
        /    \
       /      \
-Integration Tests (Some)
-     /    \
-    /      \
   Unit Tests (Many)
 ```
+
+- **Unit Tests**: Individual components, protocol implementation, and mock server tests
+- **End-to-End Tests**: Complete client-server integration tests
 
 ## Unit Tests
 
 ### Protocol Layer Tests
+
+### Mock Server Protocol Tests
 
 ```rust
 #[cfg(test)]
@@ -51,28 +53,61 @@ mod client_tests {
 }
 ```
 
-## Integration Tests
-
-### Client-Mock Server Communication
+These tests verify the mock server's protocol implementation by sending UDP messages directly:
 
 ```rust
 #[tokio::test]
-async fn test_read_variable() {
-    let server = MockHsesServer::new("127.0.0.1:10041")
-        .await
-        .unwrap()
-        .with_variable(0, 42i32)
-        .await;
+async fn test_status_command() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
 
-    server.start().await.unwrap();
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
 
-    let client = HsesClient::new("127.0.0.1:10041").await.unwrap();
-    let value: i32 = client.read_variable(0, VariableType::Integer).await.unwrap();
+    // Create status read command (0x72)
+    let message = proto::HsesRequestMessage::new(
+        1,      // Division: Robot
+        0,      // ACK: Request
+        1,      // Request ID
+        0x72,   // Command: Read Status
+        1,      // Instance
+        1,      // Attribute: Data 1
+        0x0e,   // Service: Get_Attribute_Single
+        vec![], // No payload
+    );
 
-    assert_eq!(value, 42);
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response and validate
+    let mut buf = vec![0u8; 1024];
+    let (n, _) = socket.recv_from(&mut buf).await.unwrap();
+    let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+
+    assert_eq!(response.header.ack, 1); // Should be ACK
+    assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
 }
 ```
+
+## End-to-End Integration Tests
+
+### Client-Mock Server Communication
+
+These tests verify the complete client-server integration using the actual client library:
+
+```bash
+# Run comprehensive end-to-end tests
+./scripts/integration_test.sh
+```
+
+The script tests:
+
+- Client connection establishment
+- Status reading operations
+- Position reading operations
+- Alarm data operations
+- Variable read/write operations
+- Convenience methods
+- Communication integrity validation
 
 ## Performance Tests
 
@@ -106,10 +141,33 @@ async fn test_read_throughput() {
 
 ## Test Coverage Goals
 
-- **Unit Tests**: >90% line coverage
-- **Integration Tests**: >80% integration coverage
+- **Unit Tests**: >90% line coverage (including protocol and mock server tests)
+- **End-to-End Tests**: >80% integration coverage
 - **Error Paths**: 100% error handling coverage
 - **Performance**: All performance benchmarks pass
+
+## Test Execution
+
+### Running Tests Locally
+
+```bash
+# Run all unit tests (including protocol and mock server tests)
+cargo test
+
+# Run mock server protocol tests specifically
+cargo test --test protocol_communication_tests
+
+# Run comprehensive end-to-end tests
+./scripts/integration_test.sh
+```
+
+### CI/CD Integration
+
+The following tests run automatically on pull requests:
+
+1. **Unit Tests**: Code formatting, Clippy, unit tests (including protocol and mock server tests)
+2. **Security Audit**: Security vulnerability checks
+3. **End-to-End Integration Tests**: Client-server integration tests
 
 ## Best Practices
 

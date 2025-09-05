@@ -150,6 +150,8 @@ cargo run -p moto-hses-client --example read_status -- 127.0.0.1 10040
 
 ### Mock Server Testing
 
+#### Manual Testing
+
 ```bash
 # Terminal 1: Start mock server
 cargo run -p moto-hses-mock --example mock_basic_usage
@@ -158,6 +160,30 @@ cargo run -p moto-hses-mock --example mock_basic_usage
 cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
 cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
 ```
+
+#### Automated Integration Testing
+
+```bash
+# Run protocol communication tests
+cargo test --test protocol_communication_tests
+
+# Run end-to-end integration tests
+./scripts/integration_test.sh
+```
+
+**Protocol communication tests** verify:
+
+- Mock server protocol implementation
+- Message encoding/decoding
+- Command handling
+- UDP communication with mock server
+
+**End-to-end tests** verify:
+
+- Client-server communication
+- All client operations with validation
+- Communication integrity
+- Automatic resource cleanup
 
 ## Implementation Status
 
@@ -240,8 +266,11 @@ cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
 # Unit tests
 cargo test
 
-# Integration tests
-cargo test --test integration_test
+# Protocol communication tests (Mock server protocol)
+cargo test --test protocol_communication_tests
+
+# End-to-end integration tests (Client + Mock server)
+./scripts/integration_test.sh
 ```
 
 ## License

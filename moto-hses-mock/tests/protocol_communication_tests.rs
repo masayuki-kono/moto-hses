@@ -1,4 +1,7 @@
-//! Integration tests for mock server
+//! Protocol communication tests for mock server
+//!
+//! These tests verify that the mock server correctly implements the HSES protocol
+//! by sending UDP messages and validating responses.
 
 use moto_hses_mock::test_utils;
 use moto_hses_proto as proto;

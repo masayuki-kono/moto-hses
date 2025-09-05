@@ -1,0 +1,101 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  integration-test:
+    name: Mock Server & Client Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Build all crates
+        run: cargo build --all-features --workspace
+
+      - name: Run unit tests
+        run: cargo test --all-features --workspace
+
+      - name: Run Protocol Communication Tests
+        run: |
+          echo "Running protocol communication tests..."
+          cargo test --test protocol_communication_tests
+
+      - name: Run End-to-End Integration Tests
+        run: |
+          echo "Running end-to-end integration tests..."
+          ./scripts/integration_test.sh
+
+      - name: Show Test Logs on Failure
+        if: failure()
+        run: |
+          echo "=== Integration Test Log ==="
+          cat logs/integration-test.log || echo "No integration test log found"
+          echo "=== Mock Server Log ==="
+          cat logs/mock-server.log || echo "No mock server log found"
+
+      - name: Upload Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-logs
+          path: logs/
+          retention-days: 7
+
+  integration-test-release:
+    name: Integration Tests (Release Mode)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Build in release mode
+        run: cargo build --release --all-features --workspace
+
+      - name: Run Protocol Communication Tests (Release)
+        run: |
+          echo "Running protocol communication tests in release mode..."
+          cargo test --test protocol_communication_tests --release
+
+      - name: Run End-to-End Integration Tests (Release)
+        run: |
+          echo "Running end-to-end integration tests in release mode..."
+          ./scripts/integration_test.sh
+
+      - name: Show Test Logs on Failure (Release)
+        if: failure()
+        run: |
+          echo "=== Integration Test Log (Release) ==="
+          cat logs/integration-test.log || echo "No integration test log found"
+          echo "=== Mock Server Log (Release) ==="
+          cat logs/mock-server.log || echo "No mock server log found"
+
+      - name: Upload Test Logs (Release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-logs-release
+          path: logs/
+          retention-days: 7

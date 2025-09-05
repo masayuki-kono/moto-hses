@@ -31,6 +31,25 @@ cargo test --all-features --workspace
 - **Required**: All tests must pass
 - **Coverage**: Ensure new functionality has appropriate test coverage
 
+### 3.1. Integration Tests (Local)
+
+#### Protocol Communication Tests
+
+```bash
+# Test mock server protocol communication
+cargo test --test protocol_communication_tests
+```
+
+#### End-to-End Integration Tests
+
+```bash
+# Comprehensive client-server integration tests
+./scripts/integration_test.sh
+```
+
+- **Required**: Both test types must pass locally before pushing
+- **Coverage**: Protocol communication tests verify mock server correctness, end-to-end tests verify client-server communication
+
 ### 4. Security Audit
 
 ```bash
@@ -142,6 +161,8 @@ The following GitHub Actions must pass before merging:
 
 - **Rust Tests**: Code formatting, Clippy, unit tests
 - **Security Audit**: Security vulnerability checks
+- **Protocol Communication Tests**: Mock server protocol communication tests
+- **Integration Tests**: Mock server and client integration tests
 
 ### Branch Protection
 
@@ -162,6 +183,8 @@ The following GitHub Actions must pass before merging:
 
 - Unit tests for new functionality
 - Integration tests for API changes
+- Protocol communication tests must pass
+- Mock server and client integration tests must pass
 - Test coverage maintained or improved
 
 ### Documentation Quality
