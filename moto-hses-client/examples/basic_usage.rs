@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  Running: {}", status.is_running());
             println!("  Servo on: {}", status.is_servo_on());
             println!("  Alarm: {}", status.has_alarm());
-            println!("  Error: {}", status.error);
+            println!("  Error: {}", status.has_error());
             println!("  Play mode: {}", status.is_play_mode());
             println!("  Teach mode: {}", status.is_teach_mode());
         }

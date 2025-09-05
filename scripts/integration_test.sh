@@ -357,6 +357,7 @@ test_connection_management() {
     fi
 }
 
+
 # Test read status
 test_read_status() {
     log_info "Testing read status..."
@@ -374,10 +375,24 @@ test_read_status() {
             return 1
         fi
         
-        if echo "$output" | grep -q "Reading robot status..."; then
+        if echo "$output" | grep -q "Complete status information retrieved"; then
             test_passed "Read status execution"
         else
             test_failed "Read status execution"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Data1 retrieved"; then
+            test_passed "Read status data1"
+        else
+            test_failed "Read status data1"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Data2 retrieved"; then
+            test_passed "Read status data2"
+        else
+            test_failed "Read status data2"
             return 1
         fi
         

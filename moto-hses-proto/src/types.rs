@@ -145,6 +145,8 @@ impl<T: VariableType> Command for WriteVar<T> {
 }
 
 pub struct ReadStatus;
+pub struct ReadStatusData1;
+pub struct ReadStatusData2;
 pub struct ReadCurrentPosition {
     pub control_group: u8,
     pub coordinate_system: CoordinateSystemType,
@@ -163,7 +165,39 @@ impl Command for ReadStatus {
         1 // Fixed to 1 according to specification
     }
     fn attribute(&self) -> u8 {
-        1 // Data 1 (default)
+        0 // Use 0 to get all attributes (Data 1 and Data 2) with Get_Attribute_All
+    }
+}
+
+impl Command for ReadStatusData1 {
+    type Response = crate::status::StatusData1;
+    fn command_id() -> u16 {
+        0x72
+    }
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        Ok(Vec::new())
+    }
+    fn instance(&self) -> u16 {
+        1 // Fixed to 1 according to specification
+    }
+    fn attribute(&self) -> u8 {
+        1 // Data 1
+    }
+}
+
+impl Command for ReadStatusData2 {
+    type Response = crate::status::StatusData2;
+    fn command_id() -> u16 {
+        0x72
+    }
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        Ok(Vec::new())
+    }
+    fn instance(&self) -> u16 {
+        1 // Fixed to 1 according to specification
+    }
+    fn attribute(&self) -> u8 {
+        2 // Data 2
     }
 }
 
@@ -296,5 +330,25 @@ mod tests {
         let serialized = value.serialize().unwrap();
         let deserialized = f32::deserialize(&serialized).unwrap();
         assert!((value - deserialized).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_read_status_data1_command() {
+        let read_status_data1 = ReadStatusData1;
+        assert_eq!(ReadStatusData1::command_id(), 0x72);
+        assert_eq!(read_status_data1.instance(), 1);
+        assert_eq!(read_status_data1.attribute(), 1);
+        let serialized = read_status_data1.serialize().unwrap();
+        assert_eq!(serialized, Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_read_status_data2_command() {
+        let read_status_data2 = ReadStatusData2;
+        assert_eq!(ReadStatusData2::command_id(), 0x72);
+        assert_eq!(read_status_data2.instance(), 1);
+        assert_eq!(read_status_data2.attribute(), 2);
+        let serialized = read_status_data2.serialize().unwrap();
+        assert_eq!(serialized, Vec::<u8>::new());
     }
 }
