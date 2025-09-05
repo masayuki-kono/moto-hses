@@ -11,6 +11,8 @@ pub trait Command {
     type Response;
     fn command_id() -> u16;
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
+    fn instance(&self) -> u16;
+    fn attribute(&self) -> u8;
 }
 
 pub trait VariableType: Send + Sync + 'static {
@@ -118,6 +120,12 @@ impl<T: VariableType> Command for ReadVar<T> {
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }
+    fn instance(&self) -> u16 {
+        self.index as u16 // Variable number (0-99 for byte, 0-999 for int/real)
+    }
+    fn attribute(&self) -> u8 {
+        1 // Fixed to 1 according to specification
+    }
 }
 
 impl<T: VariableType> Command for WriteVar<T> {
@@ -127,6 +135,12 @@ impl<T: VariableType> Command for WriteVar<T> {
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         self.value.serialize()
+    }
+    fn instance(&self) -> u16 {
+        self.index as u16 // Variable number (0-99 for byte, 0-999 for int/real)
+    }
+    fn attribute(&self) -> u8 {
+        1 // Fixed to 1 according to specification
     }
 }
 
@@ -145,6 +159,12 @@ impl Command for ReadStatus {
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
     }
+    fn instance(&self) -> u16 {
+        1 // Fixed to 1 according to specification
+    }
+    fn attribute(&self) -> u8 {
+        1 // Data 1 (default)
+    }
 }
 
 impl Command for ReadCurrentPosition {
@@ -154,6 +174,12 @@ impl Command for ReadCurrentPosition {
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         Ok(Vec::new())
+    }
+    fn instance(&self) -> u16 {
+        self.control_group as u16 // Control group (1-2 for R1-R2, 11-12 for B1-B2, etc.)
+    }
+    fn attribute(&self) -> u8 {
+        1 // Data type (default)
     }
 }
 

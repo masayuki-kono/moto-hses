@@ -1,8 +1,8 @@
 //! Protocol communication for HSES client
 
 use moto_hses_proto::{
-    Command, CoordinateSystemType, Position, ReadCurrentPosition, ReadStatus, ReadVar, Status,
-    StatusWrapper, VariableType, WriteVar,
+    Alarm, Command, CoordinateSystemType, Position, ReadAlarmData, ReadCurrentPosition, ReadStatus,
+    ReadVar, Status, StatusWrapper, VariableType, WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -44,6 +44,15 @@ impl HsesClient {
             control_group,
             coordinate_system: coord_system,
         };
+        self.send_command_with_retry(command).await
+    }
+
+    pub async fn read_alarm_data(
+        &self,
+        instance: u16,
+        attribute: u8,
+    ) -> Result<Alarm, ClientError> {
+        let command = ReadAlarmData::new(instance, attribute);
         self.send_command_with_retry(command).await
     }
 
@@ -121,7 +130,13 @@ impl HsesClient {
         let payload = command.serialize()?;
 
         // Create and send message
-        let message = self.create_message(C::command_id(), request_id, payload)?;
+        let message = self.create_message(
+            C::command_id(),
+            request_id,
+            payload,
+            command.instance(),
+            command.attribute(),
+        )?;
         eprintln!(
             "Sending message to {}: {} bytes",
             self.inner.remote_addr,
@@ -144,6 +159,8 @@ impl HsesClient {
         command: u16,
         request_id: u8,
         payload: Vec<u8>,
+        instance: u16,
+        attribute: u8,
     ) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
@@ -177,11 +194,11 @@ impl HsesClient {
         // Command
         message.extend_from_slice(&command.to_le_bytes());
 
-        // Instance (0 for most commands)
-        message.extend_from_slice(&0u16.to_le_bytes());
+        // Instance
+        message.extend_from_slice(&instance.to_le_bytes());
 
-        // Attribute (1 for most commands)
-        message.push(1);
+        // Attribute
+        message.push(attribute);
 
         // Service (Get_Attribute_Single for reads, Set_Attribute_Single for writes)
         message.push(0x0e);

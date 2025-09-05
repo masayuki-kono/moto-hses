@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     server.set_io_state(1001, false).await; // Output 1 = OFF
 
     println!("Test data configured:");
-    println!("  - 2 test alarms added");
+    println!("  - 4 test alarms added (Instance 1-4)");
     println!("  - D010 = 66, D020 = 50.0");
     println!("  - Input 1 = ON, Output 1 = OFF");
 

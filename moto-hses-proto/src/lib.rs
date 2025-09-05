@@ -9,7 +9,7 @@ pub mod types;
 pub mod variables;
 
 // Re-export commonly used items for convenience
-pub use alarm::{Alarm, AlarmAttribute};
+pub use alarm::{Alarm, AlarmAttribute, ReadAlarmData};
 pub use error::ProtocolError;
 pub use message::{
     HsesCommonHeader, HsesRequestMessage, HsesRequestSubHeader, HsesResponseMessage,
