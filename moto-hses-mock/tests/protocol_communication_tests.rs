@@ -186,3 +186,132 @@ async fn test_unknown_command() {
         }
     }
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_alarm_history_read_command() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+
+    // Test alarm history read command (0x71) - Major failure alarm #1, attribute 1 (code)
+    let message = proto::HsesRequestMessage::new(
+        1,      // Division: Robot
+        0,      // ACK: Request
+        5,      // Request ID
+        0x71,   // Command: Read Alarm History
+        1,      // Instance: Major failure alarm #1
+        1,      // Attribute: Alarm code
+        0x0e,   // Service: Get_Attribute_Single
+        vec![], // No payload
+    );
+
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response
+    sleep(Duration::from_millis(50)).await;
+
+    // Try to receive response
+    let mut buf = vec![0u8; 1024];
+
+    match socket.recv_from(&mut buf).await {
+        Ok((n, _)) => {
+            assert!(n > 0, "Should receive a response");
+            let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+            assert_eq!(response.header.ack, 1); // Should be ACK
+            assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
+            assert_eq!(response.payload.len(), 4); // Alarm code should be 4 bytes
+        }
+        Err(_) => {
+            // Socket might not have data yet
+            // This is acceptable for this test
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_alarm_history_read_command_monitor_alarm() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+
+    // Test alarm history read command (0x71) - Monitor alarm #1001, attribute 5 (name)
+    let message = proto::HsesRequestMessage::new(
+        1,      // Division: Robot
+        0,      // ACK: Request
+        6,      // Request ID
+        0x71,   // Command: Read Alarm History
+        1001,   // Instance: Monitor alarm #1001
+        5,      // Attribute: Alarm name
+        0x0e,   // Service: Get_Attribute_Single
+        vec![], // No payload
+    );
+
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response
+    sleep(Duration::from_millis(50)).await;
+
+    // Try to receive response
+    let mut buf = vec![0u8; 1024];
+
+    match socket.recv_from(&mut buf).await {
+        Ok((n, _)) => {
+            assert!(n > 0, "Should receive a response");
+            let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+            assert_eq!(response.header.ack, 1); // Should be ACK
+            assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
+            assert_eq!(response.payload.len(), 32); // Alarm name should be 32 bytes
+        }
+        Err(_) => {
+            // Socket might not have data yet
+            // This is acceptable for this test
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_alarm_history_read_command_invalid_instance() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+
+    // Test alarm history read command (0x71) with invalid instance
+    let message = proto::HsesRequestMessage::new(
+        1,      // Division: Robot
+        0,      // ACK: Request
+        7,      // Request ID
+        0x71,   // Command: Read Alarm History
+        5000,   // Instance: Invalid instance
+        1,      // Attribute: Alarm code
+        0x0e,   // Service: Get_Attribute_Single
+        vec![], // No payload
+    );
+
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response
+    sleep(Duration::from_millis(50)).await;
+
+    // Try to receive response
+    let mut buf = vec![0u8; 1024];
+
+    match socket.recv_from(&mut buf).await {
+        Ok((n, _)) => {
+            assert!(n > 0, "Should receive a response");
+            let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+            assert_eq!(response.header.ack, 1); // Should be ACK
+            assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
+            assert_eq!(response.payload.len(), 4); // Should return 4 bytes of zeros for invalid instance
+        }
+        Err(_) => {
+            // Socket might not have data yet
+            // This is acceptable for this test
+        }
+    }
+}

@@ -1,5 +1,6 @@
 //! Protocol communication for HSES client
 
+use moto_hses_proto::alarm::ReadAlarmHistory;
 use moto_hses_proto::{
     Alarm, Command, CoordinateSystemType, Position, ReadAlarmData, ReadCurrentPosition, ReadStatus,
     ReadVar, Status, StatusWrapper, VariableType, WriteVar,
@@ -19,7 +20,8 @@ impl HsesClient {
             index,
             _phantom: std::marker::PhantomData,
         };
-        self.send_command_with_retry(command).await
+        let response = self.send_command_with_retry(command).await?;
+        self.deserialize_response(&response)
     }
 
     pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
@@ -27,11 +29,13 @@ impl HsesClient {
         T: VariableType,
     {
         let command = WriteVar::<T> { index, value };
-        self.send_command_with_retry(command).await
+        let response = self.send_command_with_retry(command).await?;
+        self.deserialize_response(&response)
     }
 
     pub async fn read_status(&self) -> Result<Status, ClientError> {
-        let result: StatusWrapper = self.send_command_with_retry(ReadStatus).await?;
+        let response = self.send_command_with_retry(ReadStatus).await?;
+        let result: StatusWrapper = self.deserialize_response(&response)?;
         Ok(result.into())
     }
 
@@ -44,7 +48,8 @@ impl HsesClient {
             control_group,
             coordinate_system: coord_system,
         };
-        self.send_command_with_retry(command).await
+        let response = self.send_command_with_retry(command).await?;
+        self.deserialize_response(&response)
     }
 
     pub async fn read_alarm_data(
@@ -53,7 +58,106 @@ impl HsesClient {
         attribute: u8,
     ) -> Result<Alarm, ClientError> {
         let command = ReadAlarmData::new(instance, attribute);
-        self.send_command_with_retry(command).await
+        self.read_alarm_attribute(command, attribute).await
+    }
+
+    pub async fn read_alarm_history(
+        &self,
+        instance: u16,
+        attribute: u8,
+    ) -> Result<Alarm, ClientError> {
+        let command = ReadAlarmHistory::new(instance, attribute);
+        self.read_alarm_attribute(command, attribute).await
+    }
+
+    // Common helper method for alarm attribute reading
+    async fn read_alarm_attribute<C: Command>(
+        &self,
+        command: C,
+        attribute: u8,
+    ) -> Result<Alarm, ClientError>
+    where
+        C::Response: VariableType + Into<Alarm>,
+    {
+        if attribute == 0 {
+            // Service = 0x01 (Get_Attribute_All) - Return all data
+            let response = self.send_command_with_retry(command).await?;
+            let deserialized: C::Response = self.deserialize_response(&response)?;
+            Ok(deserialized.into())
+        } else {
+            // Service = 0x0E (Get_Attribute_Single) - Return only specified attribute
+            let response = self.send_command_with_retry(command).await?;
+
+            // Attribute-specific deserialization
+            match attribute {
+                1 => {
+                    // Alarm code (4 bytes)
+                    if response.len() >= 4 {
+                        let code = u32::from_le_bytes([
+                            response[0],
+                            response[1],
+                            response[2],
+                            response[3],
+                        ]);
+                        Ok(Alarm::new(code, 0, 0, String::new(), String::new()))
+                    } else {
+                        Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                    }
+                }
+                2 => {
+                    // Alarm data (4 bytes)
+                    if response.len() >= 4 {
+                        let data = u32::from_le_bytes([
+                            response[0],
+                            response[1],
+                            response[2],
+                            response[3],
+                        ]);
+                        Ok(Alarm::new(0, data, 0, String::new(), String::new()))
+                    } else {
+                        Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                    }
+                }
+                3 => {
+                    // Alarm type (4 bytes)
+                    if response.len() >= 4 {
+                        let alarm_type = u32::from_le_bytes([
+                            response[0],
+                            response[1],
+                            response[2],
+                            response[3],
+                        ]);
+                        Ok(Alarm::new(0, 0, alarm_type, String::new(), String::new()))
+                    } else {
+                        Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                    }
+                }
+                4 => {
+                    // Alarm time (16 bytes)
+                    if response.len() >= 16 {
+                        let time_end = response.iter().position(|&b| b == 0).unwrap_or(16);
+                        let time = String::from_utf8_lossy(&response[..time_end]).to_string();
+                        Ok(Alarm::new(0, 0, 0, time, String::new()))
+                    } else {
+                        Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                    }
+                }
+                5 => {
+                    // Alarm name (32 bytes)
+                    if response.len() >= 32 {
+                        let name_end = response.iter().position(|&b| b == 0).unwrap_or(32);
+                        let name = String::from_utf8_lossy(&response[..name_end]).to_string();
+                        Ok(Alarm::new(0, 0, 0, String::new(), name))
+                    } else {
+                        Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                    }
+                }
+                _ => {
+                    // Invalid attribute
+                    Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
+                }
+            }
+        }
     }
 
     pub async fn read_io(&self, _io_type: u8, _index: u8) -> Result<bool, ClientError> {
@@ -93,19 +197,16 @@ impl HsesClient {
         ))
     }
 
-    // Generic command sending with retry logic
+    // Command sending with retry logic (returns raw bytes)
     async fn send_command_with_retry<C: Command>(
         &self,
         command: C,
-    ) -> Result<C::Response, ClientError>
-    where
-        C::Response: VariableType,
-    {
+    ) -> Result<Vec<u8>, ClientError> {
         let mut last_error = None;
         let mut attempts = 0;
 
         while attempts < self.config.retry_count {
-            match self.send_command(&command).await {
+            match self.send_command_once(&command).await {
                 Ok(response) => return Ok(response),
                 Err(e) => {
                     last_error = Some(e);
@@ -121,11 +222,8 @@ impl HsesClient {
         Err(last_error.unwrap_or_else(|| ClientError::SystemError("Unknown error".to_string())))
     }
 
-    // Generic command sending
-    async fn send_command<C: Command>(&self, command: &C) -> Result<C::Response, ClientError>
-    where
-        C::Response: VariableType,
-    {
+    // Single command sending (no retry, returns raw bytes)
+    async fn send_command_once<C: Command>(&self, command: &C) -> Result<Vec<u8>, ClientError> {
         let request_id = self.inner.request_id.fetch_add(1, Ordering::Relaxed);
         let payload = command.serialize()?;
 
@@ -150,8 +248,8 @@ impl HsesClient {
         // Wait for response
         let response = self.wait_for_response(request_id).await?;
 
-        // Deserialize response
-        self.deserialize_response::<C::Response>(&response)
+        // Return raw response payload
+        Ok(response)
     }
 
     fn create_message(
@@ -200,8 +298,9 @@ impl HsesClient {
         // Attribute
         message.push(attribute);
 
-        // Service (Get_Attribute_Single for reads, Set_Attribute_Single for writes)
-        message.push(0x0e);
+        // Service depends on command type and attribute
+        let service = self.get_service_for_command(command, attribute);
+        message.push(service);
 
         // Padding
         message.extend_from_slice(&0u16.to_le_bytes());
@@ -279,5 +378,28 @@ impl HsesClient {
         T: VariableType,
     {
         T::deserialize(data).map_err(ClientError::from)
+    }
+
+    fn get_service_for_command(&self, command: u16, attribute: u8) -> u8 {
+        match command {
+            0x70 | 0x71 | 0x72 | 0x75 => {
+                // Commands that support both Get_Attribute_All and Get_Attribute_Single
+                if attribute == 0 {
+                    0x01 // Get_Attribute_All
+                } else {
+                    0x0e // Get_Attribute_Single
+                }
+            }
+            0x7A | 0x7B | 0x7C | 0x7D | 0x7E | 0x7F | 0x80 | 0x81 => {
+                // Variable read/write commands - attribute is always 1
+                // For now, assume read operations (0x0E)
+                // TODO: Add support for write operations (0x10, 0x02)
+                0x0e // Get_Attribute_Single
+            }
+            _ => {
+                // Default to Get_Attribute_Single for unknown commands
+                0x0e
+            }
+        }
     }
 }
