@@ -138,6 +138,102 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Test alarm history reading (0x71 command)
+    println!("\n--- Alarm History Reading (0x71 Command) ---");
+
+    // Test major failure alarm history (instances 1-3)
+    println!("\n--- Major Failure Alarm History ---");
+    for instance in 1..=3 {
+        match client
+            .read_alarm_history(instance, AlarmAttribute::Code as u8)
+            .await
+        {
+            Ok(alarm) => {
+                if alarm.code != 0 {
+                    println!(
+                        "✓ Major failure alarm {}: Code={}, Name={}",
+                        instance, alarm.code, alarm.name
+                    );
+                } else {
+                    println!("✓ Major failure alarm {}: No alarm", instance);
+                }
+            }
+            Err(e) => {
+                eprintln!("✗ Failed to read major failure alarm {}: {}", instance, e);
+            }
+        }
+    }
+
+    // Test monitor alarm history (instances 1001-1003)
+    println!("\n--- Monitor Alarm History ---");
+    for instance in 1001..=1003 {
+        match client
+            .read_alarm_history(instance, AlarmAttribute::Name as u8)
+            .await
+        {
+            Ok(alarm) => {
+                if alarm.code != 0 {
+                    println!(
+                        "✓ Monitor alarm {}: Code={}, Name={}",
+                        instance, alarm.code, alarm.name
+                    );
+                } else {
+                    println!("✓ Monitor alarm {}: No alarm", instance);
+                }
+            }
+            Err(e) => {
+                eprintln!("✗ Failed to read monitor alarm {}: {}", instance, e);
+            }
+        }
+    }
+
+    // Test different attributes for alarm history
+    println!("\n--- Alarm History Attributes Test ---");
+    match client
+        .read_alarm_history(1, AlarmAttribute::Code as u8)
+        .await
+    {
+        Ok(alarm) => {
+            println!("✓ Major failure alarm #1 code: {}", alarm.code);
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to read alarm history code: {}", e);
+        }
+    }
+
+    match client
+        .read_alarm_history(1, AlarmAttribute::Time as u8)
+        .await
+    {
+        Ok(alarm) => {
+            println!("✓ Major failure alarm #1 time: {}", alarm.time);
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to read alarm history time: {}", e);
+        }
+    }
+
+    // Test invalid instance (should return empty data)
+    println!("\n--- Invalid Instance Test ---");
+    match client
+        .read_alarm_history(5000, AlarmAttribute::Code as u8)
+        .await
+    {
+        Ok(alarm) => {
+            if alarm.code == 0 {
+                println!("✓ Invalid instance correctly returned empty data");
+            } else {
+                println!(
+                    "⚠ Invalid instance returned unexpected data: {}",
+                    alarm.code
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to read invalid instance: {}", e);
+        }
+    }
+
     println!("\n--- Alarm operations example completed successfully ---");
     Ok(())
 }

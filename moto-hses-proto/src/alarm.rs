@@ -222,6 +222,65 @@ pub struct ReadAlarmData {
     pub attribute: u8,
 }
 
+/// Command for reading alarm history (0x71)
+#[derive(Debug, Clone)]
+pub struct ReadAlarmHistory {
+    pub instance: u16,
+    pub attribute: u8,
+}
+
+impl ReadAlarmHistory {
+    pub fn new(instance: u16, attribute: u8) -> Self {
+        Self {
+            instance,
+            attribute,
+        }
+    }
+
+    /// Validate instance range for alarm history
+    pub fn is_valid_instance(&self) -> bool {
+        matches!(
+            self.instance,
+            1..=100 | 1001..=1100 | 2001..=2100 | 3001..=3100 | 4001..=4100
+        )
+    }
+
+    /// Get alarm category from instance
+    pub fn get_alarm_category(&self) -> AlarmCategory {
+        match self.instance {
+            1..=100 => AlarmCategory::MajorFailure,
+            1001..=1100 => AlarmCategory::MonitorAlarm,
+            2001..=2100 => AlarmCategory::UserAlarmSystem,
+            3001..=3100 => AlarmCategory::UserAlarmUser,
+            4001..=4100 => AlarmCategory::OfflineAlarm,
+            _ => AlarmCategory::Invalid,
+        }
+    }
+
+    /// Get alarm index within category
+    pub fn get_alarm_index(&self) -> usize {
+        match self.get_alarm_category() {
+            AlarmCategory::MajorFailure => (self.instance - 1) as usize,
+            AlarmCategory::MonitorAlarm => (self.instance - 1001) as usize,
+            AlarmCategory::UserAlarmSystem => (self.instance - 2001) as usize,
+            AlarmCategory::UserAlarmUser => (self.instance - 3001) as usize,
+            AlarmCategory::OfflineAlarm => (self.instance - 4001) as usize,
+            AlarmCategory::Invalid => 0,
+        }
+    }
+}
+
+/// Alarm categories for history reading
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AlarmCategory {
+    MajorFailure,    // 1-100
+    MonitorAlarm,    // 1001-1100
+    UserAlarmSystem, // 2001-2100
+    UserAlarmUser,   // 3001-3100
+    OfflineAlarm,    // 4001-4100
+    Invalid,
+}
+
 impl ReadAlarmData {
     pub fn new(instance: u16, attribute: u8) -> Self {
         Self {
@@ -240,6 +299,28 @@ impl Command for ReadAlarmData {
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         // For 0x70 command, payload is typically empty
+        // instance and attribute are specified in the sub-header
+        Ok(vec![])
+    }
+
+    fn instance(&self) -> u16 {
+        self.instance
+    }
+
+    fn attribute(&self) -> u8 {
+        self.attribute
+    }
+}
+
+impl Command for ReadAlarmHistory {
+    type Response = Alarm;
+
+    fn command_id() -> u16 {
+        0x71
+    }
+
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // For 0x71 command, payload is typically empty
         // instance and attribute are specified in the sub-header
         Ok(vec![])
     }
@@ -608,5 +689,163 @@ mod tests {
         let name_str = String::from_utf8_lossy(&data[28..60]);
         assert!(name_str.len() <= 32);
         assert!(name_str.starts_with("This is a very long alarm"));
+    }
+
+    #[test]
+    fn test_read_alarm_history_command_trait() {
+        let cmd = ReadAlarmHistory::new(1, 1);
+        assert_eq!(ReadAlarmHistory::command_id(), 0x71);
+        assert_eq!(cmd.instance(), 1);
+        assert_eq!(cmd.attribute(), 1);
+        assert!(cmd.serialize().unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_read_alarm_history_instance_validation() {
+        // Valid instances
+        assert!(ReadAlarmHistory::new(1, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(50, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(100, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1001, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1050, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1100, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2001, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2050, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2100, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3001, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3050, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3100, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4001, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4050, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4100, 1).is_valid_instance());
+
+        // Invalid instances
+        assert!(!ReadAlarmHistory::new(0, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(101, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(500, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(1000, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(1101, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(2000, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(2101, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(3000, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(3101, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(4000, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(4101, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(5000, 1).is_valid_instance());
+    }
+
+    #[test]
+    fn test_read_alarm_history_category_detection() {
+        // Major failure alarms (1-100)
+        assert_eq!(
+            ReadAlarmHistory::new(1, 1).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(50, 1).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(100, 1).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
+
+        // Monitor alarms (1001-1100)
+        assert_eq!(
+            ReadAlarmHistory::new(1001, 1).get_alarm_category(),
+            AlarmCategory::MonitorAlarm
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(1050, 1).get_alarm_category(),
+            AlarmCategory::MonitorAlarm
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(1100, 1).get_alarm_category(),
+            AlarmCategory::MonitorAlarm
+        );
+
+        // User alarm (system) (2001-2100)
+        assert_eq!(
+            ReadAlarmHistory::new(2001, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmSystem
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(2050, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmSystem
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(2100, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmSystem
+        );
+
+        // User alarm (user) (3001-3100)
+        assert_eq!(
+            ReadAlarmHistory::new(3001, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmUser
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(3050, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmUser
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(3100, 1).get_alarm_category(),
+            AlarmCategory::UserAlarmUser
+        );
+
+        // Offline alarm (4001-4100)
+        assert_eq!(
+            ReadAlarmHistory::new(4001, 1).get_alarm_category(),
+            AlarmCategory::OfflineAlarm
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(4050, 1).get_alarm_category(),
+            AlarmCategory::OfflineAlarm
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(4100, 1).get_alarm_category(),
+            AlarmCategory::OfflineAlarm
+        );
+
+        // Invalid instances
+        assert_eq!(
+            ReadAlarmHistory::new(0, 1).get_alarm_category(),
+            AlarmCategory::Invalid
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(5000, 1).get_alarm_category(),
+            AlarmCategory::Invalid
+        );
+    }
+
+    #[test]
+    fn test_read_alarm_history_index_calculation() {
+        // Major failure alarms (1-100) -> index 0-99
+        assert_eq!(ReadAlarmHistory::new(1, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(50, 1).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(100, 1).get_alarm_index(), 99);
+
+        // Monitor alarms (1001-1100) -> index 0-99
+        assert_eq!(ReadAlarmHistory::new(1001, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(1050, 1).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(1100, 1).get_alarm_index(), 99);
+
+        // User alarm (system) (2001-2100) -> index 0-99
+        assert_eq!(ReadAlarmHistory::new(2001, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(2050, 1).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(2100, 1).get_alarm_index(), 99);
+
+        // User alarm (user) (3001-3100) -> index 0-99
+        assert_eq!(ReadAlarmHistory::new(3001, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(3050, 1).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(3100, 1).get_alarm_index(), 99);
+
+        // Offline alarm (4001-4100) -> index 0-99
+        assert_eq!(ReadAlarmHistory::new(4001, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(4050, 1).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(4100, 1).get_alarm_index(), 99);
+
+        // Invalid instances
+        assert_eq!(ReadAlarmHistory::new(0, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(5000, 1).get_alarm_index(), 0);
     }
 }

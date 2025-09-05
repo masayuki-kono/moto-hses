@@ -14,10 +14,92 @@ pub struct MockState {
     pub io_states: HashMap<u16, bool>,
     pub registers: HashMap<u16, i32>,
     pub alarms: Vec<proto::Alarm>,
+    pub alarm_history: AlarmHistory,
     pub current_job: Option<String>,
     pub servo_on: bool,
     pub hold_state: bool,
     pub files: HashMap<String, Vec<u8>>,
+}
+
+/// Alarm history organized by categories
+#[derive(Debug, Clone)]
+pub struct AlarmHistory {
+    pub major_failure: Vec<proto::Alarm>,     // 1-100
+    pub monitor_alarm: Vec<proto::Alarm>,     // 1001-1100
+    pub user_alarm_system: Vec<proto::Alarm>, // 2001-2100
+    pub user_alarm_user: Vec<proto::Alarm>,   // 3001-3100
+    pub offline_alarm: Vec<proto::Alarm>,     // 4001-4100
+}
+
+impl Default for AlarmHistory {
+    fn default() -> Self {
+        Self {
+            major_failure: vec![],
+            monitor_alarm: vec![],
+            user_alarm_system: vec![],
+            user_alarm_user: vec![],
+            offline_alarm: vec![],
+        }
+    }
+}
+
+impl AlarmHistory {
+    /// Get alarm by category and index
+    pub fn get_alarm(
+        &self,
+        category: proto::alarm::AlarmCategory,
+        index: usize,
+    ) -> Option<&proto::Alarm> {
+        match category {
+            proto::alarm::AlarmCategory::MajorFailure => self.major_failure.get(index),
+            proto::alarm::AlarmCategory::MonitorAlarm => self.monitor_alarm.get(index),
+            proto::alarm::AlarmCategory::UserAlarmSystem => self.user_alarm_system.get(index),
+            proto::alarm::AlarmCategory::UserAlarmUser => self.user_alarm_user.get(index),
+            proto::alarm::AlarmCategory::OfflineAlarm => self.offline_alarm.get(index),
+            proto::alarm::AlarmCategory::Invalid => None,
+        }
+    }
+
+    /// Add alarm to specific category
+    pub fn add_alarm(&mut self, category: proto::alarm::AlarmCategory, alarm: proto::Alarm) {
+        match category {
+            proto::alarm::AlarmCategory::MajorFailure => {
+                if self.major_failure.len() < 100 {
+                    self.major_failure.push(alarm);
+                }
+            }
+            proto::alarm::AlarmCategory::MonitorAlarm => {
+                if self.monitor_alarm.len() < 100 {
+                    self.monitor_alarm.push(alarm);
+                }
+            }
+            proto::alarm::AlarmCategory::UserAlarmSystem => {
+                if self.user_alarm_system.len() < 100 {
+                    self.user_alarm_system.push(alarm);
+                }
+            }
+            proto::alarm::AlarmCategory::UserAlarmUser => {
+                if self.user_alarm_user.len() < 100 {
+                    self.user_alarm_user.push(alarm);
+                }
+            }
+            proto::alarm::AlarmCategory::OfflineAlarm => {
+                if self.offline_alarm.len() < 100 {
+                    self.offline_alarm.push(alarm);
+                }
+            }
+            proto::alarm::AlarmCategory::Invalid => {}
+        }
+    }
+
+    /// Clear all alarm history
+    pub fn clear_all(&mut self) {
+        self.major_failure.clear();
+        self.monitor_alarm.clear();
+        self.user_alarm_system.clear();
+        self.user_alarm_user.clear();
+        self.offline_alarm.clear();
+    }
 }
 
 impl Default for MockState {
@@ -46,6 +128,33 @@ impl Default for MockState {
             proto::alarm::test_alarms::communication_error(), // Instance 4: Fourth alarm
         ];
 
+        // Add test alarm history data
+        let mut alarm_history = AlarmHistory::default();
+
+        // Add some major failure alarms (instances 1-3)
+        alarm_history.add_alarm(
+            proto::alarm::AlarmCategory::MajorFailure,
+            proto::alarm::test_alarms::servo_error(),
+        );
+        alarm_history.add_alarm(
+            proto::alarm::AlarmCategory::MajorFailure,
+            proto::alarm::test_alarms::emergency_stop(),
+        );
+        alarm_history.add_alarm(
+            proto::alarm::AlarmCategory::MajorFailure,
+            proto::alarm::test_alarms::safety_error(),
+        );
+
+        // Add some monitor alarms (instances 1001-1003)
+        alarm_history.add_alarm(
+            proto::alarm::AlarmCategory::MonitorAlarm,
+            proto::alarm::test_alarms::communication_error(),
+        );
+        alarm_history.add_alarm(
+            proto::alarm::AlarmCategory::MonitorAlarm,
+            proto::alarm::test_alarms::servo_error(),
+        );
+
         Self {
             status: proto::Status {
                 step: false,
@@ -71,6 +180,7 @@ impl Default for MockState {
             io_states,
             registers,
             alarms,
+            alarm_history,
             current_job: Some("TEST.JOB".to_string()),
             servo_on: true,
             hold_state: false,

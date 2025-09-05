@@ -277,6 +277,42 @@ test_alarm_operations() {
             return 1
         fi
         
+        # Check alarm history reading (0x71 command)
+        if echo "$output" | grep -q "✓ Major failure alarm 1: Code=1001, Name="; then
+            test_passed "Alarm history - Major failure alarm 1"
+        else
+            test_failed "Alarm history - Major failure alarm 1"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "✓ Monitor alarm 1001: No alarm"; then
+            test_passed "Alarm history - Monitor alarm 1001"
+        else
+            test_failed "Alarm history - Monitor alarm 1001"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "✓ Major failure alarm #1 code: 1001"; then
+            test_passed "Alarm history - Code attribute"
+        else
+            test_failed "Alarm history - Code attribute"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "✓ Major failure alarm #1 time: 2024/01/01 12:00"; then
+            test_passed "Alarm history - Time attribute"
+        else
+            test_failed "Alarm history - Time attribute"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "✓ Invalid instance correctly returned empty data"; then
+            test_passed "Alarm history - Invalid instance handling"
+        else
+            test_failed "Alarm history - Invalid instance handling"
+            return 1
+        fi
+        
         if echo "$output" | grep -q "Alarm operations example completed successfully"; then
             test_passed "Alarm operations completion"
         else
