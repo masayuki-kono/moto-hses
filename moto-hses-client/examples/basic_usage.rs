@@ -78,6 +78,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Read alarm data
+    println!("\n--- Alarm Data ---");
+    match client.read_alarm_data(1, 0).await {
+        Ok(alarm) => {
+            println!("✓ Alarm data read successfully");
+            println!("  Code: {}", alarm.code);
+            println!("  Data: {}", alarm.data);
+            println!("  Type: {}", alarm.alarm_type);
+            println!("  Time: {}", alarm.time);
+            println!("  Name: {}", alarm.name);
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to read alarm data: {}", e);
+        }
+    }
+
     // Read variables
     println!("\n--- Variable Operations ---");
 

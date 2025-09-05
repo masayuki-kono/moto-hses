@@ -72,6 +72,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
     println!("Current position: {:?}", position);
 
+    // Read alarm data
+    let alarm = client.read_alarm_data(1, 0).await?;
+    println!("Alarm: Code={}, Name={}", alarm.code, alarm.name);
+
     // Convenience methods for status checking
     let is_running = client.is_running().await?;
     let is_servo_on = client.is_servo_on().await?;
@@ -82,6 +86,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+### Alarm Operations
+
+```rust
+use moto_hses_client::{HsesClient, Alarm};
+
+// Read alarm data
+let alarm = client.read_alarm_data(1, 0).await?;
+println!("Alarm: Code={}, Name={}", alarm.code, alarm.name);
+
+// Read specific alarm attributes
+let alarm_code = client.read_alarm_data(1, 1).await?; // Code only
+let alarm_name = client.read_alarm_data(1, 5).await?; // Name only
+```
+
+> **Note**: For detailed alarm operations examples, see [`examples/alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs)
 
 ### Advanced Usage with Custom Configuration
 
@@ -113,17 +133,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Available Examples
+
+```bash
+# Basic usage (status, position, variables, alarm data)
+cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
+
+# Detailed alarm operations
+cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
+
+# Other examples
+cargo run -p moto-hses-client --example connection_management -- 127.0.0.1 10040
+cargo run -p moto-hses-client --example file_operations -- 127.0.0.1 10041
+cargo run -p moto-hses-client --example read_status -- 127.0.0.1 10040
+```
+
 ### Mock Server Testing
 
 ```bash
 # Terminal 1: Start mock server
-cargo run -p moto-hses-mock
+cargo run -p moto-hses-mock --example mock_basic_usage
 
-# Terminal 2: Run client example against mock
-cargo run -p moto-hses-client --example read_status -- 127.0.0.1 10040
-
-# Terminal 3: Run file operations example
-cargo run -p moto-hses-client --example file_operations -- 127.0.0.1 10041
+# Terminal 2: Run client examples against mock
+cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
+cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
 ```
 
 ## Implementation Status
@@ -168,6 +201,7 @@ cargo run -p moto-hses-client --example file_operations -- 127.0.0.1 10041
 - ✅ Variable reading/writing (Integer, Float, Byte)
 - ✅ Robot status reading
 - ✅ Position reading
+- ✅ Alarm data reading (0x70 command)
 - ✅ Convenience methods for status checking
 - ✅ Error handling and retry logic
 

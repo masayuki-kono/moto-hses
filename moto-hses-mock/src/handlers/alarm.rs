@@ -14,7 +14,7 @@ impl CommandHandler for AlarmDataHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let instance = message.sub_header.instance as usize;
-        let attribute = message.sub_header.attribute;
+        let _attribute = message.sub_header.attribute;
 
         // Python client expects 60 bytes: 4+4+4+16+32
         let mut data = vec![0u8; 60];
@@ -28,27 +28,15 @@ impl CommandHandler for AlarmDataHandler {
         } else {
             let alarm = &state.alarms[instance - 1];
 
-            if attribute == 0 {
-                // For attribute 0, return complete alarm data
-                let alarm_data = alarm.serialize_complete()?;
+            // Always return complete alarm data regardless of attribute
+            // The client will extract the specific attribute it needs
+            let alarm_data = alarm.serialize_complete()?;
 
-                // Copy complete alarm data to response
-                if alarm_data.len() >= 60 {
-                    data[..60].copy_from_slice(&alarm_data[..60]);
-                } else {
-                    data[..alarm_data.len()].copy_from_slice(&alarm_data);
-                }
+            // Copy complete alarm data to response
+            if alarm_data.len() >= 60 {
+                data[..60].copy_from_slice(&alarm_data[..60]);
             } else {
-                // For specific attributes, use the existing logic
-                let alarm_data = alarm.serialize(attribute)?;
-
-                // Copy alarm data to appropriate positions
-                if alarm_data.len() >= 8 {
-                    data[0..8].copy_from_slice(&alarm_data[0..8]);
-                }
-                // Fill remaining fields with default values
-                data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
-                                                                  // data[12..28] and data[28..60] remain 0 (default time and name)
+                data[..alarm_data.len()].copy_from_slice(&alarm_data);
             }
         }
 
@@ -66,7 +54,7 @@ impl CommandHandler for AlarmInfoHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let alarm_number = message.sub_header.instance as usize;
-        let attribute = message.sub_header.attribute;
+        let _attribute = message.sub_header.attribute;
 
         // Python client expects 60 bytes: 4+4+4+16+32
         let mut data = vec![0u8; 60];
@@ -80,27 +68,15 @@ impl CommandHandler for AlarmInfoHandler {
         } else {
             let alarm = &state.alarms[alarm_number - 1];
 
-            if attribute == 0 {
-                // For attribute 0, return complete alarm data
-                let alarm_data = alarm.serialize_complete()?;
+            // Always return complete alarm data regardless of attribute
+            // The client will extract the specific attribute it needs
+            let alarm_data = alarm.serialize_complete()?;
 
-                // Copy complete alarm data to response
-                if alarm_data.len() >= 60 {
-                    data[..60].copy_from_slice(&alarm_data[..60]);
-                } else {
-                    data[..alarm_data.len()].copy_from_slice(&alarm_data);
-                }
+            // Copy complete alarm data to response
+            if alarm_data.len() >= 60 {
+                data[..60].copy_from_slice(&alarm_data[..60]);
             } else {
-                // For specific attributes, use the existing logic
-                let alarm_data = alarm.serialize(attribute)?;
-
-                // Copy alarm data to appropriate positions
-                if alarm_data.len() >= 8 {
-                    data[0..8].copy_from_slice(&alarm_data[0..8]);
-                }
-                // Fill remaining fields with default values
-                data[8..12].copy_from_slice(&0u32.to_le_bytes()); // Default alarm type
-                                                                  // data[12..28] and data[28..60] remain 0 (default time and name)
+                data[..alarm_data.len()].copy_from_slice(&alarm_data);
             }
         }
 

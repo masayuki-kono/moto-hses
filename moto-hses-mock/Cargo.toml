@@ -10,8 +10,8 @@ tokio = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
 
 [[example]]
-name = "basic_usage"
-path = "examples/basic_usage.rs"
+name = "mock_basic_usage"
+path = "examples/mock_basic_usage.rs"
 
 [dev-dependencies]
 tokio-test = "0.4"
