@@ -13,12 +13,12 @@ pub struct Status {
 
 impl Status {
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
+        if data.len() < 8 {
             return Err(ProtocolError::Underflow);
         }
 
-        let data1 = StatusData1::from_bytes(&data[0..2])?;
-        let data2 = StatusData2::from_bytes(&data[2..4])?;
+        let data1 = StatusData1::from_bytes(&data[0..4])?;
+        let data2 = StatusData2::from_bytes(&data[4..8])?;
 
         Ok(Self { data1, data2 })
     }
@@ -91,12 +91,12 @@ pub struct StatusData2 {
 
 impl StatusData1 {
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 2 {
+        if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
 
         let mut buf = data;
-        let status_word = buf.get_u16_le();
+        let status_word = buf.get_u32_le() as u16;
 
         Ok(Self {
             step: (status_word & 0x0001) != 0,
@@ -113,12 +113,12 @@ impl StatusData1 {
 
 impl StatusData2 {
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 2 {
+        if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
 
         let mut buf = data;
-        let status_word = buf.get_u16_le();
+        let status_word = buf.get_u32_le() as u16;
 
         Ok(Self {
             teach_pendant_hold: (status_word & 0x0002) != 0,
@@ -137,7 +137,7 @@ impl VariableType for StatusData1 {
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        let mut status_word = 0u16;
+        let mut status_word = 0u32;
 
         if self.step {
             status_word |= 0x0001;
@@ -178,7 +178,7 @@ impl VariableType for StatusData2 {
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        let mut status_word = 0u16;
+        let mut status_word = 0u32;
 
         if self.teach_pendant_hold {
             status_word |= 0x0002;
@@ -207,34 +207,13 @@ impl VariableType for StatusData2 {
     }
 }
 
-// Wrapper types to avoid orphan rule violations
-pub struct StatusWrapper(pub Status);
-
-impl VariableType for StatusWrapper {
-    fn command_id() -> u16 {
-        0x72
-    }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        self.0.serialize()
-    }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Status::from_bytes(data).map(StatusWrapper)
-    }
-}
-
-impl From<StatusWrapper> for Status {
-    fn from(wrapper: StatusWrapper) -> Self {
-        wrapper.0
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_status_from_bytes() {
-        let data = vec![0x01, 0x00, 0x40, 0x00];
+        let data = vec![0x01, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00];
         let status = Status::from_bytes(&data).unwrap();
         assert!(status.data1.step);
         assert!(status.data2.servo_on);
@@ -331,39 +310,8 @@ mod tests {
     }
 
     #[test]
-    fn test_status_wrapper() {
-        let data1 = StatusData1 {
-            step: true,
-            one_cycle: false,
-            continuous: false,
-            running: false,
-            speed_limited: false,
-            teach: false,
-            play: false,
-            remote: false,
-        };
-        let data2 = StatusData2 {
-            teach_pendant_hold: false,
-            external_hold: false,
-            command_hold: false,
-            alarm: false,
-            error: false,
-            servo_on: false,
-        };
-        let status = Status::new(data1, data2);
-
-        let wrapper = StatusWrapper(status.clone());
-        assert_eq!(StatusWrapper::command_id(), 0x72);
-
-        let serialized = wrapper.serialize().unwrap();
-        let deserialized = StatusWrapper::deserialize(&serialized).unwrap();
-        let deserialized_status: Status = deserialized.into();
-        assert_eq!(status.data1.step, deserialized_status.data1.step);
-    }
-
-    #[test]
     fn test_status_data1() {
-        let data = vec![0x01, 0x00]; // step bit set
+        let data = vec![0x01, 0x00, 0x00, 0x00]; // step bit set
         let status_data1 = StatusData1::from_bytes(&data).unwrap();
         assert!(status_data1.step);
         assert!(!status_data1.running);
@@ -376,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_status_data2() {
-        let data = vec![0x40, 0x00]; // servo_on bit set
+        let data = vec![0x40, 0x00, 0x00, 0x00]; // servo_on bit set
         let status_data2 = StatusData2::from_bytes(&data).unwrap();
         assert!(status_data2.servo_on);
         assert!(!status_data2.alarm);

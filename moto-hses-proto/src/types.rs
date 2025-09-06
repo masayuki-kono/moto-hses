@@ -154,7 +154,7 @@ pub struct ReadCurrentPosition {
 
 // Command implementations
 impl Command for ReadStatus {
-    type Response = crate::status::StatusWrapper;
+    type Response = crate::status::Status;
     fn command_id() -> u16 {
         0x72
     }
