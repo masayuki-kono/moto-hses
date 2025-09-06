@@ -2,9 +2,9 @@
 
 use moto_hses_proto::alarm::ReadAlarmHistory;
 use moto_hses_proto::{
-    Alarm, Command, CoordinateSystemType, Position, ReadAlarmData, ReadCurrentPosition, ReadStatus,
-    ReadStatusData1, ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, VariableType,
-    WriteVar,
+    Alarm, Command, CoordinateSystemType, ExecutingJobInfo, Position, ReadAlarmData,
+    ReadCurrentPosition, ReadExecutingJobInfo, ReadStatus, ReadStatusData1, ReadStatusData2,
+    ReadVar, Status, StatusData1, StatusData2, VariableType, WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -82,6 +82,39 @@ impl HsesClient {
     ) -> Result<Alarm, ClientError> {
         let command = ReadAlarmHistory::new(instance, attribute);
         self.read_alarm_attribute(command, attribute).await
+    }
+
+    /// Read executing job information
+    ///
+    /// # Arguments
+    /// * `task_type` - Task type (1: Master task, 2-6: Sub tasks)
+    /// * `attribute` - Information to read (0: All, 1: Job name, 2: Line number, 3: Step number, 4: Speed override value)
+    pub async fn read_executing_job_info(
+        &self,
+        task_type: u16,
+        attribute: u8,
+    ) -> Result<ExecutingJobInfo, ClientError> {
+        let command = ReadExecutingJobInfo::new(task_type, attribute);
+        let response = self.send_command_with_retry(command).await?;
+
+        // Use attribute-specific deserialization for single attributes
+        if attribute > 0 {
+            ExecutingJobInfo::deserialize_attribute(&response, attribute).map_err(ClientError::from)
+        } else {
+            // Use standard deserialization for complete data
+            self.deserialize_response(&response)
+        }
+    }
+
+    /// Read complete executing job information (all attributes)
+    ///
+    /// # Arguments
+    /// * `task_type` - Task type (1: Master task, 2-6: Sub tasks)
+    pub async fn read_executing_job_info_complete(
+        &self,
+        task_type: u16,
+    ) -> Result<ExecutingJobInfo, ClientError> {
+        self.read_executing_job_info(task_type, 0).await
     }
 
     // Common helper method for alarm attribute reading
@@ -396,7 +429,7 @@ impl HsesClient {
 
     fn get_service_for_command(&self, command: u16, attribute: u8) -> u8 {
         match command {
-            0x70 | 0x71 | 0x72 | 0x75 => {
+            0x70 | 0x71 | 0x72 | 0x73 | 0x75 => {
                 // Commands that support both Get_Attribute_All and Get_Attribute_Single
                 if attribute == 0 {
                     0x01 // Get_Attribute_All

@@ -413,6 +413,75 @@ test_read_status() {
     fi
 }
 
+# Test read executing job info (0x73 command)
+test_read_executing_job_info() {
+    log_info "Testing read executing job info..."
+    
+    cd "$PROJECT_ROOT"
+    
+    # Run read executing job info example and capture output
+    local output
+    if output=$(cargo run -p moto-hses-client --example read_executing_job_info -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
+        # Check for expected success indicators
+        if echo "$output" | grep -q "Connecting to controller at"; then
+            test_passed "Read executing job info connection"
+        else
+            test_failed "Read executing job info connection"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Complete job information:"; then
+            test_passed "Read executing job info complete"
+        else
+            test_failed "Read executing job info complete"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Job name: TEST.JOB"; then
+            test_passed "Read executing job info job name"
+        else
+            test_failed "Read executing job info job name"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Line number: 1000"; then
+            test_passed "Read executing job info line number"
+        else
+            test_failed "Read executing job info line number"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Step number: 1"; then
+            test_passed "Read executing job info step number"
+        else
+            test_failed "Read executing job info step number"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Speed override value: 100"; then
+            test_passed "Read executing job info speed override"
+        else
+            test_failed "Read executing job info speed override"
+            return 1
+        fi
+        
+        if echo "$output" | grep -q "Master Task (1): TEST.JOB"; then
+            test_passed "Read executing job info task types"
+        else
+            test_failed "Read executing job info task types"
+            return 1
+        fi
+        
+        log_success "Read executing job info test completed successfully"
+        return 0
+    else
+        test_failed "Read executing job info execution"
+        log_error "Read executing job info output:"
+        echo "$output"
+        return 1
+    fi
+}
+
 # Test file operations (optional)
 test_file_operations() {
     log_info "Testing file operations..."
@@ -476,6 +545,7 @@ main() {
     test_alarm_operations || log_error "Alarm operations test failed"
     test_connection_management || log_error "Connection management test failed"
     test_read_status || log_error "Read status test failed"
+    test_read_executing_job_info || log_error "Read executing job info test failed"
     test_file_operations || log_warning "File operations test failed (optional)"
     
     # Print test summary
