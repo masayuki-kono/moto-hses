@@ -31,24 +31,29 @@ pub struct ExecutingJobInfoHandler;
 impl CommandHandler for ExecutingJobInfoHandler {
     fn handle(
         &self,
-        _message: &proto::HsesRequestMessage,
+        message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let mut data = vec![0u8; 64];
+        // Create job info based on current state
+        let job_info = proto::ExecutingJobInfo::new(
+            state
+                .current_job
+                .clone()
+                .unwrap_or_else(|| "NO_JOB".to_string()),
+            1000, // Line number
+            1,    // Step number
+            100,  // Speed override value
+        );
 
-        // Job name (32 bytes)
-        if let Some(job_name) = &state.current_job {
-            let name_bytes = job_name.as_bytes();
-            let len = name_bytes.len().min(31);
-            data[0..len].copy_from_slice(&name_bytes[0..len]);
+        // Check if we need to serialize specific attribute or all
+        let attribute = message.sub_header.attribute;
+        if attribute == 0 {
+            // Return all attributes
+            job_info.serialize_complete()
+        } else {
+            // Return specific attribute
+            job_info.serialize(attribute)
         }
-
-        // Line number (4 bytes)
-        data[32..36].copy_from_slice(&1000u32.to_le_bytes());
-
-        // Other fields remain 0
-
-        Ok(data)
     }
 }
 
