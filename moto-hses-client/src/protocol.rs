@@ -3,8 +3,8 @@
 use moto_hses_proto::alarm::ReadAlarmHistory;
 use moto_hses_proto::{
     Alarm, Command, CoordinateSystemType, Position, ReadAlarmData, ReadCurrentPosition, ReadStatus,
-    ReadStatusData1, ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, StatusWrapper,
-    VariableType, WriteVar,
+    ReadStatusData1, ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, VariableType,
+    WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -38,8 +38,7 @@ impl HsesClient {
     /// Uses service=0x01 (Get_Attribute_All) with attribute=0 to get both data in one request
     pub async fn read_status(&self) -> Result<Status, ClientError> {
         let response = self.send_command_with_retry(ReadStatus).await?;
-        let result: StatusWrapper = self.deserialize_response(&response)?;
-        Ok(result.into())
+        self.deserialize_response(&response)
     }
 
     /// Read status data 1 (basic status information)
