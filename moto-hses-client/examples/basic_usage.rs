@@ -27,6 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create custom configuration
     let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
         timeout: Duration::from_millis(500),
         retry_count: 5,
         retry_delay: Duration::from_millis(200),
@@ -34,17 +36,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Connect to the controller
-    let client =
-        match HsesClient::new_with_config(&format!("{}:{}", host, robot_port), config).await {
-            Ok(client) => {
-                println!("✓ Successfully connected to controller");
-                client
-            }
-            Err(e) => {
-                eprintln!("✗ Failed to connect: {}", e);
-                return Ok(());
-            }
-        };
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            println!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to connect: {}", e);
+            return Ok(());
+        }
+    };
 
     // Read robot status
     println!("\n--- Robot Status ---");
@@ -162,33 +163,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     */
 
-    // Convenience methods
-    println!("\n--- Convenience Methods ---");
+    // Status checking
+    println!("\n--- Status Checking ---");
 
-    match client.is_running().await {
-        Ok(running) => {
-            println!("✓ Robot running: {}", running);
+    match client.read_status().await {
+        Ok(status) => {
+            println!("✓ Robot running: {}", status.is_running());
+            println!("✓ Servo on: {}", status.is_servo_on());
+            println!("✓ Has alarm: {}", status.has_alarm());
         }
         Err(e) => {
-            eprintln!("✗ Failed to check running status: {}", e);
-        }
-    }
-
-    match client.is_servo_on().await {
-        Ok(servo_on) => {
-            println!("✓ Servo on: {}", servo_on);
-        }
-        Err(e) => {
-            eprintln!("✗ Failed to check servo status: {}", e);
-        }
-    }
-
-    match client.has_alarm().await {
-        Ok(has_alarm) => {
-            println!("✓ Has alarm: {}", has_alarm);
-        }
-        Err(e) => {
-            eprintln!("✗ Failed to check alarm status: {}", e);
+            eprintln!("✗ Failed to read status: {}", e);
         }
     }
 

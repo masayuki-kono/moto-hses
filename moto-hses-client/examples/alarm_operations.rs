@@ -27,6 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create custom configuration
     let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
         timeout: Duration::from_millis(500),
         retry_count: 5,
         retry_delay: Duration::from_millis(200),
@@ -34,17 +36,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Connect to the controller
-    let client =
-        match HsesClient::new_with_config(&format!("{}:{}", host, robot_port), config).await {
-            Ok(client) => {
-                println!("✓ Successfully connected to controller");
-                client
-            }
-            Err(e) => {
-                eprintln!("✗ Failed to connect: {}", e);
-                return Ok(());
-            }
-        };
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            println!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to connect: {}", e);
+            return Ok(());
+        }
+    };
 
     // Read complete alarm data (attribute 0)
     println!("\n--- Complete Alarm Data (Instance 1) ---");

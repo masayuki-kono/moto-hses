@@ -310,6 +310,14 @@ impl Command for ReadAlarmData {
     fn attribute(&self) -> u8 {
         self.attribute
     }
+
+    fn service(&self) -> u8 {
+        if self.attribute == 0 {
+            0x01 // Get_Attribute_All
+        } else {
+            0x0e // Get_Attribute_Single
+        }
+    }
 }
 
 impl Command for ReadAlarmHistory {
@@ -331,6 +339,14 @@ impl Command for ReadAlarmHistory {
 
     fn attribute(&self) -> u8 {
         self.attribute
+    }
+
+    fn service(&self) -> u8 {
+        if self.attribute == 0 {
+            0x01 // Get_Attribute_All
+        } else {
+            0x0e // Get_Attribute_Single
+        }
     }
 }
 

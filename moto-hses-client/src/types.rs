@@ -14,6 +14,8 @@ use moto_hses_proto::ProtocolError;
 /// Client configuration options
 #[derive(Debug, Clone)]
 pub struct ClientConfig {
+    pub host: String,
+    pub port: u16,
     pub timeout: Duration,
     pub retry_count: u32,
     pub retry_delay: Duration,
@@ -23,6 +25,8 @@ pub struct ClientConfig {
 impl Default for ClientConfig {
     fn default() -> Self {
         Self {
+            host: "127.0.0.1".to_string(),
+            port: 10040,
             timeout: Duration::from_millis(300),
             retry_count: 3,
             retry_delay: Duration::from_millis(100),

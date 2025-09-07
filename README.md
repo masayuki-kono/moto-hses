@@ -76,12 +76,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let alarm = client.read_alarm_data(1, 0).await?;
     println!("Alarm: Code={}, Name={}", alarm.code, alarm.name);
 
-    // Convenience methods for status checking
-    let is_running = client.is_running().await?;
-    let is_servo_on = client.is_servo_on().await?;
-    let has_alarm = client.has_alarm().await?;
-
-    println!("Running: {}, Servo: {}, Alarm: {}", is_running, is_servo_on, has_alarm);
+    // Check robot status
+    let status = client.read_status().await?;
+    println!("Running: {}, Servo: {}, Alarm: {}",
+             status.is_running(), status.is_servo_on(), status.has_alarm());
 
     Ok(())
 }
@@ -103,6 +101,21 @@ let alarm_name = client.read_alarm_data(1, 5).await?; // Name only
 
 > **Note**: For detailed alarm operations examples, see [`examples/alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs)
 
+### I/O Operations
+
+```rust
+use moto_hses_client::HsesClient;
+
+// Read I/O state
+let io_state = client.read_io(1).await?; // Read robot user input #1
+println!("I/O #1 state: {}", if io_state { "ON" } else { "OFF" });
+
+// Write I/O state
+client.write_io(1001, true).await?; // Set robot user output #1001 to ON
+```
+
+> **Note**: For detailed I/O operations examples, see [`examples/io_operations.rs`](moto-hses-client/examples/io_operations.rs)
+
 ### Advanced Usage with Custom Configuration
 
 ```rust
@@ -113,6 +126,8 @@ use std::time::Duration;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create custom configuration
     let config = ClientConfig {
+        host: "192.168.1.100".to_string(),
+        port: 10040,
         timeout: Duration::from_millis(500),
         retry_count: 5,
         retry_delay: Duration::from_millis(200),
@@ -120,7 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Create client with custom configuration
-    let client = HsesClient::new_with_config("192.168.1.100:10040", config).await?;
+    let client = HsesClient::new_with_config(config).await?;
 
     // Read different variable types
     let int_value: i32 = client.read_variable::<i32>(0).await?;
@@ -142,6 +157,9 @@ cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
 # Detailed alarm operations
 cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
 
+# I/O operations (0x78 command)
+cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
+
 # Other examples
 cargo run -p moto-hses-client --example connection_management -- 127.0.0.1 10040
 cargo run -p moto-hses-client --example file_operations -- 127.0.0.1 10041
@@ -159,6 +177,7 @@ cargo run -p moto-hses-mock --example mock_basic_usage
 # Terminal 2: Run client examples against mock
 cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
 cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
+cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
 ```
 
 #### Automated Integration Testing
@@ -228,12 +247,11 @@ cargo test --test protocol_communication_tests
 - ✅ Robot status reading
 - ✅ Position reading
 - ✅ Alarm data reading (0x70 command)
-- ✅ Convenience methods for status checking
+- ✅ I/O operations (`read_io`, `write_io`) - 0x78 command fully implemented
 - ✅ Error handling and retry logic
 
 ### Partially Implemented Features
 
-- 🔄 I/O operations (`read_io`, `write_io`) - Basic structure exists but not fully implemented
 - 🔄 Job control (`execute_job`, `stop_job`) - Basic structure exists but not fully implemented
 
 ### Planned Features

@@ -13,6 +13,7 @@ pub trait Command {
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
     fn instance(&self) -> u16;
     fn attribute(&self) -> u8;
+    fn service(&self) -> u8;
 }
 
 pub trait VariableType: Send + Sync + 'static {
@@ -111,6 +112,15 @@ pub struct WriteVar<T> {
     pub value: T,
 }
 
+pub struct ReadIo {
+    pub io_number: u16,
+}
+
+pub struct WriteIo {
+    pub io_number: u16,
+    pub value: bool,
+}
+
 // Generic Command implementations for ReadVar and WriteVar
 impl<T: VariableType> Command for ReadVar<T> {
     type Response = T;
@@ -125,6 +135,9 @@ impl<T: VariableType> Command for ReadVar<T> {
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
+    }
+    fn service(&self) -> u8 {
+        0x0e // Get_Attribute_Single
     }
 }
 
@@ -141,6 +154,48 @@ impl<T: VariableType> Command for WriteVar<T> {
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
+    }
+    fn service(&self) -> u8 {
+        0x10 // Set_Attribute_Single
+    }
+}
+
+impl Command for ReadIo {
+    type Response = bool;
+    fn command_id() -> u16 {
+        0x78
+    }
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        Ok(Vec::new())
+    }
+    fn instance(&self) -> u16 {
+        self.io_number
+    }
+    fn attribute(&self) -> u8 {
+        1 // Fixed to 1 for I/O commands
+    }
+    fn service(&self) -> u8 {
+        0x0e // Get_Attribute_Single
+    }
+}
+
+impl Command for WriteIo {
+    type Response = ();
+    fn command_id() -> u16 {
+        0x78
+    }
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        let value = if self.value { 1 } else { 0 };
+        Ok(vec![value, 0, 0, 0])
+    }
+    fn instance(&self) -> u16 {
+        self.io_number
+    }
+    fn attribute(&self) -> u8 {
+        1 // Fixed to 1 for I/O commands
+    }
+    fn service(&self) -> u8 {
+        0x10 // Set_Attribute_Single
     }
 }
 
@@ -167,6 +222,9 @@ impl Command for ReadStatus {
     fn attribute(&self) -> u8 {
         0 // Use 0 to get all attributes (Data 1 and Data 2) with Get_Attribute_All
     }
+    fn service(&self) -> u8 {
+        0x01 // Get_Attribute_All
+    }
 }
 
 impl Command for ReadStatusData1 {
@@ -182,6 +240,9 @@ impl Command for ReadStatusData1 {
     }
     fn attribute(&self) -> u8 {
         1 // Data 1
+    }
+    fn service(&self) -> u8 {
+        0x0e // Get_Attribute_Single
     }
 }
 
@@ -199,6 +260,9 @@ impl Command for ReadStatusData2 {
     fn attribute(&self) -> u8 {
         2 // Data 2
     }
+    fn service(&self) -> u8 {
+        0x0e // Get_Attribute_Single
+    }
 }
 
 impl Command for ReadCurrentPosition {
@@ -214,6 +278,9 @@ impl Command for ReadCurrentPosition {
     }
     fn attribute(&self) -> u8 {
         1 // Data type (default)
+    }
+    fn service(&self) -> u8 {
+        0x0e // Get_Attribute_Single
     }
 }
 

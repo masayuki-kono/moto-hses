@@ -315,3 +315,90 @@ async fn test_alarm_history_read_command_invalid_instance() {
         }
     }
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_io_read_command_0x78() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+
+    // Create I/O read command (0x78)
+    let message = proto::HsesRequestMessage::new(
+        1,      // Division: Robot
+        0,      // ACK: Request
+        1,      // Request ID
+        0x78,   // Command: I/O data reading
+        1,      // Instance: I/O number 1
+        1,      // Attribute: Fixed to 1
+        0x0e,   // Service: Get_Attribute_Single
+        vec![], // No payload
+    );
+
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response
+    sleep(Duration::from_millis(50)).await;
+
+    // Try to receive response
+    let mut buf = vec![0u8; 1024];
+
+    match socket.recv_from(&mut buf).await {
+        Ok((n, _)) => {
+            assert!(n > 0, "Should receive a response");
+            let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+            assert_eq!(response.header.ack, 1); // Should be ACK
+            assert_eq!(response.sub_header.service, 0x8e); // Response service
+            assert_eq!(response.sub_header.status, 0x00); // Normal status
+            assert_eq!(response.payload.len(), 4); // I/O data is 4 bytes
+        }
+        Err(_) => {
+            panic!("Failed to receive response");
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_io_write_command() {
+    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+
+    // Create a UDP socket to send commands
+    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+
+    // Create I/O write command (0x78)
+    let payload = vec![1, 0, 0, 0]; // Set I/O to ON
+    let message = proto::HsesRequestMessage::new(
+        1,    // Division: Robot
+        0,    // ACK: Request
+        1,    // Request ID
+        0x78, // Command: I/O data writing
+        1,    // Instance: I/O number 1
+        1,    // Attribute: Fixed to 1
+        0x10, // Service: Set_Attribute_Single
+        payload,
+    );
+
+    let data = message.encode();
+    socket.send_to(&data, addr).await.unwrap();
+
+    // Wait for response
+    sleep(Duration::from_millis(50)).await;
+
+    // Try to receive response
+    let mut buf = vec![0u8; 1024];
+
+    match socket.recv_from(&mut buf).await {
+        Ok((n, _)) => {
+            assert!(n > 0, "Should receive a response");
+            let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
+            assert_eq!(response.header.ack, 1); // Should be ACK
+            assert_eq!(response.sub_header.service, 0x90); // Response service (0x10 + 0x80)
+            assert_eq!(response.sub_header.status, 0x00); // Normal status
+            assert_eq!(response.payload.len(), 0); // Write response has no payload
+        }
+        Err(_) => {
+            panic!("Failed to receive response");
+        }
+    }
+}

@@ -216,6 +216,51 @@ type = "task_types"
 pattern = "Master Task (1): TEST.JOB"
 description = "Read executing job info task types"
 
+[tests.io_operations]
+command = "io_operations"
+port = "10040"
+description = "Test I/O operations (0x78 command)"
+
+[[tests.io_operations.expected_outputs]]
+type = "connection"
+pattern = "Connected successfully!"
+description = "I/O operations connection"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_read_1"
+pattern = "I/O #1 state:"
+description = "Read robot user input I/O #1"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_read_1001"
+pattern = "I/O #1001 state:"
+description = "Read robot user output I/O #1001"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_write_1001"
+pattern = "Successfully set I/O #1001 to ON"
+description = "Write to robot user output I/O #1001"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_verify_1001"
+pattern = "I/O #1001 state after write:"
+description = "Verify I/O #1001 write operation"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_read_2"
+pattern = "I/O #2 state:"
+description = "Read additional I/O #2"
+
+[[tests.io_operations.expected_outputs]]
+type = "io_write_1002"
+pattern = "Successfully set I/O #1002 to OFF"
+description = "Write to I/O #1002"
+
+[[tests.io_operations.expected_outputs]]
+type = "completion"
+pattern = "I/O operations completed."
+description = "I/O operations completion"
+
 [tests.file_operations]
 command = "file_operations"
 port = "10041"

@@ -27,12 +27,14 @@ let client = HsesClient::new("192.168.1.100:10040").await?;
 
 // With custom configuration
 let config = ClientConfig {
+    host: "192.168.1.100".to_string(),
+    port: 10040,
     timeout: Duration::from_millis(500),
     retry_count: 3,
     retry_delay: Duration::from_millis(100),
     buffer_size: 8192,
 };
-let client = HsesClient::new_with_config("192.168.1.100:10040", config).await?;
+let client = HsesClient::new_with_config(config).await?;
 ```
 
 ### Enhanced Variable Operations
@@ -187,6 +189,31 @@ client.move_to_position(
 ).await?;
 ```
 
+### I/O Operations
+
+```rust
+// Read I/O state
+let io_state = client.read_io(1).await?; // Read robot user input #1
+println!("I/O #1 state: {}", if io_state { "ON" } else { "OFF" });
+
+// Write I/O state
+client.write_io(1001, true).await?; // Set robot user output #1001 to ON
+
+// I/O number ranges:
+// 1-128: Robot user input
+// 1001-1128: Robot user output
+// 2001-2127: External input
+// 2501-2628: Network input
+// 3001-3128: External output
+// 3501-3628: Network output
+// 4001-4160: Robot system input
+// 5001-5200: Robot system output
+// 6001-6064: Interface panel input
+// 7001-7999: Auxiliary relay
+// 8001-8064: Robot control status signal
+// 8201-8220: Pseudo input
+```
+
 ### Enhanced Error Handling
 
 ```rust
@@ -214,15 +241,15 @@ match client.read_variable(&mut var).await {
 ```rust
 // Client configuration with retry logic
 let config = ClientConfig {
+    host: "192.168.1.100".to_string(),
+    port: 10040,
     timeout: Duration::from_millis(1000),
     retry_count: 3,
     retry_delay: Duration::from_millis(100),
     buffer_size: 8192,
-    enable_debug: true,
-    connection_pool_size: 5,
 };
 
-let client = HsesClient::connect_with_config("192.168.1.100:10040", config).await?;
+let client = HsesClient::new_with_config(config).await?;
 
 // Connection pooling for high-performance applications
 let pool = HsesClientPool::new(config, "192.168.1.100:10040").await?;
