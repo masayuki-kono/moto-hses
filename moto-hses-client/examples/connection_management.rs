@@ -28,6 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create configuration with aggressive retry settings
     let config = ClientConfig {
+        host: "127.0.0.1".to_string(),
+        port: 10040,
         timeout: Duration::from_millis(200),
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
@@ -36,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Attempt to connect with error handling
     println!("\n--- Connection Attempt ---");
-    let client = match HsesClient::new_with_config(&controller_addr, config).await {
+    let client = match HsesClient::new_with_config(config).await {
         Ok(client) => {
             println!("✓ Successfully connected to controller");
             client
@@ -91,13 +93,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test connection with invalid address
     println!("\n--- Invalid Address Test ---");
     let invalid_config = ClientConfig {
+        host: "127.0.0.1".to_string(),
+        port: 10040,
         timeout: Duration::from_millis(100),
         retry_count: 1,
         retry_delay: Duration::from_millis(50),
         buffer_size: 8192,
     };
 
-    match HsesClient::new_with_config("192.168.1.999:10040", invalid_config).await {
+    match HsesClient::new_with_config(invalid_config).await {
         Ok(_) => {
             println!("✓ Unexpectedly connected to invalid address");
         }

@@ -32,22 +32,4 @@ impl HsesClient {
     pub async fn write_byte(&self, index: u8, value: u8) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
-
-    /// Check if robot is running
-    pub async fn is_running(&self) -> Result<bool, ClientError> {
-        let status = self.read_status().await?;
-        Ok(status.is_running())
-    }
-
-    /// Check if servo is on
-    pub async fn is_servo_on(&self) -> Result<bool, ClientError> {
-        let status = self.read_status().await?;
-        Ok(status.is_servo_on())
-    }
-
-    /// Check if robot has alarm
-    pub async fn has_alarm(&self) -> Result<bool, ClientError> {
-        let status = self.read_status().await?;
-        Ok(status.has_alarm())
-    }
 }

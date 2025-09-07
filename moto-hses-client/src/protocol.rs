@@ -3,8 +3,8 @@
 use moto_hses_proto::alarm::ReadAlarmHistory;
 use moto_hses_proto::{
     Alarm, Command, CoordinateSystemType, ExecutingJobInfo, Position, ReadAlarmData,
-    ReadCurrentPosition, ReadExecutingJobInfo, ReadStatus, ReadStatusData1, ReadStatusData2,
-    ReadVar, Status, StatusData1, StatusData2, VariableType, WriteVar,
+    ReadCurrentPosition, ReadExecutingJobInfo, ReadIo, ReadStatus, ReadStatusData1,
+    ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -207,25 +207,26 @@ impl HsesClient {
         }
     }
 
-    pub async fn read_io(&self, _io_type: u8, _index: u8) -> Result<bool, ClientError> {
-        // TODO: Implement I/O reading command
-        // For now, return a placeholder implementation
-        Err(ClientError::SystemError(
-            "I/O reading not yet implemented".to_string(),
-        ))
+    pub async fn read_io(&self, io_number: u16) -> Result<bool, ClientError> {
+        let command = ReadIo { io_number };
+        let response = self.send_command_with_retry(command).await?;
+
+        if response.len() >= 4 {
+            let value = i32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+            Ok(value != 0)
+        } else {
+            Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization(
+                    "Invalid response length for I/O read".to_string(),
+                ),
+            ))
+        }
     }
 
-    pub async fn write_io(
-        &self,
-        _io_type: u8,
-        _index: u8,
-        _value: bool,
-    ) -> Result<(), ClientError> {
-        // TODO: Implement I/O writing command
-        // For now, return a placeholder implementation
-        Err(ClientError::SystemError(
-            "I/O writing not yet implemented".to_string(),
-        ))
+    pub async fn write_io(&self, io_number: u16, value: bool) -> Result<(), ClientError> {
+        let command = WriteIo { io_number, value };
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
     }
 
     pub async fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
@@ -281,6 +282,7 @@ impl HsesClient {
             payload,
             command.instance(),
             command.attribute(),
+            command.service(),
         )?;
         eprintln!(
             "Sending message to {}: {} bytes",
@@ -306,6 +308,7 @@ impl HsesClient {
         payload: Vec<u8>,
         instance: u16,
         attribute: u8,
+        service: u8,
     ) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
@@ -345,8 +348,7 @@ impl HsesClient {
         // Attribute
         message.push(attribute);
 
-        // Service depends on command type and attribute
-        let service = self.get_service_for_command(command, attribute);
+        // Service
         message.push(service);
 
         // Padding
@@ -425,28 +427,5 @@ impl HsesClient {
         T: VariableType,
     {
         T::deserialize(data).map_err(ClientError::from)
-    }
-
-    fn get_service_for_command(&self, command: u16, attribute: u8) -> u8 {
-        match command {
-            0x70 | 0x71 | 0x72 | 0x73 | 0x75 => {
-                // Commands that support both Get_Attribute_All and Get_Attribute_Single
-                if attribute == 0 {
-                    0x01 // Get_Attribute_All
-                } else {
-                    0x0e // Get_Attribute_Single
-                }
-            }
-            0x7A..=0x81 => {
-                // Variable read/write commands - attribute is always 1
-                // For now, assume read operations (0x0E)
-                // TODO: Add support for write operations (0x10, 0x02)
-                0x0e // Get_Attribute_Single
-            }
-            _ => {
-                // Default to Get_Attribute_Single for unknown commands
-                0x0e
-            }
-        }
     }
 }
