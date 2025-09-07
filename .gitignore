@@ -21,6 +21,4 @@ target
 #.idea/
 
 # Log files
-logs/*.log
-logs/*.out
-logs/*.err
+logs
