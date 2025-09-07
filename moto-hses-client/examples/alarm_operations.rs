@@ -36,17 +36,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Connect to the controller
-    let client =
-        match HsesClient::new_with_config(config).await {
-            Ok(client) => {
-                println!("✓ Successfully connected to controller");
-                client
-            }
-            Err(e) => {
-                eprintln!("✗ Failed to connect: {}", e);
-                return Ok(());
-            }
-        };
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            println!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            eprintln!("✗ Failed to connect: {}", e);
+            return Ok(());
+        }
+    };
 
     // Read complete alarm data (attribute 0)
     println!("\n--- Complete Alarm Data (Instance 1) ---");
