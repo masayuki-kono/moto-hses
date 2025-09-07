@@ -67,10 +67,7 @@ impl CommandHandler for RegisterHandler {
                 if message.payload.len() >= 2 {
                     // Register data is 2 bytes (i16) + 2 bytes reserved = 4 bytes total
                     // We only use the first 2 bytes for the actual register value
-                    let value = i16::from_le_bytes([
-                        message.payload[0],
-                        message.payload[1],
-                    ]);
+                    let value = i16::from_le_bytes([message.payload[0], message.payload[1]]);
                     state.set_register(reg_number, value);
                 }
                 Ok(vec![])
