@@ -24,3 +24,7 @@ path = "examples/connection_management.rs"
 [[example]]
 name = "file_operations"
 path = "examples/file_operations.rs"
+
+[[example]]
+name = "register_operations"
+path = "examples/register_operations.rs"

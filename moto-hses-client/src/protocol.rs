@@ -229,6 +229,39 @@ impl HsesClient {
         Ok(())
     }
 
+    pub async fn read_register(&self, register_number: u16) -> Result<i16, ClientError> {
+        use moto_hses_proto::types::ReadRegister;
+        let command = ReadRegister { register_number };
+        let response = self.send_command_with_retry(command).await?;
+
+        if response.len() >= 2 {
+            // Register data is 2 bytes (i16) + 2 bytes reserved = 4 bytes total
+            // We only use the first 2 bytes for the actual register value
+            let value = i16::from_le_bytes([response[0], response[1]]);
+            Ok(value)
+        } else {
+            Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization(
+                    "Invalid response length for register read".to_string(),
+                ),
+            ))
+        }
+    }
+
+    pub async fn write_register(
+        &self,
+        register_number: u16,
+        value: i16,
+    ) -> Result<(), ClientError> {
+        use moto_hses_proto::types::WriteRegister;
+        let command = WriteRegister {
+            register_number,
+            value,
+        };
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
+    }
+
     pub async fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
         // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
