@@ -261,6 +261,56 @@ type = "completion"
 pattern = "I/O operations completed."
 description = "I/O operations completion"
 
+[tests.register_operations]
+command = "register_operations"
+port = "10040"
+description = "Test register operations (0x79 command)"
+
+[[tests.register_operations.expected_outputs]]
+type = "connection"
+pattern = "Connected to mock server"
+description = "Register operations connection"
+
+[[tests.register_operations.expected_outputs]]
+type = "read_register_0"
+pattern = "Register 0 value:"
+description = "Read register 0"
+
+[[tests.register_operations.expected_outputs]]
+type = "write_register_0"
+pattern = "Write successful"
+description = "Write to register 0"
+
+[[tests.register_operations.expected_outputs]]
+type = "verify_register_0"
+pattern = "Register 0 value after write: 42"
+description = "Verify register 0 write operation"
+
+[[tests.register_operations.expected_outputs]]
+type = "test_register_1"
+pattern = "✓ Register 1 test passed"
+description = "Test register 1 operations"
+
+[[tests.register_operations.expected_outputs]]
+type = "test_register_2"
+pattern = "✓ Register 2 test passed"
+description = "Test register 2 operations"
+
+[[tests.register_operations.expected_outputs]]
+type = "test_register_3"
+pattern = "✓ Register 3 test passed"
+description = "Test register 3 operations"
+
+[[tests.register_operations.expected_outputs]]
+type = "test_register_4"
+pattern = "✓ Register 4 test passed"
+description = "Test register 4 operations"
+
+[[tests.register_operations.expected_outputs]]
+type = "completion"
+pattern = "Register operations example completed!"
+description = "Register operations completion"
+
 [tests.file_operations]
 command = "file_operations"
 port = "10041"

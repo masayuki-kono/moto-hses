@@ -12,7 +12,7 @@ pub struct MockState {
     pub position: proto::Position,
     pub variables: HashMap<u8, Vec<u8>>,
     pub io_states: HashMap<u16, bool>,
-    pub registers: HashMap<u16, i32>,
+    pub registers: HashMap<u16, i16>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: AlarmHistory,
     pub current_job: Option<String>,
@@ -203,12 +203,12 @@ impl MockState {
     }
 
     /// Get register value
-    pub fn get_register(&self, reg_number: u16) -> i32 {
+    pub fn get_register(&self, reg_number: u16) -> i16 {
         self.registers.get(&reg_number).copied().unwrap_or(0)
     }
 
     /// Set register value
-    pub fn set_register(&mut self, reg_number: u16, value: i32) {
+    pub fn set_register(&mut self, reg_number: u16, value: i16) {
         self.registers.insert(reg_number, value);
     }
 
