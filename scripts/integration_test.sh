@@ -2,6 +2,17 @@
 
 # Integration Test Script for moto-hses
 # This script tests the communication between mock server and client
+#
+# Usage:
+#   ./integration_test.sh                    # Run tests in normal mode
+#   DEBUG_MODE=true ./integration_test.sh    # Run tests with debug output
+#
+# Features:
+#   - Configuration-based testing using test_config.yaml
+#   - Structured output validation
+#   - Debug mode for detailed error information
+#   - Automatic cleanup of temporary files
+#   - Comprehensive test result reporting
 
 set -e  # Exit on any error
 
@@ -18,8 +29,12 @@ MOCK_PORT="10040"
 MOCK_PID=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LOG_FILE="$PROJECT_ROOT/logs/integration-test.log"
-MOCK_LOG_FILE="$PROJECT_ROOT/logs/mock-server.log"
+LOG_FILE="$PROJECT_ROOT/logs/integration_test_summary.log"
+MOCK_LOG_FILE="$PROJECT_ROOT/logs/mock_server.log"
+TEST_CONFIG_FILE="$SCRIPT_DIR/integration_test.toml"
+
+# Debug mode
+DEBUG_MODE=${DEBUG_MODE:-false}
 
 # Test results
 TESTS_PASSED=0
@@ -43,6 +58,13 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
 }
 
+# Debug output function
+debug_output() {
+    if [ "$DEBUG_MODE" = "true" ]; then
+        echo -e "${YELLOW}[DEBUG]${NC} $1" | tee -a "$LOG_FILE"
+    fi
+}
+
 # Test result tracking
 test_passed() {
     ((TESTS_PASSED++))
@@ -54,6 +76,19 @@ test_failed() {
     ((TESTS_FAILED++))
     ((TESTS_TOTAL++))
     log_error "Test failed: $1"
+}
+
+# Enhanced test failure with details
+test_failed_with_details() {
+    local test_name="$1"
+    local expected="$2"
+    local actual="$3"
+    
+    test_failed "$test_name"
+    if [ "$DEBUG_MODE" = "true" ]; then
+        log_error "Expected: $expected"
+        log_error "Actual: $actual"
+    fi
 }
 
 # Cleanup function
@@ -71,6 +106,239 @@ cleanup() {
 
 # Set up cleanup trap
 trap cleanup EXIT
+
+# TOML parsing functions (simple implementation)
+parse_toml() {
+    local toml_file="$1"
+    local test_name="$2"
+    
+    # Extract expected outputs for the given test
+    awk -v test_name="$test_name" '
+    BEGIN { in_test = 0; in_outputs = 0 }
+    /^\[tests\./ { 
+        if ($0 ~ "\\[tests\\." test_name "\\]") {
+            in_test = 1
+            next
+        } else if (in_test) {
+            in_test = 0
+            in_outputs = 0
+        }
+    }
+    in_test && /^\[\[tests\./ {
+        if ($0 ~ "\\[\\[tests\\." test_name "\\.expected_outputs\\]\\]") {
+            in_outputs = 1
+            next
+        } else if (in_outputs) {
+            in_outputs = 0
+        }
+    }
+    in_outputs && /^type =/ { 
+        gsub(/^type = /, "", $0)
+        gsub(/^"/, "", $0)
+        gsub(/"$/, "", $0)
+        print "type: " $0
+    }
+    in_outputs && /^pattern =/ { 
+        gsub(/^pattern = /, "", $0)
+        gsub(/^"/, "", $0)
+        gsub(/"$/, "", $0)
+        print "pattern: " $0
+    }
+    in_outputs && /^description =/ { 
+        gsub(/^description = /, "", $0)
+        gsub(/^"/, "", $0)
+        gsub(/"$/, "", $0)
+        print "description: " $0
+    }
+    ' "$toml_file" | sed 's/^"//' | sed 's/"$//'
+}
+
+# Get list of all test names from TOML config
+get_all_test_names() {
+    grep -E '^\[tests\.' "$TEST_CONFIG_FILE" | sed 's/^\[tests\.//' | sed 's/\]$//'
+}
+
+# Get test configuration
+get_test_config() {
+    local test_name="$1"
+    local config_key="$2"
+    
+    case "$config_key" in
+        "command")
+            awk -v test_name="$test_name" '
+            /^\[tests\./ { 
+                if ($0 ~ "\\[tests\\." test_name "\\]") {
+                    in_test = 1
+                    next
+                } else {
+                    in_test = 0
+                }
+            }
+            in_test && /^command =/ { 
+                gsub(/^command = /, "", $0)
+                gsub(/^"/, "", $0)
+                gsub(/"$/, "", $0)
+                print $0
+            }
+            ' "$TEST_CONFIG_FILE" | sed 's/^"//' | sed 's/"$//'
+            ;;
+        "port")
+            local port_value=$(awk -v test_name="$test_name" '
+            /^\[tests\./ { 
+                if ($0 ~ "\\[tests\\." test_name "\\]") {
+                    in_test = 1
+                    next
+                } else {
+                    in_test = 0
+                }
+            }
+            in_test && /^port =/ { 
+                gsub(/^port = /, "", $0)
+                gsub(/^"/, "", $0)
+                gsub(/"$/, "", $0)
+                print $0
+            }
+            ' "$TEST_CONFIG_FILE" | sed 's/^"//' | sed 's/"$//')
+            if [ -z "$port_value" ]; then
+                log_error "Port not specified for test: $test_name"
+                exit 1
+            fi
+            echo "$port_value"
+            ;;
+        "optional")
+            awk -v test_name="$test_name" '
+            /^\[tests\./ { 
+                if ($0 ~ "\\[tests\\." test_name "\\]") {
+                    in_test = 1
+                    next
+                } else {
+                    in_test = 0
+                }
+            }
+            in_test && /^optional =/ { 
+                if ($0 ~ "true") print "true"
+                else print "false"
+            }
+            ' "$TEST_CONFIG_FILE" | head -1 || echo "false"
+            ;;
+    esac
+}
+
+# Generic test output validation
+validate_test_output() {
+    local test_name="$1"
+    local output_file="$2"
+    local temp_dir="$PROJECT_ROOT/logs/integration_test_detailed_outputs"
+    
+    mkdir -p "$temp_dir"
+    local expected_file="$temp_dir/expected_${test_name}.log"
+    
+    # Extract expected outputs from TOML config
+    parse_toml "$TEST_CONFIG_FILE" "$test_name" > "$expected_file"
+    
+    local passed=0
+    local failed=0
+    local current_type=""
+    local current_pattern=""
+    local current_description=""
+    
+    # Debug information only in debug mode
+    if [ "$DEBUG_MODE" = "true" ]; then
+        debug_output "Validating test: $test_name"
+        debug_output "Output file: $output_file"
+        debug_output "Expected file: $expected_file"
+        
+        # Show expected file contents
+        if [ -f "$expected_file" ]; then
+            debug_output "Expected file contents:"
+            cat "$expected_file" | while read line; do
+                debug_output "  $line"
+            done
+        fi
+    fi
+    
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^type: ]]; then
+            current_type=$(echo "$line" | sed 's/type: //')
+        elif [[ "$line" =~ ^pattern: ]]; then
+            current_pattern=$(echo "$line" | sed 's/pattern: //')
+        elif [[ "$line" =~ ^description: ]]; then
+            current_description=$(echo "$line" | sed 's/description: //')
+            
+            # Now we have all three pieces, validate
+            if [ -n "$current_type" ] && [ -n "$current_pattern" ] && [ -n "$current_description" ]; then
+                if grep -q "$current_pattern" "$output_file"; then
+                    test_passed "$test_name: $current_description"
+                    ((passed++))
+                else
+                    test_failed_with_details "$test_name: $current_description" "$current_pattern" "$(head -5 "$output_file")"
+                    ((failed++))
+                fi
+                
+                # Reset for next iteration
+                current_type=""
+                current_pattern=""
+                current_description=""
+            fi
+        fi
+    done < "$expected_file"
+    
+    # Only show validation summary in debug mode
+    if [ "$DEBUG_MODE" = "true" ]; then
+        debug_output "$test_name validation: $passed passed, $failed failed"
+    fi
+    
+    # Cleanup expected file only (keep output files for debugging)
+    rm -f "$expected_file"
+    
+    return $failed
+}
+
+# Run test with configuration
+run_configured_test() {
+    local test_name="$1"
+    local command=$(get_test_config "$test_name" "command")
+    local port=$(get_test_config "$test_name" "port")
+    local optional=$(get_test_config "$test_name" "optional")
+    
+    log_info "Testing $test_name..."
+    if [ "$DEBUG_MODE" = "true" ]; then
+        debug_output "Command: $command, Port: $port, Optional: $optional"
+    fi
+    
+    cd "$PROJECT_ROOT"
+    
+    # Create temporary output directory and file
+    local temp_dir="$PROJECT_ROOT/logs/integration_test_detailed_outputs"
+    mkdir -p "$temp_dir"
+    local temp_output="$temp_dir/${test_name}.log"
+    
+    # Run the test command
+    if cargo run -p moto-hses-client --example $command -- "$MOCK_HOST" "$port" > "$temp_output" 2>&1; then
+        # Validate output
+        if validate_test_output "$test_name" "$temp_output"; then
+            log_success "$test_name test completed successfully"
+            # Keep output file for debugging in logs directory
+            return 0
+        else
+            log_error "$test_name test failed validation"
+            log_error "Detailed output available in: $temp_output"
+            # Keep output file for debugging in logs directory
+            return 1
+        fi
+    else
+        if [ "$optional" = "true" ]; then
+            log_warning "$test_name test failed (optional test)"
+            rm -f "$temp_output"
+            return 0
+        else
+            test_failed "$test_name execution"
+            log_error "Detailed output available in: $temp_output"
+            # Keep output file for debugging in logs directory
+            return 1
+        fi
+    fi
+}
 
 # Check if mock server is running
 check_mock_server() {
@@ -113,398 +381,21 @@ start_mock_server() {
     return 1
 }
 
-# Test basic client operations
-test_basic_operations() {
-    log_info "Testing basic client operations..."
+# Run all configured tests
+run_all_tests() {
+    local test_names
+    test_names=$(get_all_test_names)
     
-    cd "$PROJECT_ROOT"
-    
-    # Run basic usage example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example basic_usage -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "✓ Successfully connected to controller"; then
-            test_passed "Client connection"
-        else
-            test_failed "Client connection - no success message"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Status read successfully"; then
-            test_passed "Status reading"
-        else
-            test_failed "Status reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Position read successfully"; then
-            test_passed "Position reading"
-        else
-            test_failed "Position reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm data read successfully"; then
-            test_passed "Alarm data reading"
-        else
-            test_failed "Alarm data reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ D000 = 1"; then
-            test_passed "Integer variable reading"
-        else
-            test_failed "Integer variable reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ R000 = 0"; then
-            test_passed "Float variable reading"
-        else
-            test_failed "Float variable reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ B000 = 1"; then
-            test_passed "Byte variable reading"
-        else
-            test_failed "Byte variable reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Robot running: true"; then
-            test_passed "Convenience method - is_running"
-        else
-            test_failed "Convenience method - is_running"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Servo on: true"; then
-            test_passed "Convenience method - is_servo_on"
-        else
-            test_failed "Convenience method - is_servo_on"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Has alarm: true"; then
-            test_passed "Convenience method - has_alarm"
-        else
-            test_failed "Convenience method - has_alarm"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Example completed successfully"; then
-            test_passed "Basic operations completion"
-        else
-            test_failed "Basic operations completion"
-            return 1
-        fi
-        
-        log_success "Basic operations test completed successfully"
-        return 0
-    else
-        test_failed "Basic operations execution"
-        log_error "Basic operations output:"
-        echo "$output"
+    if [ -z "$test_names" ]; then
+        log_error "No tests found in configuration file"
         return 1
     fi
-}
-
-# Test alarm operations
-test_alarm_operations() {
-    log_info "Testing alarm operations..."
     
-    cd "$PROJECT_ROOT"
+    log_info "Found tests: $(echo $test_names | tr '\n' ' ')"
     
-    # Run alarm operations example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example alarm_operations -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "✓ Complete alarm data read successfully"; then
-            test_passed "Complete alarm data reading"
-        else
-            test_failed "Complete alarm data reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm code: 1001"; then
-            test_passed "Alarm code reading"
-        else
-            test_failed "Alarm code reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm data: 1"; then
-            test_passed "Alarm data reading"
-        else
-            test_failed "Alarm data reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm type: 1"; then
-            test_passed "Alarm type reading"
-        else
-            test_failed "Alarm type reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm time: 2024/01/01 12:00"; then
-            test_passed "Alarm time reading"
-        else
-            test_failed "Alarm time reading"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm name: Servo Error"; then
-            test_passed "Alarm name reading"
-        else
-            test_failed "Alarm name reading"
-            return 1
-        fi
-        
-        # Check multiple alarm instances
-        if echo "$output" | grep -q "✓ Alarm instance 1: Code=1001, Name=Servo Error"; then
-            test_passed "Alarm instance 1"
-        else
-            test_failed "Alarm instance 1"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Alarm instance 2: Code=2001, Name=Emergency Stop"; then
-            test_passed "Alarm instance 2"
-        else
-            test_failed "Alarm instance 2"
-            return 1
-        fi
-        
-        # Check alarm history reading (0x71 command)
-        if echo "$output" | grep -q "✓ Major failure alarm 1: Code=1001, Name="; then
-            test_passed "Alarm history - Major failure alarm 1"
-        else
-            test_failed "Alarm history - Major failure alarm 1"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Monitor alarm 1001: No alarm"; then
-            test_passed "Alarm history - Monitor alarm 1001"
-        else
-            test_failed "Alarm history - Monitor alarm 1001"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Major failure alarm #1 code: 1001"; then
-            test_passed "Alarm history - Code attribute"
-        else
-            test_failed "Alarm history - Code attribute"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Major failure alarm #1 time: 2024/01/01 12:00"; then
-            test_passed "Alarm history - Time attribute"
-        else
-            test_failed "Alarm history - Time attribute"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "✓ Invalid instance correctly returned empty data"; then
-            test_passed "Alarm history - Invalid instance handling"
-        else
-            test_failed "Alarm history - Invalid instance handling"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Alarm operations example completed successfully"; then
-            test_passed "Alarm operations completion"
-        else
-            test_failed "Alarm operations completion"
-            return 1
-        fi
-        
-        log_success "Alarm operations test completed successfully"
-        return 0
-    else
-        test_failed "Alarm operations execution"
-        log_error "Alarm operations output:"
-        echo "$output"
-        return 1
-    fi
-}
-
-# Test connection management
-test_connection_management() {
-    log_info "Testing connection management..."
-    
-    cd "$PROJECT_ROOT"
-    
-    # Run connection management example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example connection_management -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "✓ Successfully connected"; then
-            test_passed "Connection management"
-        else
-            test_failed "Connection management"
-            return 1
-        fi
-        
-        log_success "Connection management test completed successfully"
-        return 0
-    else
-        test_failed "Connection management execution"
-        log_error "Connection management output:"
-        echo "$output"
-        return 1
-    fi
-}
-
-
-# Test read status
-test_read_status() {
-    log_info "Testing read status..."
-    
-    cd "$PROJECT_ROOT"
-    
-    # Run read status example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example read_status -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "Successfully connected to controller"; then
-            test_passed "Read status connection"
-        else
-            test_failed "Read status connection"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Complete status information retrieved"; then
-            test_passed "Read status execution"
-        else
-            test_failed "Read status execution"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Data1 retrieved"; then
-            test_passed "Read status data1"
-        else
-            test_failed "Read status data1"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Data2 retrieved"; then
-            test_passed "Read status data2"
-        else
-            test_failed "Read status data2"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Running: true"; then
-            test_passed "Read status result"
-        else
-            test_failed "Read status result"
-            return 1
-        fi
-        
-        log_success "Read status test completed successfully"
-        return 0
-    else
-        test_failed "Read status execution"
-        log_error "Read status output:"
-        echo "$output"
-        return 1
-    fi
-}
-
-# Test read executing job info (0x73 command)
-test_read_executing_job_info() {
-    log_info "Testing read executing job info..."
-    
-    cd "$PROJECT_ROOT"
-    
-    # Run read executing job info example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example read_executing_job_info -- "$MOCK_HOST" "$MOCK_PORT" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "Connecting to controller at"; then
-            test_passed "Read executing job info connection"
-        else
-            test_failed "Read executing job info connection"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Complete job information:"; then
-            test_passed "Read executing job info complete"
-        else
-            test_failed "Read executing job info complete"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Job name: TEST.JOB"; then
-            test_passed "Read executing job info job name"
-        else
-            test_failed "Read executing job info job name"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Line number: 1000"; then
-            test_passed "Read executing job info line number"
-        else
-            test_failed "Read executing job info line number"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Step number: 1"; then
-            test_passed "Read executing job info step number"
-        else
-            test_failed "Read executing job info step number"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Speed override value: 100"; then
-            test_passed "Read executing job info speed override"
-        else
-            test_failed "Read executing job info speed override"
-            return 1
-        fi
-        
-        if echo "$output" | grep -q "Master Task (1): TEST.JOB"; then
-            test_passed "Read executing job info task types"
-        else
-            test_failed "Read executing job info task types"
-            return 1
-        fi
-        
-        log_success "Read executing job info test completed successfully"
-        return 0
-    else
-        test_failed "Read executing job info execution"
-        log_error "Read executing job info output:"
-        echo "$output"
-        return 1
-    fi
-}
-
-# Test file operations (optional)
-test_file_operations() {
-    log_info "Testing file operations..."
-    
-    cd "$PROJECT_ROOT"
-    
-    # Run file operations example and capture output
-    local output
-    if output=$(cargo run -p moto-hses-client --example file_operations -- "$MOCK_HOST" "10041" 2>&1); then
-        # Check for expected success indicators
-        if echo "$output" | grep -q "✓"; then
-            test_passed "File operations"
-        else
-            test_failed "File operations"
-            return 1
-        fi
-        
-        log_success "File operations test completed successfully"
-        return 0
-    else
-        log_warning "File operations test failed or not available (this is optional)"
-        return 0  # Don't fail the entire test suite for optional tests
-    fi
+    for test_name in $test_names; do
+        run_configured_test "$test_name"
+    done
 }
 
 # Main test execution
@@ -512,6 +403,15 @@ main() {
     log_info "Starting moto-hses integration tests..."
     log_info "Project root: $PROJECT_ROOT"
     log_info "Log file: $LOG_FILE"
+    log_info "Test config: $TEST_CONFIG_FILE"
+    log_info "Debug mode: $DEBUG_MODE"
+    
+    # Check if test configuration file exists
+    if [ ! -f "$TEST_CONFIG_FILE" ]; then
+        log_error "Test configuration file not found: $TEST_CONFIG_FILE"
+        log_error "Please ensure the integration_test.toml file exists in the scripts directory"
+        exit 1
+    fi
     
     # Ensure logs directory exists and clear log file
     mkdir -p "$PROJECT_ROOT/logs"
@@ -541,12 +441,7 @@ main() {
     # Run integration tests
     log_info "Running integration tests..."
     
-    test_basic_operations || log_error "Basic operations test failed"
-    test_alarm_operations || log_error "Alarm operations test failed"
-    test_connection_management || log_error "Connection management test failed"
-    test_read_status || log_error "Read status test failed"
-    test_read_executing_job_info || log_error "Read executing job info test failed"
-    test_file_operations || log_warning "File operations test failed (optional)"
+    run_all_tests
     
     # Print test summary
     log_info "Test Summary:"

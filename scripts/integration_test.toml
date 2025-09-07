@@ -1,0 +1,228 @@
+# Integration Test Configuration for moto-hses
+# This file defines expected outputs for integration tests
+
+[tests.basic_operations]
+command = "basic_usage"
+port = "10040"
+description = "Test basic client operations"
+
+[[tests.basic_operations.expected_outputs]]
+type = "connection"
+pattern = "✓ Successfully connected to controller"
+description = "Client connection"
+
+[[tests.basic_operations.expected_outputs]]
+type = "status"
+pattern = "✓ Status read successfully"
+description = "Status reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "position"
+pattern = "✓ Position read successfully"
+description = "Position reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "alarm"
+pattern = "✓ Alarm data read successfully"
+description = "Alarm data reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "integer_var"
+pattern = "✓ D000 = 1"
+description = "Integer variable reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "float_var"
+pattern = "✓ R000 = 0"
+description = "Float variable reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "byte_var"
+pattern = "✓ B000 = 1"
+description = "Byte variable reading"
+
+[[tests.basic_operations.expected_outputs]]
+type = "is_running"
+pattern = "✓ Robot running: true"
+description = "Convenience method - is_running"
+
+[[tests.basic_operations.expected_outputs]]
+type = "is_servo_on"
+pattern = "✓ Servo on: true"
+description = "Convenience method - is_servo_on"
+
+[[tests.basic_operations.expected_outputs]]
+type = "has_alarm"
+pattern = "✓ Has alarm: true"
+description = "Convenience method - has_alarm"
+
+[[tests.basic_operations.expected_outputs]]
+type = "completion"
+pattern = "Example completed successfully"
+description = "Basic operations completion"
+
+[tests.alarm_operations]
+command = "alarm_operations"
+port = "10040"
+description = "Test alarm operations"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "complete_alarm"
+pattern = "✓ Complete alarm data read successfully"
+description = "Complete alarm data reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_code"
+pattern = "✓ Alarm code: 1001"
+description = "Alarm code reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_data"
+pattern = "✓ Alarm data: 1"
+description = "Alarm data reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_type"
+pattern = "✓ Alarm type: 1"
+description = "Alarm type reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_time"
+pattern = "✓ Alarm time: 2024/01/01 12:00"
+description = "Alarm time reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_name"
+pattern = "✓ Alarm name: Servo Error"
+description = "Alarm name reading"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_instance_1"
+pattern = "✓ Alarm instance 1: Code=1001, Name=Servo Error"
+description = "Alarm instance 1"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_instance_2"
+pattern = "✓ Alarm instance 2: Code=2001, Name=Emergency Stop"
+description = "Alarm instance 2"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_history_1"
+pattern = "✓ Major failure alarm 1: Code=1001, Name="
+description = "Alarm history - Major failure alarm 1"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_history_2"
+pattern = "✓ Monitor alarm 1001: No alarm"
+description = "Alarm history - Monitor alarm 1001"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_history_code"
+pattern = "✓ Major failure alarm #1 code: 1001"
+description = "Alarm history - Code attribute"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "alarm_history_time"
+pattern = "✓ Major failure alarm #1 time: 2024/01/01 12:00"
+description = "Alarm history - Time attribute"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "invalid_instance"
+pattern = "✓ Invalid instance correctly returned empty data"
+description = "Alarm history - Invalid instance handling"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "completion"
+pattern = "Alarm operations example completed successfully"
+description = "Alarm operations completion"
+
+[tests.connection_management]
+command = "connection_management"
+port = "10040"
+description = "Test connection management"
+
+[[tests.connection_management.expected_outputs]]
+type = "connection"
+pattern = "✓ Successfully connected"
+description = "Connection management"
+
+[tests.read_status]
+command = "read_status"
+port = "10040"
+description = "Test read status"
+
+[[tests.read_status.expected_outputs]]
+type = "connection"
+pattern = "Successfully connected to controller"
+description = "Read status connection"
+
+[[tests.read_status.expected_outputs]]
+type = "execution"
+pattern = "Complete status information retrieved"
+description = "Read status execution"
+
+[[tests.read_status.expected_outputs]]
+type = "data1"
+pattern = "Data1 retrieved"
+description = "Read status data1"
+
+[[tests.read_status.expected_outputs]]
+type = "data2"
+pattern = "Data2 retrieved"
+description = "Read status data2"
+
+[[tests.read_status.expected_outputs]]
+type = "result"
+pattern = "Running: true"
+description = "Read status result"
+
+[tests.read_executing_job_info]
+command = "read_executing_job_info"
+port = "10040"
+description = "Test read executing job info (0x73 command)"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "connection"
+pattern = "Connecting to controller at"
+description = "Read executing job info connection"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "complete"
+pattern = "Complete job information:"
+description = "Read executing job info complete"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "job_name"
+pattern = "Job name: TEST.JOB"
+description = "Read executing job info job name"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "line_number"
+pattern = "Line number: 1000"
+description = "Read executing job info line number"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "step_number"
+pattern = "Step number: 1"
+description = "Read executing job info step number"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "speed_override"
+pattern = "Speed override value: 100"
+description = "Read executing job info speed override"
+
+[[tests.read_executing_job_info.expected_outputs]]
+type = "task_types"
+pattern = "Master Task (1): TEST.JOB"
+description = "Read executing job info task types"
+
+[tests.file_operations]
+command = "file_operations"
+port = "10041"
+optional = true
+description = "Test file operations (optional)"
+
+[[tests.file_operations.expected_outputs]]
+type = "success"
+pattern = "✓"
+description = "File operations"

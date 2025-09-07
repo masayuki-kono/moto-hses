@@ -43,10 +43,12 @@ jobs:
       - name: Show Test Logs on Failure
         if: failure()
         run: |
-          echo "=== Integration Test Log ==="
-          cat logs/integration-test.log || echo "No integration test log found"
+          echo "=== Integration Test Summary Log ==="
+          cat logs/integration_test_summary.log || echo "No integration test summary log found"
           echo "=== Mock Server Log ==="
-          cat logs/mock-server.log || echo "No mock server log found"
+          cat logs/mock_server.log || echo "No mock server log found"
+          echo "=== Detailed Test Outputs ==="
+          ls -la logs/integration_test_detailed_outputs/ || echo "No detailed test outputs found"
 
       - name: Upload Test Logs
         if: always()
@@ -87,10 +89,12 @@ jobs:
       - name: Show Test Logs on Failure (Release)
         if: failure()
         run: |
-          echo "=== Integration Test Log (Release) ==="
-          cat logs/integration-test.log || echo "No integration test log found"
+          echo "=== Integration Test Summary Log (Release) ==="
+          cat logs/integration_test_summary.log || echo "No integration test summary log found"
           echo "=== Mock Server Log (Release) ==="
-          cat logs/mock-server.log || echo "No mock server log found"
+          cat logs/mock_server.log || echo "No mock server log found"
+          echo "=== Detailed Test Outputs (Release) ==="
+          ls -la logs/integration_test_detailed_outputs/ || echo "No detailed test outputs found"
 
       - name: Upload Test Logs (Release)
         if: always()
