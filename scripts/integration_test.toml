@@ -251,6 +251,51 @@ type = "error_cancel_command"
 pattern = "✓ Error cancel command executed successfully"
 description = "0x82 Error Cancel Command (Instance 2)"
 
+[tests.hold_servo_control]
+command = "hold_servo_control"
+port = "10040"
+description = "Test hold/servo control (0x83 command)"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "connection"
+pattern = "Successfully connected to controller"
+description = "Hold/Servo control connection"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "initial_status"
+pattern = "Initial status retrieved and saved"
+description = "Initial status reading"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "hold_control"
+pattern = "HOLD.*command sent"
+description = "HOLD control commands"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "servo_control"
+pattern = "Servo.*command sent"
+description = "Servo control commands"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "hlock_control"
+pattern = "HLOCK.*command sent"
+description = "HLOCK control commands"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "verification"
+pattern = "HOLD state verification"
+description = "HOLD control verification"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "verification"
+pattern = "Servo state verification"
+description = "Servo control verification"
+
+[[tests.hold_servo_control.expected_outputs]]
+type = "verification"
+pattern = "HLOCK state verification"
+description = "HLOCK control verification"
+
 [tests.connection_management]
 command = "connection_management"
 port = "10040"
