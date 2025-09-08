@@ -14,8 +14,16 @@ name = "read_status"
 path = "examples/read_status.rs"
 
 [[example]]
-name = "basic_usage"
-path = "examples/basic_usage.rs"
+name = "alarm_operations"
+path = "examples/alarm_operations.rs"
+
+[[example]]
+name = "variable_operations"
+path = "examples/variable_operations.rs"
+
+[[example]]
+name = "position_operations"
+path = "examples/position_operations.rs"
 
 [[example]]
 name = "connection_management"
@@ -28,3 +36,11 @@ path = "examples/file_operations.rs"
 [[example]]
 name = "register_operations"
 path = "examples/register_operations.rs"
+
+[[example]]
+name = "io_operations"
+path = "examples/io_operations.rs"
+
+[[example]]
+name = "read_executing_job_info"
+path = "examples/read_executing_job_info.rs"

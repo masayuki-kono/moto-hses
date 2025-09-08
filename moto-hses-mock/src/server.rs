@@ -235,15 +235,23 @@ impl MockServer {
         let mut state = state.write().await;
 
         // Handle the command using new message format
-        let payload = match handlers.handle(message, &mut state) {
-            Ok(payload) => payload,
+        let (payload, status, added_status) = match handlers.handle(message, &mut state) {
+            Ok(payload) => (payload, 0x00, 0x0000), // Success
             Err(proto::ProtocolError::InvalidCommand) => {
-                // For unknown commands, return empty payload but still send response
-                vec![]
+                // For unknown commands, return error status
+                (vec![], 0x01, 0x0001) // Error status with command error code
             }
-            Err(e) => {
-                // For other errors, propagate them
-                return Err(Box::new(e));
+            Err(proto::ProtocolError::InvalidService) => {
+                // For invalid service, return error status
+                (vec![], 0x02, 0x0002) // Error status with service error code
+            }
+            Err(proto::ProtocolError::InvalidAttribute) => {
+                // For invalid attribute, return error status
+                (vec![], 0x03, 0x0003) // Error status with attribute error code
+            }
+            Err(_e) => {
+                // For other errors, return generic error status
+                (vec![], 0xFF, 0x00FF) // Generic error status
             }
         };
 
@@ -253,8 +261,8 @@ impl MockServer {
             0x01, // ACK
             message.header.request_id,
             message.sub_header.service,
-            0x00,   // status: success
-            0x0000, // added_status: no error
+            status,       // status: success (0x00) or error (non-zero)
+            added_status, // added_status: error code if status is non-zero
             payload,
         );
 

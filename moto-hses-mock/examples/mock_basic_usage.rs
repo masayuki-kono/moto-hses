@@ -8,7 +8,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Starting mock HSES server...");
 
     // Create server configuration
-    let config = MockConfig::new("127.0.0.1", 10040, 10041);
+    let config = MockConfig::new(
+        "127.0.0.1",
+        moto_hses_proto::ROBOT_CONTROL_PORT,
+        moto_hses_proto::FILE_CONTROL_PORT,
+    );
 
     // Create and start server
     let server = MockServer::new(config).await?;

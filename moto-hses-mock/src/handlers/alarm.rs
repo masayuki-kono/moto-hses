@@ -74,16 +74,30 @@ impl CommandHandler for AlarmDataHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let instance = message.sub_header.instance as usize;
+        let instance = message.sub_header.instance;
         let attribute = message.sub_header.attribute;
         let service = message.sub_header.service;
 
-        if instance == 0 || instance > state.alarms.len() {
+        // Create ReadAlarmData command to validate instance and attribute
+        let alarm_data_cmd = proto::alarm::ReadAlarmData::new(instance, attribute);
+
+        // Validate instance range
+        if !alarm_data_cmd.is_valid_instance() {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
+        // Validate attribute range
+        if !alarm_data_cmd.is_valid_attribute() {
+            return Err(proto::ProtocolError::InvalidAttribute);
+        }
+
+        let instance_usize = instance as usize;
+        if instance_usize == 0 || instance_usize > state.alarms.len() {
             // No alarm found - return empty data
             return Ok(vec![0u8; 4]);
         }
 
-        let alarm = &state.alarms[instance - 1];
+        let alarm = &state.alarms[instance_usize - 1];
         handle_alarm_service_request(alarm, service, attribute)
     }
 }

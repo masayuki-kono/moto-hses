@@ -94,7 +94,11 @@ impl MockConfig {
 
 impl Default for MockConfig {
     fn default() -> Self {
-        Self::new("127.0.0.1", 10040, 10041)
+        Self::new(
+            "127.0.0.1",
+            moto_hses_proto::ROBOT_CONTROL_PORT,
+            moto_hses_proto::FILE_CONTROL_PORT,
+        )
     }
 }
 

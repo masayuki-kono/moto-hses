@@ -1,65 +1,145 @@
 # Integration Test Configuration for moto-hses
 # This file defines expected outputs for integration tests
 
-[tests.basic_operations]
-command = "basic_usage"
+[tests.variable_operations]
+command = "variable_operations"
 port = "10040"
-description = "Test basic client operations"
+description = "Test variable operations (I16, I32, R, B variables)"
 
-[[tests.basic_operations.expected_outputs]]
+[[tests.variable_operations.expected_outputs]]
 type = "connection"
 pattern = "✓ Successfully connected to controller"
-description = "Client connection"
+description = "Variable operations connection"
 
-[[tests.basic_operations.expected_outputs]]
-type = "status"
-pattern = "✓ Status read successfully"
-description = "Status reading"
+[[tests.variable_operations.expected_outputs]]
+type = "read_i16"
+pattern = "✓ I000 ="
+description = "Read 16-bit integer variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "position"
-pattern = "✓ Position read successfully"
-description = "Position reading"
+[[tests.variable_operations.expected_outputs]]
+type = "read_i32"
+pattern = "✓ D000 ="
+description = "Read 32-bit integer variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "alarm"
-pattern = "✓ Alarm data read successfully"
-description = "Alarm data reading"
+[[tests.variable_operations.expected_outputs]]
+type = "read_f32"
+pattern = "✓ R000 ="
+description = "Read float variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "integer_var"
-pattern = "✓ D000 = 1"
-description = "Integer variable reading"
+[[tests.variable_operations.expected_outputs]]
+type = "read_u8"
+pattern = "✓ B000 ="
+description = "Read byte variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "float_var"
-pattern = "✓ R000 = 0"
-description = "Float variable reading"
+[[tests.variable_operations.expected_outputs]]
+type = "write_i16"
+pattern = "✓ Wrote 42 to I001"
+description = "Write 16-bit integer variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "byte_var"
-pattern = "✓ B000 = 1"
-description = "Byte variable reading"
+[[tests.variable_operations.expected_outputs]]
+type = "write_i32"
+pattern = "✓ Wrote 12345 to D002"
+description = "Write 32-bit integer variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "is_running"
-pattern = "✓ Robot running: true"
-description = "Convenience method - is_running"
+[[tests.variable_operations.expected_outputs]]
+type = "write_f32"
+pattern = "✓ Wrote π to R003"
+description = "Write float variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "is_servo_on"
-pattern = "✓ Servo on: true"
-description = "Convenience method - is_servo_on"
+[[tests.variable_operations.expected_outputs]]
+type = "write_u8"
+pattern = "✓ Wrote 255 to B004"
+description = "Write byte variable"
 
-[[tests.basic_operations.expected_outputs]]
-type = "has_alarm"
-pattern = "✓ Has alarm: true"
-description = "Convenience method - has_alarm"
+[[tests.variable_operations.expected_outputs]]
+type = "verify_i16"
+pattern = "✓ I001 = 42"
+description = "Verify 16-bit integer write"
 
-[[tests.basic_operations.expected_outputs]]
+[[tests.variable_operations.expected_outputs]]
+type = "verify_i32"
+pattern = "✓ D002 = 12345"
+description = "Verify 32-bit integer write"
+
+[[tests.variable_operations.expected_outputs]]
+type = "verify_f32"
+pattern = "✓ R003 = 3.1415927"
+description = "Verify float write"
+
+[[tests.variable_operations.expected_outputs]]
+type = "verify_u8"
+pattern = "✓ B004 = 255"
+description = "Verify byte write"
+
+[[tests.variable_operations.expected_outputs]]
+type = "error_handling"
+pattern = "✓ Invalid variable index correctly failed"
+description = "Invalid variable index should fail"
+
+[[tests.variable_operations.expected_outputs]]
 type = "completion"
-pattern = "Example completed successfully"
-description = "Basic operations completion"
+pattern = "Variable Operations Example completed successfully"
+description = "Variable operations completion"
+
+[tests.position_operations]
+command = "position_operations"
+port = "10040"
+description = "Test position operations"
+
+[[tests.position_operations.expected_outputs]]
+type = "connection"
+pattern = "✓ Successfully connected to controller"
+description = "Position operations connection"
+
+[[tests.position_operations.expected_outputs]]
+type = "robot_pulse"
+pattern = "✓ Robot pulse position read successfully"
+description = "Read robot pulse position"
+
+[[tests.position_operations.expected_outputs]]
+type = "base_pulse"
+pattern = "✓ Base pulse position read successfully"
+description = "Read base pulse position"
+
+[[tests.position_operations.expected_outputs]]
+type = "station_pulse"
+pattern = "✓ Station pulse position read successfully"
+description = "Read station pulse position"
+
+[[tests.position_operations.expected_outputs]]
+type = "robot_cartesian"
+pattern = "✓ Robot cartesian position read successfully"
+description = "Read robot cartesian position"
+
+[[tests.position_operations.expected_outputs]]
+type = "r1_position"
+pattern = "✓ R1 position read successfully"
+description = "Read R1 position"
+
+[[tests.position_operations.expected_outputs]]
+type = "r2_position"
+pattern = "✓ R2 position read successfully"
+description = "Read R2 position"
+
+[[tests.position_operations.expected_outputs]]
+type = "b1_position"
+pattern = "✓ B1 position read successfully"
+description = "Read B1 position"
+
+[[tests.position_operations.expected_outputs]]
+type = "b2_position"
+pattern = "✓ B2 position read successfully"
+description = "Read B2 position"
+
+[[tests.position_operations.expected_outputs]]
+type = "monitoring"
+pattern = "Monitoring position for 5 seconds"
+description = "Position monitoring"
+
+[[tests.position_operations.expected_outputs]]
+type = "completion"
+pattern = "Position Operations Example completed successfully"
+description = "Position operations completion"
 
 [tests.alarm_operations]
 command = "alarm_operations"
@@ -255,6 +335,11 @@ description = "Read additional I/O #2"
 type = "io_write_1002"
 pattern = "Successfully set I/O #1002 to OFF"
 description = "Write to I/O #1002"
+
+[[tests.io_operations.expected_outputs]]
+type = "error_handling"
+pattern = "✓ Invalid I/O number correctly failed"
+description = "Invalid I/O number should fail"
 
 [[tests.io_operations.expected_outputs]]
 type = "completion"

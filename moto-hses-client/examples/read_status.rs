@@ -1,4 +1,5 @@
 use moto_hses_client::HsesClient;
+use moto_hses_proto::ROBOT_CONTROL_PORT;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,8 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (host.to_string(), robot_port)
         }
         _ => {
-            // Default: 127.0.0.1:10040
-            ("127.0.0.1".to_string(), 10040)
+            // Default: 127.0.0.1:DEFAULT_PORT
+            ("127.0.0.1".to_string(), ROBOT_CONTROL_PORT)
         }
     };
 

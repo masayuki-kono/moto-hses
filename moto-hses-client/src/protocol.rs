@@ -30,8 +30,8 @@ impl HsesClient {
         T: VariableType,
     {
         let command = WriteVar::<T> { index, value };
-        let response = self.send_command_with_retry(command).await?;
-        self.deserialize_response(&response)
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
     }
 
     /// Read complete status information (both Data 1 and Data 2) efficiently
@@ -438,6 +438,20 @@ impl HsesClient {
             let ack = response_data[10];
             if ack != 0x01 {
                 continue;
+            }
+
+            // Check status (byte 25 in response sub-header)
+            if response_data.len() >= 26 {
+                let status = response_data[25];
+                if status != 0x00 {
+                    // Non-zero status indicates an error
+                    return Err(ClientError::ProtocolError(
+                        moto_hses_proto::ProtocolError::InvalidMessage(format!(
+                            "Server returned error status: 0x{:02x}",
+                            status
+                        )),
+                    ));
+                }
             }
 
             // Extract payload size (bytes 6-7)

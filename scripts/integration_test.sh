@@ -25,7 +25,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 MOCK_HOST="127.0.0.1"
-MOCK_PORT="10040"
+MOCK_PORT="10040"  # Using DEFAULT_PORT value
 MOCK_PID=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"

@@ -3,8 +3,8 @@
 use crate::error::ProtocolError;
 use std::marker::PhantomData;
 
-pub const DEFAULT_PORT: u16 = 10040;
-pub const FILE_PORT: u16 = 10041;
+pub const ROBOT_CONTROL_PORT: u16 = 10040;
+pub const FILE_CONTROL_PORT: u16 = 10041;
 
 // Core traits for type-safe commands
 pub trait Command {
@@ -22,50 +22,6 @@ pub trait VariableType: Send + Sync + 'static {
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>
     where
         Self: Sized;
-}
-
-// Variable type definitions
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum VarType {
-    Io = 0x78,
-    Register = 0x79,
-    Byte = 0x7a,
-    Integer = 0x7b,
-    Double = 0x7c,
-    Real = 0x7d,
-    String = 0x7e,
-    RobotPosition = 0x7f,
-    BasePosition = 0x80,
-    ExternalAxis = 0x81,
-}
-
-// Variable object for type-safe operations
-#[derive(Debug, Clone)]
-pub struct Variable<T> {
-    pub var_type: VarType,
-    pub index: u8,
-    pub value: T,
-}
-
-impl<T> Variable<T> {
-    pub fn new(var_type: VarType, index: u8, value: T) -> Self {
-        Self {
-            var_type,
-            index,
-            value,
-        }
-    }
-
-    pub fn with_default(var_type: VarType, index: u8) -> Self
-    where
-        T: Default,
-    {
-        Self {
-            var_type,
-            index,
-            value: T::default(),
-        }
-    }
 }
 
 // Basic enums
@@ -338,22 +294,6 @@ impl Command for ReadCurrentPosition {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_variable_creation() {
-        let var = Variable::new(VarType::Byte, 1, 42u8);
-        assert_eq!(var.var_type, VarType::Byte);
-        assert_eq!(var.index, 1);
-        assert_eq!(var.value, 42);
-    }
-
-    #[test]
-    fn test_variable_with_default() {
-        let var = Variable::<u8>::with_default(VarType::Byte, 1);
-        assert_eq!(var.var_type, VarType::Byte);
-        assert_eq!(var.index, 1);
-        assert_eq!(var.value, 0u8);
-    }
 
     #[test]
     fn test_division_enum() {

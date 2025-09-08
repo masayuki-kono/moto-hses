@@ -1,5 +1,5 @@
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::AlarmAttribute;
+use moto_hses_proto::{AlarmAttribute, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 
 #[tokio::main]
@@ -17,8 +17,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (host.to_string(), robot_port)
         }
         _ => {
-            // Default: 127.0.0.1:10040
-            ("127.0.0.1".to_string(), 10040)
+            // Default: 127.0.0.1:DEFAULT_PORT
+            ("127.0.0.1".to_string(), ROBOT_CONTROL_PORT)
         }
     };
 
@@ -232,6 +232,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             eprintln!("✗ Failed to read invalid instance: {}", e);
+        }
+    }
+
+    // Test error handling for alarm data
+    println!("\n--- Error Handling Tests ---");
+
+    // Test invalid alarm instance (5000 is outside all valid ranges)
+    match client.read_alarm_data(5000, 1).await {
+        Ok(alarm) => {
+            println!(
+                "✗ Invalid alarm instance succeeded unexpectedly: code={}",
+                alarm.code
+            );
+        }
+        Err(e) => {
+            println!("✓ Invalid alarm instance correctly failed: {}", e);
+        }
+    }
+
+    // Test invalid alarm attribute
+    match client.read_alarm_data(1, 255).await {
+        Ok(alarm) => {
+            println!(
+                "✗ Invalid alarm attribute succeeded unexpectedly: code={}",
+                alarm.code
+            );
+        }
+        Err(e) => {
+            println!("✓ Invalid alarm attribute correctly failed: {}", e);
         }
     }
 

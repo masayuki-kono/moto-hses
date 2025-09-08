@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client configuration
     let config = ClientConfig {
         host: "127.0.0.1".to_string(),
-        port: 10040,
+        port: moto_hses_proto::ROBOT_CONTROL_PORT,
         timeout: Duration::from_secs(5),
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
@@ -67,6 +67,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.write_io(1002, false).await {
         Ok(_) => println!("Successfully set I/O #1002 to OFF"),
         Err(e) => println!("Failed to write I/O #1002: {}", e),
+    }
+
+    // Test error handling
+    println!("\n--- Error Handling Tests ---");
+
+    // Test invalid I/O number
+    match client.read_io(65535).await {
+        Ok(value) => {
+            println!("✗ Invalid I/O number succeeded unexpectedly: {}", value);
+        }
+        Err(e) => {
+            println!("✓ Invalid I/O number correctly failed: {}", e);
+        }
+    }
+
+    // Test invalid I/O number for write
+    match client.write_io(65535, true).await {
+        Ok(()) => {
+            println!("✗ Invalid I/O number write succeeded unexpectedly");
+        }
+        Err(e) => {
+            println!("✓ Invalid I/O number write correctly failed: {}", e);
+        }
     }
 
     println!("\nI/O operations completed.");
