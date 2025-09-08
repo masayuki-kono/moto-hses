@@ -242,9 +242,14 @@ pattern = "✓ Invalid instance correctly returned empty data"
 description = "Alarm history - Invalid instance handling"
 
 [[tests.alarm_operations.expected_outputs]]
-type = "completion"
-pattern = "Alarm operations example completed successfully"
-description = "Alarm operations completion"
+type = "alarm_reset_command"
+pattern = "✓ Alarm reset command executed successfully"
+description = "0x82 Alarm Reset Command (Instance 1)"
+
+[[tests.alarm_operations.expected_outputs]]
+type = "error_cancel_command"
+pattern = "✓ Error cancel command executed successfully"
+description = "0x82 Error Cancel Command (Instance 2)"
 
 [tests.connection_management]
 command = "connection_management"

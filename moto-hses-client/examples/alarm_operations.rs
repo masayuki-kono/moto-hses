@@ -264,6 +264,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("\n--- Alarm operations example completed successfully ---");
+    // Test 0x82 Alarm Reset / Error Cancel Commands
+    println!("\n--- 0x82 Alarm Reset / Error Cancel Commands ---");
+
+    // Test alarm reset command
+    println!("\n--- Alarm Reset Command (0x82, Instance 1) ---");
+    match client.reset_alarm().await {
+        Ok(_) => {
+            println!("✓ Alarm reset command executed successfully");
+        }
+        Err(e) => {
+            println!("✗ Alarm reset command failed: {}", e);
+        }
+    }
+
+    // Test error cancel command
+    println!("\n--- Error Cancel Command (0x82, Instance 2) ---");
+    match client.cancel_error().await {
+        Ok(_) => {
+            println!("✓ Error cancel command executed successfully");
+        }
+        Err(e) => {
+            println!("✗ Error cancel command failed: {}", e);
+        }
+    }
+
     Ok(())
 }
