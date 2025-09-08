@@ -26,7 +26,7 @@ impl Default for ClientConfig {
     fn default() -> Self {
         Self {
             host: "127.0.0.1".to_string(),
-            port: 10040,
+            port: moto_hses_proto::ROBOT_CONTROL_PORT,
             timeout: Duration::from_millis(300),
             retry_count: 3,
             retry_delay: Duration::from_millis(100),

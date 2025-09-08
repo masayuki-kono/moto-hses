@@ -23,8 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             (host.to_string(), robot_port, file_port)
         }
         _ => {
-            // Default: 127.0.0.1:10040, 127.0.0.1:10041
-            ("127.0.0.1".to_string(), 10040, 10041)
+            // Default: 127.0.0.1:DEFAULT_PORT, 127.0.0.1:FILE_PORT
+            (
+                "127.0.0.1".to_string(),
+                moto_hses_proto::ROBOT_CONTROL_PORT,
+                moto_hses_proto::FILE_CONTROL_PORT,
+            )
         }
     };
 

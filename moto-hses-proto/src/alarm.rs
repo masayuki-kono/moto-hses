@@ -288,6 +288,19 @@ impl ReadAlarmData {
             attribute,
         }
     }
+
+    /// Validate instance range for alarm data
+    pub fn is_valid_instance(&self) -> bool {
+        matches!(
+            self.instance,
+            1..=100 | 1001..=1100 | 2001..=2100 | 3001..=3100 | 4001..=4100
+        )
+    }
+
+    /// Validate attribute range for alarm data
+    pub fn is_valid_attribute(&self) -> bool {
+        matches!(self.attribute, 0..=8)
+    }
 }
 
 impl Command for ReadAlarmData {

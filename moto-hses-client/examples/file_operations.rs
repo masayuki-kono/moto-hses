@@ -1,7 +1,7 @@
 //! File operations example for HSES client
 //! This example demonstrates file operations using the file control port
 
-use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage};
+use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, FILE_CONTROL_PORT};
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
 
@@ -19,8 +19,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (host.to_string(), file_port)
         }
         _ => {
-            // Default: 127.0.0.1:10041
-            ("127.0.0.1".to_string(), 10041)
+            // Default: 127.0.0.1:FILE_CONTROL_PORT
+            ("127.0.0.1".to_string(), FILE_CONTROL_PORT)
         }
     };
 

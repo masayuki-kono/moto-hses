@@ -246,7 +246,7 @@ impl ReadExecutingJobInfo {
 
     /// Validate attribute range for job info reading
     pub fn is_valid_attribute(&self) -> bool {
-        matches!(self.attribute, 0 | 1..=4)
+        matches!(self.attribute, 0..=4)
     }
 }
 

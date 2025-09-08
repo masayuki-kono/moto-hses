@@ -16,6 +16,11 @@ impl CommandHandler for ByteVarHandler {
         let var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
+        // Validate variable index range (0-99 for B variables)
+        if var_index > 99 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
         match service {
             0x0e => {
                 // Read
@@ -57,6 +62,11 @@ impl CommandHandler for IntegerVarHandler {
         let var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
+        // Validate variable index range (0-99 for I variables)
+        if var_index > 99 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
         match service {
             0x0e => {
                 // Read
@@ -86,7 +96,7 @@ impl CommandHandler for IntegerVarHandler {
     }
 }
 
-/// Handler for double variable operations (0x7c)
+/// Handler for double precision integer variable operations (0x7c)
 pub struct DoubleVarHandler;
 
 impl CommandHandler for DoubleVarHandler {
@@ -98,24 +108,29 @@ impl CommandHandler for DoubleVarHandler {
         let var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
+        // Validate variable index range (0-99 for D variables)
+        if var_index > 99 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
         match service {
             0x0e => {
                 // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    // Python client expects 4 bytes
+                    // Protocol specification: 4 bytes for 32-bit integer (D variable)
                     if value.len() >= 4 {
                         Ok(value[0..4].to_vec())
                     } else {
                         Ok(vec![0, 0, 0, 0])
                     }
                 } else {
-                    // Return 4 bytes for double variable as expected by Python client
+                    // Return 4 bytes for 32-bit integer variable
                     Ok(vec![0, 0, 0, 0])
                 }
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 8 {
+                if message.payload.len() >= 4 {
                     state.set_variable(var_index, message.payload.clone());
                 }
                 Ok(vec![])
@@ -136,6 +151,11 @@ impl CommandHandler for RealVarHandler {
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
+
+        // Validate variable index range (0-99 for R variables)
+        if var_index > 99 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
 
         match service {
             0x0e => {

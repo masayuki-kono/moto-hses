@@ -1,4 +1,5 @@
 use moto_hses_client::{ClientConfig, ClientError, HsesClient};
+use moto_hses_proto::ROBOT_CONTROL_PORT;
 use std::time::Duration;
 
 #[tokio::main]
@@ -18,8 +19,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             (host.to_string(), robot_port)
         }
         _ => {
-            // Default: 127.0.0.1:10040
-            ("127.0.0.1".to_string(), 10040)
+            // Default: 127.0.0.1:DEFAULT_PORT
+            ("127.0.0.1".to_string(), ROBOT_CONTROL_PORT)
         }
     };
 
@@ -29,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create configuration with aggressive retry settings
     let config = ClientConfig {
         host: "127.0.0.1".to_string(),
-        port: 10040,
+        port: ROBOT_CONTROL_PORT,
         timeout: Duration::from_millis(200),
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
@@ -93,8 +94,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test connection with invalid address
     println!("\n--- Invalid Address Test ---");
     let invalid_config = ClientConfig {
-        host: "127.0.0.1".to_string(),
-        port: 10040,
+        host: "192.168.999.999".to_string(), // Invalid IP address
+        port: ROBOT_CONTROL_PORT,
         timeout: Duration::from_millis(100),
         retry_count: 1,
         retry_delay: Duration::from_millis(50),
