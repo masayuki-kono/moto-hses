@@ -216,6 +216,10 @@ impl CommandHandler for HoldServoHandler {
                     // Servo ON
                     state.set_servo(value == 1);
                 }
+                3 => {
+                    // HLOCK (Programming Pendant and I/O operation system interlock)
+                    state.set_hlock(value == 1);
+                }
                 _ => {}
             }
         }

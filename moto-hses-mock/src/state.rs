@@ -18,6 +18,7 @@ pub struct MockState {
     pub current_job: Option<String>,
     pub servo_on: bool,
     pub hold_state: bool,
+    pub hlock_state: bool,
     pub files: HashMap<String, Vec<u8>>,
 }
 
@@ -175,6 +176,7 @@ impl Default for MockState {
             current_job: Some("TEST.JOB".to_string()),
             servo_on: true,
             hold_state: false,
+            hlock_state: false,
             files,
         }
     }
@@ -233,6 +235,13 @@ impl MockState {
     pub fn set_hold(&mut self, hold: bool) {
         self.hold_state = hold;
         self.status.data2.command_hold = hold;
+        // If HOLD is ON, running should be false
+        if hold {
+            self.status.data1.running = false;
+        } else {
+            // If HOLD is OFF, running should be true (assuming no other holds)
+            self.status.data1.running = true;
+        }
     }
 
     /// Set running state
@@ -272,6 +281,16 @@ impl MockState {
     /// Delete file
     pub fn delete_file(&mut self, filename: &str) -> bool {
         self.files.remove(filename).is_some()
+    }
+
+    /// Set HLOCK state
+    pub fn set_hlock(&mut self, enabled: bool) {
+        self.hlock_state = enabled;
+    }
+
+    /// Get HLOCK state
+    pub fn is_hlock_enabled(&self) -> bool {
+        self.hlock_state
     }
 }
 

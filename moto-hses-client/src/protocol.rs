@@ -2,8 +2,8 @@
 
 use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
 use moto_hses_proto::{
-    Alarm, Command, CoordinateSystemType, ExecutingJobInfo, Position, ReadAlarmData,
-    ReadCurrentPosition, ReadExecutingJobInfo, ReadIo, ReadStatus, ReadStatusData1,
+    Alarm, Command, CoordinateSystemType, ExecutingJobInfo, HoldServoControl, Position,
+    ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo, ReadIo, ReadStatus, ReadStatusData1,
     ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
 };
 use std::sync::atomic::Ordering;
@@ -98,6 +98,51 @@ impl HsesClient {
     /// This command cancels the current error state.
     pub async fn cancel_error(&self) -> Result<(), ClientError> {
         let command = AlarmReset::cancel();
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
+    }
+
+    /// Set HOLD state (0x83 command with instance 1)
+    ///
+    /// # Arguments
+    /// * `enabled` - true for HOLD ON, false for HOLD OFF
+    pub async fn set_hold(&self, enabled: bool) -> Result<(), ClientError> {
+        let command = if enabled {
+            HoldServoControl::hold_on()
+        } else {
+            HoldServoControl::hold_off()
+        };
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
+    }
+
+    /// Set Servo power state (0x83 command with instance 2)
+    ///
+    /// # Arguments
+    /// * `enabled` - true for Servo ON, false for Servo OFF
+    pub async fn set_servo(&self, enabled: bool) -> Result<(), ClientError> {
+        let command = if enabled {
+            HoldServoControl::servo_on()
+        } else {
+            HoldServoControl::servo_off()
+        };
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
+    }
+
+    /// Set HLOCK state (0x83 command with instance 3)
+    ///
+    /// HLOCK interlocks the Programming Pendant and I/O operation system signals.
+    /// Only emergency stop and limited input signals are available while HLOCK is ON.
+    ///
+    /// # Arguments
+    /// * `enabled` - true for HLOCK ON, false for HLOCK OFF
+    pub async fn set_hlock(&self, enabled: bool) -> Result<(), ClientError> {
+        let command = if enabled {
+            HoldServoControl::hlock_on()
+        } else {
+            HoldServoControl::hlock_off()
+        };
         let _response = self.send_command_with_retry(command).await?;
         Ok(())
     }
