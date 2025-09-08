@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Variable Operations",
+      "program": "${workspaceFolder}/target/debug/examples/variable_operations",
+      "args": [
+        "127.0.0.1",
+        "10040"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Mock Server",
+      "program": "${workspaceFolder}/target/debug/moto-hses-mock",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "console": "integratedTerminal",
+      "stopOnEntry": false,
+    }
+  ]
+}

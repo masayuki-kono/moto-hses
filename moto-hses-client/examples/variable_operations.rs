@@ -204,6 +204,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Test string variables (0x7E command)
+    println!("\n--- String Variable Operations (0x7E) ---");
+
+    // Read string variable
+    match client.read_string(0).await {
+        Ok(value) => println!("✓ S000 = '{}'", String::from_utf8_lossy(&value)),
+        Err(e) => eprintln!("✗ Failed to read S000: {}", e),
+    }
+
+    // Write string variable
+    let test_string = b"Hello, Robot!";
+    match client.write_string(0, test_string.to_vec()).await {
+        Ok(()) => println!("✓ Wrote '{}' to S000", String::from_utf8_lossy(test_string)),
+        Err(e) => eprintln!("✗ Failed to write to S000: {}", e),
+    }
+
+    // Verify written string
+    match client.read_string(0).await {
+        Ok(value) => {
+            let expected = String::from_utf8_lossy(test_string);
+            let actual = String::from_utf8_lossy(&value);
+            if value == test_string {
+                println!("✓ S000 = '{}' (expected: '{}')", actual, expected);
+            } else {
+                println!("✗ S000 = '{}' (expected: '{}')", actual, expected);
+            }
+        }
+        Err(e) => eprintln!("✗ Failed to read S000: {}", e),
+    }
+
+    // Test another string variable
+    let test_string2 = b"Test String 123";
+    match client.write_string(1, test_string2.to_vec()).await {
+        Ok(()) => println!(
+            "✓ Wrote '{}' to S001",
+            String::from_utf8_lossy(test_string2)
+        ),
+        Err(e) => eprintln!("✗ Failed to write to S001: {}", e),
+    }
+
+    match client.read_string(1).await {
+        Ok(value) => println!("✓ S001 = '{}'", String::from_utf8_lossy(&value)),
+        Err(e) => eprintln!("✗ Failed to read S001: {}", e),
+    }
+
     // Test error handling
     println!("\n--- Error Handling Tests ---");
 
@@ -224,6 +269,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             println!("✓ Invalid variable index write correctly failed: {}", e);
+        }
+    }
+
+    // Test invalid string variable index
+    match client.read_string(255).await {
+        Ok(value) => {
+            println!(
+                "✗ Invalid string variable index succeeded unexpectedly: '{}'",
+                String::from_utf8_lossy(&value)
+            );
+        }
+        Err(e) => {
+            println!("✓ Invalid string variable index correctly failed: {}", e);
         }
     }
 

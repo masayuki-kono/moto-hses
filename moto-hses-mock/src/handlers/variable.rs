@@ -199,19 +199,47 @@ impl CommandHandler for StringVarHandler {
         let var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
+        // Validate variable index range (0-99 for S variables)
+        if var_index > 99 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
         match service {
             0x0e => {
                 // Read
                 if let Some(value) = state.get_variable(var_index) {
-                    Ok(value.clone())
+                    // S variables are 16 bytes (4 × 32-bit integers)
+                    // Pad with null bytes to 16 bytes
+                    let mut response = vec![0u8; 16];
+                    let copy_len = std::cmp::min(value.len(), 16);
+                    response[..copy_len].copy_from_slice(&value[..copy_len]);
+                    Ok(response)
                 } else {
-                    Ok(vec![0u8; 16]) // Empty string
+                    // Return 16 bytes for uninitialized variables (all zeros)
+                    Ok(vec![0u8; 16])
                 }
             }
             0x10 => {
                 // Write
-                if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                if message.payload.len() >= 16 {
+                    // Store the full 16-byte S variable data, but trim trailing nulls for storage
+                    let data = &message.payload[..16];
+                    let trimmed_len = data
+                        .iter()
+                        .rposition(|&b| b != 0)
+                        .map(|i| i + 1)
+                        .unwrap_or(0);
+                    state.set_variable(var_index, data[..trimmed_len].to_vec());
+                } else if !message.payload.is_empty() {
+                    // Handle shorter payloads by padding with zeros
+                    let mut data = message.payload.clone();
+                    data.resize(16, 0); // Pad to 16 bytes
+                    let trimmed_len = data
+                        .iter()
+                        .rposition(|&b| b != 0)
+                        .map(|i| i + 1)
+                        .unwrap_or(0);
+                    state.set_variable(var_index, data[..trimmed_len].to_vec());
                 }
                 Ok(vec![])
             }

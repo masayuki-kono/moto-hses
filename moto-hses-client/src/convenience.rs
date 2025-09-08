@@ -42,4 +42,14 @@ impl HsesClient {
     pub async fn write_u8(&self, index: u8, value: u8) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
+
+    /// Read a string variable (S variable)
+    pub async fn read_string(&self, index: u8) -> Result<Vec<u8>, ClientError> {
+        self.read_variable::<Vec<u8>>(index).await
+    }
+
+    /// Write a string variable (S variable)
+    pub async fn write_string(&self, index: u8, value: Vec<u8>) -> Result<(), ClientError> {
+        self.write_variable(index, value).await
+    }
 }
