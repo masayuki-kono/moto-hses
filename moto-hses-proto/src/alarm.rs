@@ -392,6 +392,75 @@ impl From<u8> for AlarmAttribute {
     }
 }
 
+/// Alarm Reset / Error Cancel Command (0x82)
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AlarmResetType {
+    Reset = 1,  // RESET (Alarm reset)
+    Cancel = 2, // CANCEL (Error cancel)
+}
+
+impl From<u16> for AlarmResetType {
+    fn from(value: u16) -> Self {
+        match value {
+            1 => AlarmResetType::Reset,
+            2 => AlarmResetType::Cancel,
+            _ => AlarmResetType::Reset, // Default to Reset
+        }
+    }
+}
+
+/// Command for alarm reset / error cancel (0x82)
+#[derive(Debug, Clone)]
+pub struct AlarmReset {
+    pub reset_type: AlarmResetType,
+}
+
+impl AlarmReset {
+    pub fn new(reset_type: AlarmResetType) -> Self {
+        Self { reset_type }
+    }
+
+    /// Create a reset command
+    pub fn reset() -> Self {
+        Self {
+            reset_type: AlarmResetType::Reset,
+        }
+    }
+
+    /// Create a cancel command
+    pub fn cancel() -> Self {
+        Self {
+            reset_type: AlarmResetType::Cancel,
+        }
+    }
+}
+
+impl Command for AlarmReset {
+    type Response = ();
+
+    fn command_id() -> u16 {
+        0x82
+    }
+
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // Payload: 32-bit integer (4 bytes) with fixed value 1
+        // Byte 0: Data 1, Bytes 1-3: Reserved
+        Ok(vec![1, 0, 0, 0])
+    }
+
+    fn instance(&self) -> u16 {
+        self.reset_type as u16
+    }
+
+    fn attribute(&self) -> u8 {
+        1 // Fixed to 1 according to specification
+    }
+
+    fn service(&self) -> u8 {
+        0x10 // Set_Attribute_Single
+    }
+}
+
 /// Predefined alarms for testing
 pub mod test_alarms {
     use super::*;
@@ -876,5 +945,90 @@ mod tests {
         // Invalid instances
         assert_eq!(ReadAlarmHistory::new(0, 1).get_alarm_index(), 0);
         assert_eq!(ReadAlarmHistory::new(5000, 1).get_alarm_index(), 0);
+    }
+
+    #[test]
+    fn test_alarm_reset_type_enum() {
+        assert_eq!(AlarmResetType::Reset as u16, 1);
+        assert_eq!(AlarmResetType::Cancel as u16, 2);
+    }
+
+    #[test]
+    fn test_alarm_reset_type_from_u16() {
+        assert_eq!(AlarmResetType::from(1), AlarmResetType::Reset);
+        assert_eq!(AlarmResetType::from(2), AlarmResetType::Cancel);
+        assert_eq!(AlarmResetType::from(99), AlarmResetType::Reset); // Default
+    }
+
+    #[test]
+    fn test_alarm_reset_new() {
+        let reset_cmd = AlarmReset::new(AlarmResetType::Reset);
+        assert_eq!(reset_cmd.reset_type, AlarmResetType::Reset);
+
+        let cancel_cmd = AlarmReset::new(AlarmResetType::Cancel);
+        assert_eq!(cancel_cmd.reset_type, AlarmResetType::Cancel);
+    }
+
+    #[test]
+    fn test_alarm_reset_convenience_methods() {
+        let reset_cmd = AlarmReset::reset();
+        assert_eq!(reset_cmd.reset_type, AlarmResetType::Reset);
+
+        let cancel_cmd = AlarmReset::cancel();
+        assert_eq!(cancel_cmd.reset_type, AlarmResetType::Cancel);
+    }
+
+    #[test]
+    fn test_alarm_reset_command_trait() {
+        let reset_cmd = AlarmReset::reset();
+        let cancel_cmd = AlarmReset::cancel();
+
+        // Command ID
+        assert_eq!(AlarmReset::command_id(), 0x82);
+
+        // Instance
+        assert_eq!(reset_cmd.instance(), 1);
+        assert_eq!(cancel_cmd.instance(), 2);
+
+        // Attribute (fixed to 1)
+        assert_eq!(reset_cmd.attribute(), 1);
+        assert_eq!(cancel_cmd.attribute(), 1);
+
+        // Service (Set_Attribute_Single)
+        assert_eq!(reset_cmd.service(), 0x10);
+        assert_eq!(cancel_cmd.service(), 0x10);
+
+        // Serialization
+        let reset_payload = reset_cmd.serialize().unwrap();
+        let cancel_payload = cancel_cmd.serialize().unwrap();
+
+        // Both should have the same payload: [1, 0, 0, 0]
+        assert_eq!(reset_payload, vec![1, 0, 0, 0]);
+        assert_eq!(cancel_payload, vec![1, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_alarm_reset_serialization() {
+        let reset_cmd = AlarmReset::reset();
+        let payload = reset_cmd.serialize().unwrap();
+
+        // Payload should be 4 bytes: [1, 0, 0, 0]
+        assert_eq!(payload.len(), 4);
+        assert_eq!(payload[0], 1); // Data 1
+        assert_eq!(payload[1], 0); // Reserved
+        assert_eq!(payload[2], 0); // Reserved
+        assert_eq!(payload[3], 0); // Reserved
+    }
+
+    #[test]
+    fn test_alarm_reset_clone_and_debug() {
+        let reset_cmd = AlarmReset::reset();
+        let cloned_cmd = reset_cmd.clone();
+        assert_eq!(reset_cmd.reset_type, cloned_cmd.reset_type);
+
+        // Test Debug trait
+        let debug_str = format!("{:?}", reset_cmd);
+        assert!(debug_str.contains("AlarmReset"));
+        assert!(debug_str.contains("Reset"));
     }
 }

@@ -1,6 +1,6 @@
 //! Protocol communication for HSES client
 
-use moto_hses_proto::alarm::ReadAlarmHistory;
+use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
 use moto_hses_proto::{
     Alarm, Command, CoordinateSystemType, ExecutingJobInfo, Position, ReadAlarmData,
     ReadCurrentPosition, ReadExecutingJobInfo, ReadIo, ReadStatus, ReadStatusData1,
@@ -82,6 +82,24 @@ impl HsesClient {
     ) -> Result<Alarm, ClientError> {
         let command = ReadAlarmHistory::new(instance, attribute);
         self.read_alarm_attribute(command, attribute).await
+    }
+
+    /// Reset alarm (0x82 command with instance 1)
+    ///
+    /// This command resets the current alarm state.
+    pub async fn reset_alarm(&self) -> Result<(), ClientError> {
+        let command = AlarmReset::reset();
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
+    }
+
+    /// Cancel error (0x82 command with instance 2)
+    ///
+    /// This command cancels the current error state.
+    pub async fn cancel_error(&self) -> Result<(), ClientError> {
+        let command = AlarmReset::cancel();
+        let _response = self.send_command_with_retry(command).await?;
+        Ok(())
     }
 
     /// Read executing job information
