@@ -92,10 +92,9 @@ impl AlarmHistory {
 
 impl Default for MockState {
     fn default() -> Self {
-        let mut variables = HashMap::new();
-        variables.insert(0, vec![0x01, 0x00, 0x00, 0x00]); // D000 = 1
-        variables.insert(1, vec![0x64, 0x00, 0x00, 0x00]); // D001 = 100
-        variables.insert(2, vec![0x00, 0x00, 0x20, 0x41]); // D002 = 10.0
+        let variables = HashMap::new();
+        // Note: Variables are initialized as needed, not pre-populated
+        // This avoids conflicts between different variable types (B, I, D, R, S) using the same indices
 
         let mut io_states = HashMap::new();
         io_states.insert(1, true); // Robot user input 1

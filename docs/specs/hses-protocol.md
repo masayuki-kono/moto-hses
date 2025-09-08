@@ -947,7 +947,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes)x4: S variable data
-    - Byte 0-11: S variable
+    - Byte 0-15: S variable (16-byte string)
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -962,7 +962,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
   - 32-bit integer (4 bytes)x4: S variable data
-    - Byte 0-11: S variable
+    - Byte 0-15: S variable (16-byte string)
   - The data exists only when requested by the client
 
 #### Robot Position Type Variable (P) Reading / Writing Command (Command 0x7F)
@@ -2519,9 +2519,8 @@ The File List Acquiring Command is not a single message but a protocol involving
   - 32-bit floating point (4 bytes)
   - Variable number range: 0 to 99
 - `S variables`: Character type variables (Command 0x7E)
-  - 32-bit integer (4 bytes)
-  - Byte 0: S variable value
-  - Byte 1-3: Reserved
+  - 32-bit integer (4 bytes) × 4 = 16 bytes total
+  - Byte 0-15: S variable data (16-byte string)
   - Variable number range: 0 to 99
 - `P variables`: Robot position type variables (Command 0x7F)
   - 13 × 32-bit integers (52 bytes): Position variable data

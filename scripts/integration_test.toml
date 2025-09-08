@@ -72,9 +72,39 @@ pattern = "✓ B004 = 255"
 description = "Verify byte write"
 
 [[tests.variable_operations.expected_outputs]]
+type = "read_string_empty"
+pattern = "✓ S000 = ''"
+description = "Read empty string variable"
+
+[[tests.variable_operations.expected_outputs]]
+type = "write_string_1"
+pattern = "✓ Wrote 'Hello, Robot!' to S000"
+description = "Write string variable 1"
+
+[[tests.variable_operations.expected_outputs]]
+type = "verify_string_1"
+pattern = "✓ S000 = 'Hello, Robot!'"
+description = "Verify string variable write 1 (clean string without null padding)"
+
+[[tests.variable_operations.expected_outputs]]
+type = "write_string_2"
+pattern = "✓ Wrote 'Test String 123' to S001"
+description = "Write string variable 2"
+
+[[tests.variable_operations.expected_outputs]]
+type = "verify_string_2"
+pattern = "✓ S001 = 'Test String 123'"
+description = "Verify string variable write 2 (clean string without null padding)"
+
+[[tests.variable_operations.expected_outputs]]
 type = "error_handling"
 pattern = "✓ Invalid variable index correctly failed"
 description = "Invalid variable index should fail"
+
+[[tests.variable_operations.expected_outputs]]
+type = "string_error_handling"
+pattern = "✓ Invalid string variable index correctly failed"
+description = "Invalid string variable index should fail"
 
 [[tests.variable_operations.expected_outputs]]
 type = "completion"

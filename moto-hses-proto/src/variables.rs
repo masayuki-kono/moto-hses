@@ -73,3 +73,40 @@ impl VariableType for f32 {
         Ok(buf.get_f32_le())
     }
 }
+
+impl VariableType for Vec<u8> {
+    fn command_id() -> u16 {
+        0x7e // String variable command
+    }
+
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // S variables are 16 bytes (4 × 32-bit integers)
+        // Pad with null bytes to 16 bytes
+        let mut result = vec![0u8; 16];
+        let copy_len = std::cmp::min(self.len(), 16);
+        result[..copy_len].copy_from_slice(&self[..copy_len]);
+        Ok(result)
+    }
+
+    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+        // S variables should be 16 bytes, but handle shorter responses gracefully
+        // Always pad to 16 bytes first, then remove trailing nulls for consistent behavior
+        let mut padded_data = [0u8; 16];
+        let copy_len = std::cmp::min(data.len(), 16);
+        padded_data[..copy_len].copy_from_slice(&data[..copy_len]);
+
+        // Remove trailing null bytes for cleaner API
+        let trimmed_len = padded_data
+            .iter()
+            .rposition(|&b| b != 0)
+            .map(|i| i + 1)
+            .unwrap_or(0);
+
+        // If all bytes are null, return empty vector
+        if trimmed_len == 0 {
+            Ok(vec![])
+        } else {
+            Ok(padded_data[..trimmed_len].to_vec())
+        }
+    }
+}
