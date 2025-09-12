@@ -44,7 +44,7 @@ cargo test --test protocol_communication_tests
 
 ```bash
 # Comprehensive client-server integration tests
-./scripts/integration_test.sh
+cargo test --test integration_tests
 ```
 
 - **Required**: Both test types must pass locally before pushing
