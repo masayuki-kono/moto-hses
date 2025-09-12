@@ -12,11 +12,77 @@ test_with_logging!(test_hold_control_commands, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test HOLD control commands
-    // Note: Hold/servo control API is not currently implemented in the client
-    // This test verifies that the client can connect and basic operations work
-    let status = client.read_status().await;
-    assert!(status.is_ok(), "Basic client operations should work");
+    // Read initial status
+    log::info!("Reading initial status...");
+    let initial_status = client
+        .read_status()
+        .await
+        .expect("Failed to read initial status");
+
+    log::info!("✓ Initial status retrieved");
+    log::info!("  Servo on: {}", initial_status.is_servo_on());
+    log::info!("  Running: {}", initial_status.is_running());
+
+    // Test HOLD control
+    let initial_hold_state = !initial_status.data1.running; // If running, HOLD is OFF
+    let opposite_hold_state = !initial_hold_state;
+
+    log::info!("Testing HOLD control...");
+    log::info!(
+        "  Initial HOLD state: {} (running: {})",
+        initial_hold_state,
+        initial_status.data1.running
+    );
+    log::info!(
+        "  Setting HOLD to opposite state: {}...",
+        opposite_hold_state
+    );
+
+    client
+        .set_hold(opposite_hold_state)
+        .await
+        .expect("Failed to set HOLD");
+
+    log::info!(
+        "  ✓ HOLD {} command sent",
+        if opposite_hold_state { "ON" } else { "OFF" }
+    );
+
+    // Wait and verify the change
+    wait_for_operation().await;
+    let hold_test_status = client
+        .read_status()
+        .await
+        .expect("Failed to read HOLD test status");
+
+    let expected_running = !opposite_hold_state; // If HOLD is ON, running should be false
+    log::info!(
+        "  ✓ HOLD state verification: Running = {} (expected: {})",
+        hold_test_status.is_running(),
+        expected_running
+    );
+
+    // Verify the state change
+    assert_eq!(
+        hold_test_status.is_running(),
+        expected_running,
+        "HOLD state should affect running state"
+    );
+
+    // Set HOLD back to initial state
+    log::info!(
+        "  Setting HOLD back to initial state: {}...",
+        initial_hold_state
+    );
+    client
+        .set_hold(initial_hold_state)
+        .await
+        .expect("Failed to set HOLD back");
+
+    log::info!(
+        "  ✓ HOLD {} command sent",
+        if initial_hold_state { "ON" } else { "OFF" }
+    );
 });
 
 test_with_logging!(test_servo_control_commands, {
@@ -25,21 +91,70 @@ test_with_logging!(test_servo_control_commands, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test Servo control commands
-    let result = client.read_status().await;
-    assert!(result.is_ok(), "Servo command should succeed");
-
-    wait_for_operation().await;
-
-    // Verify Servo state
-    let servo_state = client
+    // Read initial status
+    log::info!("Reading initial status...");
+    let initial_status = client
         .read_status()
         .await
-        .expect("Failed to read Servo state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        servo_state.data2.servo_on || !servo_state.data2.servo_on,
-        "Servo state should be valid"
+        .expect("Failed to read initial status");
+
+    log::info!("✓ Initial status retrieved");
+    log::info!("  Servo on: {}", initial_status.is_servo_on());
+
+    // Test Servo control
+    let initial_servo_state = initial_status.data2.servo_on;
+    let opposite_servo_state = !initial_servo_state;
+
+    log::info!("Testing Servo control...");
+    log::info!("  Initial Servo state: {}", initial_servo_state);
+    log::info!(
+        "  Setting Servo to opposite state: {}...",
+        opposite_servo_state
+    );
+
+    client
+        .set_servo(opposite_servo_state)
+        .await
+        .expect("Failed to set Servo");
+
+    log::info!(
+        "  ✓ Servo {} command sent",
+        if opposite_servo_state { "ON" } else { "OFF" }
+    );
+
+    // Wait and verify the change
+    wait_for_operation().await;
+    let servo_test_status = client
+        .read_status()
+        .await
+        .expect("Failed to read Servo test status");
+
+    log::info!(
+        "  ✓ Servo state verification: Servo ON = {} (expected: {})",
+        servo_test_status.is_servo_on(),
+        opposite_servo_state
+    );
+
+    // Verify the state change
+    assert_eq!(
+        servo_test_status.is_servo_on(),
+        opposite_servo_state,
+        "Servo state should match the set value"
+    );
+
+    // Set Servo back to initial state
+    log::info!(
+        "  Setting Servo back to initial state: {}...",
+        initial_servo_state
+    );
+    client
+        .set_servo(initial_servo_state)
+        .await
+        .expect("Failed to set Servo back");
+
+    log::info!(
+        "  ✓ Servo {} command sent",
+        if initial_servo_state { "ON" } else { "OFF" }
     );
 });
 
@@ -49,218 +164,51 @@ test_with_logging!(test_hlock_control_commands, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test HLOCK control commands
-    let result = client.read_status().await;
-    assert!(result.is_ok(), "HLOCK command should succeed");
+    // Test HLOCK control
+    let initial_hlock_state = false;
+    let opposite_hlock_state = !initial_hlock_state;
 
-    wait_for_operation().await;
-
-    // Verify HLOCK state
-    let hlock_state = client
-        .read_status()
-        .await
-        .expect("Failed to read HLOCK state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        hlock_state.data2.servo_on || !hlock_state.data2.servo_on,
-        "HLOCK state should be valid"
-    );
-});
-
-test_with_logging!(test_control_state_transitions, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Test state transitions: HOLD -> Servo -> HLOCK
-    client
-        .read_status()
-        .await
-        .expect("Failed to send HOLD command");
-    wait_for_operation().await;
-
-    let status = client
-        .read_status()
-        .await
-        .expect("Failed to read HOLD state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        status.data2.servo_on || !status.data2.servo_on,
-        "Status should be valid"
+    log::info!("Testing HLOCK control...");
+    log::info!("  Initial HLOCK state: {}", initial_hlock_state);
+    log::info!(
+        "  Setting HLOCK to opposite state: {}...",
+        opposite_hlock_state
     );
 
     client
-        .read_status()
+        .set_hlock(opposite_hlock_state)
         .await
-        .expect("Failed to send Servo command");
-    wait_for_operation().await;
+        .expect("Failed to set HLOCK");
 
-    let servo_state = client
-        .read_status()
-        .await
-        .expect("Failed to read Servo state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        servo_state.data2.servo_on || !servo_state.data2.servo_on,
-        "Servo state should be valid"
+    log::info!(
+        "  ✓ HLOCK {} command sent",
+        if opposite_hlock_state { "ON" } else { "OFF" }
     );
 
+    // Wait and verify the change
+    wait_for_operation().await;
+    let _hlock_test_status = client
+        .read_status()
+        .await
+        .expect("Failed to read HLOCK test status");
+
+    log::info!(
+        "  ✓ HLOCK state verification: HLOCK set to {} (command executed)",
+        opposite_hlock_state
+    );
+
+    // Set HLOCK back to initial state
+    log::info!(
+        "  Setting HLOCK back to initial state: {}...",
+        initial_hlock_state
+    );
     client
-        .read_status()
+        .set_hlock(initial_hlock_state)
         .await
-        .expect("Failed to send HLOCK command");
-    wait_for_operation().await;
+        .expect("Failed to set HLOCK back");
 
-    let hlock_state = client
-        .read_status()
-        .await
-        .expect("Failed to read HLOCK state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        hlock_state.data2.servo_on || !hlock_state.data2.servo_on,
-        "HLOCK state should be valid"
+    log::info!(
+        "  ✓ HLOCK {} command sent",
+        if initial_hlock_state { "ON" } else { "OFF" }
     );
-});
-
-test_with_logging!(test_control_commands_comprehensive, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Test all control commands
-    let commands = vec![
-        ("HOLD", client.read_status()),
-        ("Servo", client.read_status()),
-        ("HLOCK", client.read_status()),
-    ];
-
-    for (command_name, command_future) in commands {
-        let result = command_future.await;
-        assert!(result.is_ok(), "{} command should succeed", command_name);
-        wait_for_operation().await;
-    }
-});
-
-test_with_logging!(test_control_state_verification, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Test state verification for each control type
-    client
-        .read_status()
-        .await
-        .expect("Failed to send HOLD command");
-    wait_for_operation().await;
-
-    let status = client
-        .read_status()
-        .await
-        .expect("Failed to read HOLD state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        status.data2.servo_on || !status.data2.servo_on,
-        "Status should be valid"
-    );
-
-    client
-        .read_status()
-        .await
-        .expect("Failed to send Servo command");
-    wait_for_operation().await;
-
-    let servo_state = client
-        .read_status()
-        .await
-        .expect("Failed to read Servo state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        servo_state.data2.servo_on || !servo_state.data2.servo_on,
-        "Servo state should be valid"
-    );
-
-    client
-        .read_status()
-        .await
-        .expect("Failed to send HLOCK command");
-    wait_for_operation().await;
-
-    let hlock_state = client
-        .read_status()
-        .await
-        .expect("Failed to read HLOCK state");
-    // Status is a struct, not a Result, so we just verify it was read successfully
-    assert!(
-        hlock_state.data2.servo_on || !hlock_state.data2.servo_on,
-        "HLOCK state should be valid"
-    );
-});
-
-test_with_logging!(test_control_initial_status, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Test reading initial status
-    let initial_status = client
-        .read_status()
-        .await
-        .expect("Failed to read initial status");
-
-    // Verify initial status structure
-    // Status is a struct, not an Option, so we just verify it was read successfully
-    assert!(
-        initial_status.data2.servo_on || !initial_status.data2.servo_on,
-        "Initial status should be valid"
-    );
-
-    {
-        // Verify status contains expected fields
-        // Status is a struct with data1 and data2 fields
-        assert!(
-            initial_status.data1.running || !initial_status.data1.running,
-            "Running state should be present in initial status"
-        );
-        assert!(
-            initial_status.data2.servo_on || !initial_status.data2.servo_on,
-            "Servo state should be present in initial status"
-        );
-    }
-});
-
-test_with_logging!(test_control_state_monitoring, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Test control state monitoring over time
-    let start_time = std::time::Instant::now();
-    let monitoring_duration = std::time::Duration::from_secs(1);
-
-    while start_time.elapsed() < monitoring_duration {
-        let status = client.read_status().await;
-        let servo_state = client.read_status().await;
-        let hlock_state = client.read_status().await;
-
-        // All state readings should succeed
-        assert!(
-            status.is_ok(),
-            "Status reading should succeed during monitoring"
-        );
-        assert!(
-            servo_state.is_ok(),
-            "Servo state reading should succeed during monitoring"
-        );
-        assert!(
-            hlock_state.is_ok(),
-            "HLOCK state reading should succeed during monitoring"
-        );
-
-        wait_for_operation().await;
-    }
 });
