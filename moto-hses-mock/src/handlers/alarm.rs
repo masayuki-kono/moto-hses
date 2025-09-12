@@ -120,8 +120,7 @@ impl CommandHandler for AlarmInfoHandler {
 
         // Validate instance range
         if !alarm_history_cmd.is_valid_instance() {
-            // Return empty data for invalid instance
-            return Ok(vec![0u8; 4]); // Return 4 bytes of zeros for invalid instance
+            return Err(proto::ProtocolError::InvalidCommand);
         }
 
         let category = alarm_history_cmd.get_alarm_category();

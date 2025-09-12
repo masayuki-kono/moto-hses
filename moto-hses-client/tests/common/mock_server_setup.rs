@@ -212,10 +212,21 @@ pub async fn create_alarm_test_server(
 ) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
-    manager.start().await?;
-
-    // Note: Alarm setup would need to be done through MockServerBuilder
-    // or by modifying the MockState directly, which is not currently supported
+    manager
+        .start_with_builder(|builder| {
+            builder
+                // Add test alarms for instances 1-4
+                .with_alarm(moto_hses_proto::alarm::test_alarms::servo_error()) // Instance 1
+                .with_alarm(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Instance 2
+                .with_alarm(moto_hses_proto::alarm::test_alarms::safety_error()) // Instance 3
+                .with_alarm(moto_hses_proto::alarm::test_alarms::communication_error()) // Instance 4
+                // Add alarm history for testing
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::servo_error()) // Major failure #1
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Major failure #2
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::safety_error())
+            // Major failure #3
+        })
+        .await?;
 
     Ok(manager)
 }

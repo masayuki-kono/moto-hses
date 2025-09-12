@@ -238,7 +238,7 @@ description = "Alarm history - Time attribute"
 
 [[tests.alarm_operations.expected_outputs]]
 type = "invalid_instance"
-pattern = "✓ Invalid instance correctly returned empty data"
+pattern = "✗ Failed to read invalid instance: Protocol error: invalid message: Server returned error status: 0x01"
 description = "Alarm history - Invalid instance handling"
 
 [[tests.alarm_operations.expected_outputs]]

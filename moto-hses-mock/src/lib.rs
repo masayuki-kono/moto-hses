@@ -22,6 +22,8 @@ pub struct MockConfig {
     pub default_position: proto::Position,
     pub variables: HashMap<u8, Vec<u8>>,
     pub io_states: HashMap<u16, bool>,
+    pub alarms: Vec<proto::Alarm>,
+    pub alarm_history: Vec<proto::Alarm>,
 }
 
 impl MockConfig {
@@ -66,6 +68,8 @@ impl MockConfig {
             )),
             variables,
             io_states,
+            alarms: Vec::new(),
+            alarm_history: Vec::new(),
         }
     }
 

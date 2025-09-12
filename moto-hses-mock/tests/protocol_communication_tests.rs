@@ -306,8 +306,11 @@ async fn test_alarm_history_read_command_invalid_instance() {
             assert!(n > 0, "Should receive a response");
             let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
             assert_eq!(response.header.ack, 1); // Should be ACK
-            assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
-            assert_eq!(response.payload.len(), 4); // Should return 4 bytes of zeros for invalid instance
+                                                // For invalid instance, should return error status (non-zero)
+            assert_ne!(
+                response.sub_header.status, 0,
+                "Invalid instance should return error status"
+            );
         }
         Err(_) => {
             // Socket might not have data yet

@@ -5,6 +5,7 @@ use crate::common::{
     test_utils::create_test_client,
 };
 use crate::test_with_logging;
+use moto_hses_proto::AlarmAttribute;
 
 test_with_logging!(test_complete_alarm_data, {
     log::info!("Creating alarm test server...");
@@ -15,14 +16,14 @@ test_with_logging!(test_complete_alarm_data, {
     log::info!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
 
-    log::info!("Reading alarm data for instance 1, attribute 1...");
+    log::info!("Reading complete alarm data for instance 1, attribute 0...");
     let alarm_data = client
-        .read_alarm_data(1, 1) // Read alarm instance 1, attribute 1
+        .read_alarm_data(1, 0) // Read complete alarm data (attribute 0)
         .await
-        .expect("Failed to read alarm data");
+        .expect("Failed to read complete alarm data");
 
     log::info!(
-        "Alarm data received: code={}, data={}, alarm_type={}, time='{}', name='{}'",
+        "Complete alarm data received: code={}, data={}, alarm_type={}, time='{}', name='{}'",
         alarm_data.code,
         alarm_data.data,
         alarm_data.alarm_type,
@@ -30,15 +31,95 @@ test_with_logging!(test_complete_alarm_data, {
         alarm_data.name
     );
 
-    // Verify alarm data structure
-    // Mock server returns default values, so we just verify the structure is valid
-    // Note: u32 values are always non-negative, so these assertions are not needed
-    // Note: Mock server may return empty time string, which is acceptable for testing
-    // assert!(!alarm_data.time.is_empty(), "Alarm time should not be empty");
-    // Note: Mock server may return empty name string, which is acceptable for testing
-    // assert!(!alarm_data.name.is_empty(), "Alarm name should not be empty");
+    // Verify alarm data matches expected values from MockServer default state
+    // Expected values from test_alarms::servo_error():
+    // - code: 1001, data: 1, alarm_type: 1, time: "2024/01/01 12:00", name: "Servo Error"
+    assert_eq!(
+        alarm_data.code, 1001,
+        "Alarm code should match expected value"
+    );
+    assert_eq!(alarm_data.data, 1, "Alarm data should match expected value");
+    assert_eq!(
+        alarm_data.alarm_type, 1,
+        "Alarm type should match expected value"
+    );
+    assert_eq!(
+        alarm_data.time, "2024/01/01 12:00",
+        "Alarm time should match expected value"
+    );
+    assert_eq!(
+        alarm_data.name, "Servo Error",
+        "Alarm name should match expected value"
+    );
 
+    log::info!("All alarm data values match expected values from MockServer");
     log::info!("Test completed successfully");
+});
+
+test_with_logging!(test_specific_alarm_attributes, {
+    let mut server = MockServerManager::new();
+    server.start().await.expect("Failed to start mock server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test reading alarm code
+    log::info!("Testing alarm code attribute...");
+    let alarm_code = client
+        .read_alarm_data(1, AlarmAttribute::Code as u8)
+        .await
+        .expect("Failed to read alarm code");
+    log::info!("Alarm code: {}", alarm_code.code);
+    assert_eq!(
+        alarm_code.code, 1001,
+        "Alarm code should match expected value"
+    );
+
+    // Test reading alarm data
+    log::info!("Testing alarm data attribute...");
+    let alarm_data = client
+        .read_alarm_data(1, AlarmAttribute::Data as u8)
+        .await
+        .expect("Failed to read alarm data");
+    log::info!("Alarm data: {}", alarm_data.data);
+    assert_eq!(alarm_data.data, 1, "Alarm data should match expected value");
+
+    // Test reading alarm type
+    log::info!("Testing alarm type attribute...");
+    let alarm_type = client
+        .read_alarm_data(1, AlarmAttribute::Type as u8)
+        .await
+        .expect("Failed to read alarm type");
+    log::info!("Alarm type: {}", alarm_type.alarm_type);
+    assert_eq!(
+        alarm_type.alarm_type, 1,
+        "Alarm type should match expected value"
+    );
+
+    // Test reading alarm time
+    log::info!("Testing alarm time attribute...");
+    let alarm_time = client
+        .read_alarm_data(1, AlarmAttribute::Time as u8)
+        .await
+        .expect("Failed to read alarm time");
+    log::info!("Alarm time: {}", alarm_time.time);
+    assert_eq!(
+        alarm_time.time, "2024/01/01 12:00",
+        "Alarm time should match expected value"
+    );
+
+    // Test reading alarm name
+    log::info!("Testing alarm name attribute...");
+    let alarm_name = client
+        .read_alarm_data(1, AlarmAttribute::Name as u8)
+        .await
+        .expect("Failed to read alarm name");
+    log::info!("Alarm name: {}", alarm_name.name);
+    assert_eq!(
+        alarm_name.name, "Servo Error",
+        "Alarm name should match expected value"
+    );
+
+    log::info!("All specific alarm attributes match expected values");
 });
 
 test_with_logging!(test_alarm_instances, {
@@ -47,63 +128,162 @@ test_with_logging!(test_alarm_instances, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test reading alarm instances
-    for instance_id in 1..=2 {
-        let _alarm_instance = client
-            .read_alarm_data(instance_id, 1) // Read alarm instance with attribute 1
-            .await
-            .expect(&format!("Failed to read alarm instance {}", instance_id));
+    // Test reading alarm instances (HSES specification: Instance 1-4)
+    log::info!("Testing multiple alarm instances...");
 
-        // Note: Mock server may return 0 or negative codes, which is acceptable for testing
-        // assert!(
-        //     alarm_instance.code > 0,
-        //     "Alarm instance {} code should be positive",
-        //     instance_id
-        // );
-        // Note: Mock server may return empty name string, which is acceptable for testing
-        // assert!(
-        //     !alarm_instance.name.is_empty(),
-        //     "Alarm instance {} name should not be empty",
-        //     instance_id
-        // );
+    // Expected values from MockServer default state:
+    // Instance 1: servo_error() - code: 1001, name: "Servo Error"
+    // Instance 2: emergency_stop() - code: 2001, name: "Emergency Stop"
+    // Instance 3: safety_error() - code: 3001, name: "Safety Error"
+    // Instance 4: communication_error() - code: 4001, name: "Communication Error"
+
+    let expected_alarms = vec![
+        (1, 1001, "Servo Error"),
+        (2, 2001, "Emergency Stop"),
+        (3, 3001, "Safety Error"),
+        (4, 4001, "Communication Error"),
+    ];
+
+    for (instance, expected_code, expected_name) in expected_alarms {
+        let alarm_instance = client
+            .read_alarm_data(instance, 0) // Read complete alarm data
+            .await
+            .expect(&format!("Failed to read alarm instance {}", instance));
+
+        log::info!(
+            "Alarm instance {}: Code={}, Name={}",
+            instance,
+            alarm_instance.code,
+            alarm_instance.name
+        );
+
+        // Verify expected values
+        assert_eq!(
+            alarm_instance.code, expected_code,
+            "Alarm instance {} code should match expected value {}",
+            instance, expected_code
+        );
+        assert_eq!(
+            alarm_instance.name, expected_name,
+            "Alarm instance {} name should match expected value '{}'",
+            instance, expected_name
+        );
     }
+
+    log::info!("All alarm instances match expected values");
 });
 
-test_with_logging!(test_alarm_history, {
+test_with_logging!(test_alarm_history_major_failure, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test major failure alarm history
-    let _major_failure_alarm = client
-        .read_alarm_data(1, 2) // Read alarm instance 1, attribute 2
-        .await
-        .expect("Failed to read major failure alarm");
+    // Test major failure alarm history (instances 1-3)
+    log::info!("Testing major failure alarm history...");
 
-    // Note: Mock server may return 0 or negative codes, which is acceptable for testing
-    // assert!(
-    //     major_failure_alarm.code > 0,
-    //     "Major failure alarm code should be positive"
-    // );
-    // Note: Mock server may return empty name string, which is acceptable for testing
-    // assert!(
-    //     !major_failure_alarm.name.is_empty(),
-    //     "Major failure alarm name should not be empty"
-    // );
+    // Expected values from MockServer alarm history:
+    // Instance 1: servo_error() - code: 1001, name: "Servo Error"
+    // Instance 2: emergency_stop() - code: 2001, name: "Emergency Stop"
+    // Instance 3: safety_error() - code: 3001, name: "Safety Error"
 
-    // Test monitor alarm
-    let _monitor_alarm = client
-        .read_alarm_data(1001, 1) // Read alarm instance 1001, attribute 1
-        .await
-        .expect("Failed to read monitor alarm");
+    let expected_history = vec![
+        (1, 1001, "Servo Error"),
+        (2, 2001, "Emergency Stop"),
+        (3, 3001, "Safety Error"),
+    ];
 
-    // Note: Mock server may return empty name string, which is acceptable for testing
-    // Monitor alarm might be "No alarm" which is valid
-    // assert!(
-    //     monitor_alarm.name.len() > 0,
-    //     "Monitor alarm should have a name (even if 'No alarm')"
-    // );
+    for (instance, expected_code, expected_name) in expected_history {
+        // Test alarm history code
+        let alarm_history_code = client
+            .read_alarm_history(instance, AlarmAttribute::Code as u8)
+            .await
+            .expect(&format!(
+                "Failed to read major failure alarm code {}",
+                instance
+            ));
+
+        // Test alarm history name
+        let alarm_history_name = client
+            .read_alarm_history(instance, AlarmAttribute::Name as u8)
+            .await
+            .expect(&format!(
+                "Failed to read major failure alarm name {}",
+                instance
+            ));
+
+        log::info!(
+            "Major failure alarm {}: Code={}, Name={}",
+            instance,
+            alarm_history_code.code,
+            alarm_history_name.name
+        );
+
+        // Verify expected values
+        assert_eq!(
+            alarm_history_code.code, expected_code,
+            "Major failure alarm {} code should match expected value {}",
+            instance, expected_code
+        );
+        assert_eq!(
+            alarm_history_name.name, expected_name,
+            "Major failure alarm {} name should match expected value '{}'",
+            instance, expected_name
+        );
+    }
+
+    log::info!("All major failure alarm history values match expected values");
+});
+
+test_with_logging!(test_alarm_history_monitor, {
+    let mut server = MockServerManager::new();
+    server.start().await.expect("Failed to start mock server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test monitor alarm history (instances 1001-1003)
+    log::info!("Testing monitor alarm history...");
+
+    // Expected values from MockServer alarm history:
+    // Monitor alarms are set up in alarm history but may return "No alarm" for some instances
+    // We'll check that the response is valid (either has alarm data or "No alarm")
+
+    for instance in 1001..=1003 {
+        let alarm_history = client
+            .read_alarm_history(instance, AlarmAttribute::Name as u8)
+            .await
+            .expect(&format!("Failed to read monitor alarm {}", instance));
+
+        if alarm_history.code != 0 {
+            log::info!(
+                "Monitor alarm {}: Code={}, Name={}",
+                instance,
+                alarm_history.code,
+                alarm_history.name
+            );
+            // If there's an alarm, verify it has valid data
+            assert!(
+                alarm_history.code > 0,
+                "Monitor alarm {} should have positive code if not 'No alarm'",
+                instance
+            );
+            assert!(
+                !alarm_history.name.is_empty(),
+                "Monitor alarm {} should have non-empty name if not 'No alarm'",
+                instance
+            );
+        } else {
+            log::info!("Monitor alarm {}: No alarm", instance);
+            // If no alarm, verify it's properly handled
+            assert_eq!(
+                alarm_history.code, 0,
+                "Monitor alarm {} should have code 0 when 'No alarm'",
+                instance
+            );
+        }
+    }
+
+    log::info!("Monitor alarm history test completed");
 });
 
 test_with_logging!(test_alarm_history_attributes, {
@@ -113,41 +293,51 @@ test_with_logging!(test_alarm_history_attributes, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test alarm history code attribute
-    let alarm_data = client
-        .read_alarm_data(1, 3) // Read alarm instance 1, attribute 3
+    log::info!("Testing alarm history code attribute...");
+    let alarm_code = client
+        .read_alarm_history(1, AlarmAttribute::Code as u8)
         .await
         .expect("Failed to read major failure alarm code");
-    let _alarm_code = alarm_data.code;
-
-    // Note: Mock server may return 0 or negative codes, which is acceptable for testing
-    // assert!(
-    //     alarm_code > 0,
-    //     "Major failure alarm code should be positive"
-    // );
+    log::info!("Major failure alarm #1 code: {}", alarm_code.code);
+    assert_eq!(
+        alarm_code.code, 1001,
+        "Major failure alarm code should match expected value"
+    );
 
     // Test alarm history time attribute
-    let alarm_data = client
-        .read_alarm_data(1, 4) // Read alarm instance 1, attribute 4
+    log::info!("Testing alarm history time attribute...");
+    let alarm_time = client
+        .read_alarm_history(1, AlarmAttribute::Time as u8)
         .await
         .expect("Failed to read major failure alarm time");
-    let _alarm_time = alarm_data.time;
+    log::info!("Major failure alarm #1 time: {}", alarm_time.time);
+    assert_eq!(
+        alarm_time.time, "2024/01/01 12:00",
+        "Major failure alarm time should match expected value"
+    );
 
-    // Note: Mock server may return empty time string, which is acceptable for testing
-    // assert!(
-    //     !alarm_time.is_empty(),
-    //     "Major failure alarm time should not be empty"
-    // );
-    // Note: Mock server may return empty time string, which is acceptable for testing
-    // Verify time format (should contain date and time)
-    // assert!(
-    //     alarm_time.contains("/"),
-    //     "Alarm time should contain date separator"
-    // );
-    // Note: Mock server may return empty time string, which is acceptable for testing
-    // assert!(
-    //     alarm_time.contains(":"),
-    //     "Alarm time should contain time separator"
-    // );
+    log::info!("All alarm history attributes match expected values");
+});
+
+test_with_logging!(test_invalid_alarm_history_instance, {
+    let mut server = MockServerManager::new();
+    server.start().await.expect("Failed to start mock server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid instance (should return error)
+    log::info!("Testing invalid alarm history instance...");
+    let result = client
+        .read_alarm_history(5000, AlarmAttribute::Code as u8)
+        .await;
+
+    // Assert that invalid instance returns error
+    assert!(
+        result.is_err(),
+        "Invalid alarm history instance should return error"
+    );
+
+    log::info!("Invalid instance correctly returned error");
 });
 
 test_with_logging!(test_invalid_alarm_instance, {
@@ -156,11 +346,27 @@ test_with_logging!(test_invalid_alarm_instance, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test invalid alarm instance
-    let result = client.read_alarm_data(9999, 1).await;
+    // Test invalid alarm instance (5000 is outside all valid ranges)
+    log::info!("Testing invalid alarm instance...");
+    let result = client.read_alarm_data(5000, 1).await;
     assert!(
         result.is_err(),
         "Invalid alarm instance should return error"
+    );
+});
+
+test_with_logging!(test_invalid_alarm_attribute, {
+    let mut server = MockServerManager::new();
+    server.start().await.expect("Failed to start mock server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid alarm attribute (255 is invalid)
+    log::info!("Testing invalid alarm attribute...");
+    let result = client.read_alarm_data(1, 255).await;
+    assert!(
+        result.is_err(),
+        "Invalid alarm attribute should return error"
     );
 });
 
@@ -192,36 +398,84 @@ test_with_logging!(test_alarm_operations_comprehensive, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Comprehensive test covering all alarm operations
+    log::info!("Starting comprehensive alarm operations test...");
+
+    // Test complete alarm data reading (attribute 0)
     let _complete_alarm = client
-        .read_alarm_data(1, 1) // Read alarm instance 1, attribute 1
+        .read_alarm_data(1, 0) // Read complete alarm data
         .await
         .expect("Failed to read complete alarm data");
 
-    // Verify alarm data consistency
-    // Note: u32 values are always non-negative, so this assertion is not needed
-    // Note: Mock server may return empty name string, which is acceptable for testing
-    // assert!(!complete_alarm.name.is_empty());
+    // Test specific alarm attributes
+    let _alarm_code = client
+        .read_alarm_data(1, AlarmAttribute::Code as u8)
+        .await
+        .expect("Failed to read alarm code");
 
-    // Test alarm instances
-    for i in 1..=2 {
+    let _alarm_data = client
+        .read_alarm_data(1, AlarmAttribute::Data as u8)
+        .await
+        .expect("Failed to read alarm data");
+
+    let _alarm_type = client
+        .read_alarm_data(1, AlarmAttribute::Type as u8)
+        .await
+        .expect("Failed to read alarm type");
+
+    let _alarm_time = client
+        .read_alarm_data(1, AlarmAttribute::Time as u8)
+        .await
+        .expect("Failed to read alarm time");
+
+    let _alarm_name = client
+        .read_alarm_data(1, AlarmAttribute::Name as u8)
+        .await
+        .expect("Failed to read alarm name");
+
+    // Test multiple alarm instances (1-4)
+    for i in 1..=4 {
         let _instance = client
-            .read_alarm_data(i, 1) // Read alarm instance i, attribute 1
+            .read_alarm_data(i, 0) // Read complete alarm data
             .await
             .expect(&format!("Failed to read alarm instance {}", i));
-        // Note: Mock server may return 0 or negative codes, which is acceptable for testing
-        // assert!(instance.code > 0);
     }
 
-    // Test alarm history
-    let _major_failure = client
-        .read_alarm_data(1, 2) // Read alarm instance 1, attribute 2
+    // Test alarm history - major failure alarms
+    for i in 1..=3 {
+        let _major_failure = client
+            .read_alarm_history(i, AlarmAttribute::Code as u8)
+            .await
+            .expect(&format!("Failed to read major failure alarm {}", i));
+    }
+
+    // Test alarm history - monitor alarms
+    for i in 1001..=1003 {
+        let _monitor_alarm = client
+            .read_alarm_history(i, AlarmAttribute::Name as u8)
+            .await
+            .expect(&format!("Failed to read monitor alarm {}", i));
+    }
+
+    // Test alarm history attributes
+    let _history_code = client
+        .read_alarm_history(1, AlarmAttribute::Code as u8)
         .await
-        .expect("Failed to read major failure alarm");
-    // Note: Mock server may return 0 or negative codes, which is acceptable for testing
-    // assert!(major_failure.code >= 0);
+        .expect("Failed to read alarm history code");
+
+    let _history_time = client
+        .read_alarm_history(1, AlarmAttribute::Time as u8)
+        .await
+        .expect("Failed to read alarm history time");
 
     // Test commands
-    assert!(client.reset_alarm().await.is_ok());
-    assert!(client.cancel_error().await.is_ok());
+    assert!(
+        client.reset_alarm().await.is_ok(),
+        "Alarm reset should succeed"
+    );
+    assert!(
+        client.cancel_error().await.is_ok(),
+        "Error cancel should succeed"
+    );
+
+    log::info!("Comprehensive alarm operations test completed successfully");
 });
