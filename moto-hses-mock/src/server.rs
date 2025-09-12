@@ -28,6 +28,9 @@ impl MockServer {
 
         let mut mock_state = MockState::default();
 
+        // Apply configured status
+        mock_state.status = config.default_status.clone();
+
         // Apply configured position
         mock_state.position = config.default_position.clone();
 
@@ -383,6 +386,11 @@ impl MockServerBuilder {
 
     pub fn with_position(mut self, position: proto::Position) -> Self {
         self.config.default_position = position;
+        self
+    }
+
+    pub fn with_status(mut self, status: proto::Status) -> Self {
+        self.config.default_status = status;
         self
     }
 

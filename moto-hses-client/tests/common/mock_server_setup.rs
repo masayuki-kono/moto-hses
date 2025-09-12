@@ -285,6 +285,108 @@ pub async fn create_job_info_test_server(
     Ok(manager)
 }
 
+pub async fn create_status_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with known values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: false,
+                    one_cycle: false,
+                    continuous: true,
+                    running: true,
+                    speed_limited: false,
+                    teach: false,
+                    play: true,
+                    remote: false,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: false,
+                    external_hold: false,
+                    command_hold: false,
+                    alarm: true,
+                    error: false,
+                    servo_on: true,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_status_all_true_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with all true values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: true,
+                    one_cycle: true,
+                    continuous: true,
+                    running: true,
+                    speed_limited: true,
+                    teach: true,
+                    play: true,
+                    remote: true,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: true,
+                    external_hold: true,
+                    command_hold: true,
+                    alarm: true,
+                    error: true,
+                    servo_on: true,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_status_all_false_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with all false values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: false,
+                    one_cycle: false,
+                    continuous: false,
+                    running: false,
+                    speed_limited: false,
+                    teach: false,
+                    play: false,
+                    remote: false,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: false,
+                    external_hold: false,
+                    command_hold: false,
+                    alarm: false,
+                    error: false,
+                    servo_on: false,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -10,11 +10,17 @@ pub struct StatusHandler;
 impl CommandHandler for StatusHandler {
     fn handle(
         &self,
-        _message: &proto::HsesRequestMessage,
+        message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         use moto_hses_proto::VariableType;
-        let mut data = state.status.serialize()?;
+
+        let attribute = message.sub_header.attribute;
+        let mut data = match attribute {
+            1 => state.status.data1.serialize()?,
+            2 => state.status.data2.serialize()?,
+            _ => state.status.serialize()?, // Default to complete status
+        };
 
         // Extend to 8 bytes if needed
         if data.len() < 8 {
