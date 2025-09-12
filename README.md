@@ -186,8 +186,8 @@ cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
 # Run protocol communication tests
 cargo test --test protocol_communication_tests
 
-# Run end-to-end integration tests
-./scripts/integration_test.sh
+# Run comprehensive integration tests
+cargo test --test integration_tests
 ```
 
 **Protocol communication tests** verify:
@@ -197,12 +197,13 @@ cargo test --test protocol_communication_tests
 - Command handling
 - UDP communication with mock server
 
-**End-to-end tests** verify:
+**Integration tests** verify:
 
 - Client-server communication
 - All client operations with validation
 - Communication integrity
 - Automatic resource cleanup
+- MockServer configuration and expected value validation
 
 ## Implementation Status
 
@@ -230,11 +231,11 @@ cargo test --test protocol_communication_tests
 - [x] Mock server implementation
 - [x] Test utilities
 
-### Phase 4: Testing & Documentation 🔄
+### Phase 4: Testing & Documentation ✅
 
 - [x] Testing strategy
 - [x] Unit tests
-- [ ] Integration tests
+- [x] Integration tests
 - [ ] Performance tests
 - [x] Basic documentation
 
@@ -287,8 +288,8 @@ cargo test
 # Protocol communication tests (Mock server protocol)
 cargo test --test protocol_communication_tests
 
-# End-to-end integration tests (Client + Mock server)
-./scripts/integration_test.sh
+# Comprehensive integration tests (Client + Mock server)
+cargo test --test integration_tests
 ```
 
 ## License

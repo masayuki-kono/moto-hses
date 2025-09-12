@@ -60,11 +60,17 @@ test_with_logging!(test_variable_read_operations, {
     );
 
     assert_eq!(
-        client.read_u8(30).await.expect("Failed to read U8 variable"),
+        client
+            .read_u8(30)
+            .await
+            .expect("Failed to read U8 variable"),
         10
     );
     assert_eq!(
-        client.read_u8(31).await.expect("Failed to read U8 variable"),
+        client
+            .read_u8(31)
+            .await
+            .expect("Failed to read U8 variable"),
         20
     );
 
@@ -237,4 +243,3 @@ test_with_logging!(test_invalid_variable_handling, {
         "Invalid string variable index write should return error"
     );
 });
-

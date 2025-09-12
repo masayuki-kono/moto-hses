@@ -380,7 +380,6 @@ impl MockServerBuilder {
         self
     }
 
-
     pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
         self.config.io_states.insert(io_number, state);
         self

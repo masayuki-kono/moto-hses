@@ -40,27 +40,19 @@ jobs:
           echo "Running new integration tests with Rust test framework..."
           cargo test --test integration_tests
 
-      - name: Run Legacy End-to-End Integration Tests
-        run: |
-          echo "Running legacy end-to-end integration tests..."
-          ./scripts/integration_test.sh
 
       - name: Show Test Logs on Failure
         if: failure()
         run: |
-          echo "=== Integration Test Summary Log ==="
-          cat logs/integration_test_summary.log || echo "No integration test summary log found"
-          echo "=== Mock Server Log ==="
-          cat logs/mock_server.log || echo "No mock server log found"
-          echo "=== Detailed Test Outputs ==="
-          ls -la logs/integration_test_detailed_outputs/ || echo "No detailed test outputs found"
+          echo "=== Integration Test Logs ==="
+          cat moto-hses-client/logs/integration_tests.log || echo "No integration test log found"
 
       - name: Upload Test Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-logs
-          path: logs/
+          path: moto-hses-client/logs/
           retention-days: 7
 
   integration-test-release:
@@ -91,25 +83,17 @@ jobs:
           echo "Running new integration tests with Rust test framework in release mode..."
           cargo test --test integration_tests --release
 
-      - name: Run Legacy End-to-End Integration Tests (Release)
-        run: |
-          echo "Running legacy end-to-end integration tests in release mode..."
-          ./scripts/integration_test.sh
 
       - name: Show Test Logs on Failure (Release)
         if: failure()
         run: |
-          echo "=== Integration Test Summary Log (Release) ==="
-          cat logs/integration_test_summary.log || echo "No integration test summary log found"
-          echo "=== Mock Server Log (Release) ==="
-          cat logs/mock_server.log || echo "No mock server log found"
-          echo "=== Detailed Test Outputs (Release) ==="
-          ls -la logs/integration_test_detailed_outputs/ || echo "No detailed test outputs found"
+          echo "=== Integration Test Logs (Release) ==="
+          cat moto-hses-client/logs/integration_tests.log || echo "No integration test log found"
 
       - name: Upload Test Logs (Release)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-logs-release
-          path: logs/
+          path: moto-hses-client/logs/
           retention-days: 7
