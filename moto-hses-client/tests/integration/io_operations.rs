@@ -30,10 +30,7 @@ test_with_logging!(test_read_io, {
         .await
         .expect("Failed to read I/O #1001");
     log::info!("I/O #1001 state: {}", io1001_state);
-    assert!(
-        !io1001_state,
-        "I/O #1001 should be OFF (initial state)"
-    );
+    assert!(!io1001_state, "I/O #1001 should be OFF (initial state)");
 
     // Test reading additional I/O as per legacy example
     log::info!("Reading robot user input I/O #2...");
@@ -68,10 +65,7 @@ test_with_logging!(test_write_io, {
         .expect("Failed to read I/O #1001 after write");
 
     log::info!("I/O #1001 state after write: {}", io_state_after_write);
-    assert!(
-        io_state_after_write,
-        "I/O #1001 should be ON after write"
-    );
+    assert!(io_state_after_write, "I/O #1001 should be ON after write");
 
     // Additional I/O operations (as per legacy example)
     log::info!("Writing to robot user output I/O #1002...");

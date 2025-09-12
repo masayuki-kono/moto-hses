@@ -198,15 +198,13 @@ test_with_logging!(test_alarm_history_major_failure, {
         let alarm_history_code = client
             .read_alarm_history(instance, AlarmAttribute::Code as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read major failure alarm code {}",
-                instance));
+            .unwrap_or_else(|_| panic!("Failed to read major failure alarm code {}", instance));
 
         // Test alarm history name
         let alarm_history_name = client
             .read_alarm_history(instance, AlarmAttribute::Name as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read major failure alarm name {}",
-                instance));
+            .unwrap_or_else(|_| panic!("Failed to read major failure alarm name {}", instance));
 
         log::info!(
             "Major failure alarm {}: Code={}, Name={}",

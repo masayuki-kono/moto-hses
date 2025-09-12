@@ -90,8 +90,10 @@ test_with_logging!(test_multiple_register_operations, {
 
     // First, verify initial values
     for (register, expected_value) in test_registers.iter().zip(expected_initial_values.iter()) {
-        let initial_value = client.read_register(*register).await.unwrap_or_else(|_| panic!("Failed to read initial value from register {}",
-            register));
+        let initial_value = client
+            .read_register(*register)
+            .await
+            .unwrap_or_else(|_| panic!("Failed to read initial value from register {}", register));
         assert_eq!(initial_value, *expected_value);
     }
 

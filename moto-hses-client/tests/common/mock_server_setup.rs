@@ -147,7 +147,8 @@ impl MockServerManager {
                 let test_data = b"test";
                 (socket
                     .send_to(test_data, format!("{}:{}", self.host, self.robot_port))
-                    .await).is_ok()
+                    .await)
+                    .is_ok()
             }
             Err(_) => false,
         }
