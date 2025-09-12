@@ -174,23 +174,6 @@ impl Drop for MockServerManager {
 
 // Helper functions for common test configurations
 
-pub async fn create_variable_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
-    let mut manager = MockServerManager::new();
-
-    manager
-        .start_with_builder(|builder| {
-            builder
-                .with_variable(0, vec![0x2A, 0x00, 0x00, 0x00]) // I000 = 42
-                .with_variable(1, vec![0x39, 0x30, 0x00, 0x00]) // I001 = 12345
-                .with_variable(2, vec![0xDB, 0x0F, 0x49, 0x40]) // R002 = 3.14159
-                .with_variable(3, vec![0xFF, 0x00, 0x00, 0x00]) // B003 = 255
-        })
-        .await?;
-
-    Ok(manager)
-}
-
 pub async fn create_io_test_server(
 ) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -391,6 +374,43 @@ pub async fn create_register_test_server(
             registers.insert(4, 400);
 
             builder.with_registers(registers)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_variable_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up variable data with known values for testing
+            // Each variable type uses different indices to avoid conflicts
+            let mut variables = std::collections::HashMap::new();
+            
+            // I16 variables (I variables) - indices 0, 1
+            variables.insert(0, vec![100, 0]); // I000 = 100
+            variables.insert(1, vec![200, 0]); // I001 = 200
+            
+            // I32 variables (D variables) - indices 10, 11
+            variables.insert(10, vec![232, 3, 0, 0]); // D010 = 1000 (little endian)
+            variables.insert(11, vec![208, 7, 0, 0]); // D011 = 2000 (little endian)
+            
+            // F32 variables (R variables) - indices 20, 21
+            variables.insert(20, vec![0, 0, 192, 63]); // R020 = 1.5 (little endian)
+            variables.insert(21, vec![0, 0, 32, 64]); // R021 = 2.5 (little endian)
+            
+            // U8 variables (B variables) - indices 30, 31
+            variables.insert(30, vec![10]); // B030 = 10
+            variables.insert(31, vec![20]); // B031 = 20
+            
+            // String variables (S variables) - indices 40, 41
+            variables.insert(40, b"Hello".to_vec()); // S040 = "Hello"
+            variables.insert(41, b"World".to_vec()); // S041 = "World"
+
+            builder.with_variables(variables)
         })
         .await?;
 

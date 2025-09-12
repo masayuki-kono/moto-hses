@@ -37,6 +37,9 @@ impl MockServer {
         // Apply configured registers
         mock_state.registers = config.registers.clone();
 
+        // Apply configured variables
+        mock_state.variables = config.variables.clone();
+
         // Apply configured job information
         if let Some(job) = &config.executing_job {
             mock_state.executing_job = Some(job.clone());
@@ -377,10 +380,6 @@ impl MockServerBuilder {
         self
     }
 
-    pub fn with_variable(mut self, index: u8, value: Vec<u8>) -> Self {
-        self.config.variables.insert(index, value);
-        self
-    }
 
     pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
         self.config.io_states.insert(io_number, state);
@@ -404,6 +403,11 @@ impl MockServerBuilder {
 
     pub fn with_registers(mut self, registers: std::collections::HashMap<u16, i16>) -> Self {
         self.config.registers = registers;
+        self
+    }
+
+    pub fn with_variables(mut self, variables: std::collections::HashMap<u8, Vec<u8>>) -> Self {
+        self.config.variables = variables;
         self
     }
 

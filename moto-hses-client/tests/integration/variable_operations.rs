@@ -1,46 +1,91 @@
 // Integration tests for variable operations
 
 use crate::common::{
-    mock_server_setup::{create_test_server, create_variable_test_server},
+    mock_server_setup::create_variable_test_server,
     test_utils::{create_test_client, wait_for_operation},
 };
 use crate::test_with_logging;
 
 test_with_logging!(test_variable_read_operations, {
-    let mut server = create_test_server();
-    server.start().await.expect("Failed to start mock server");
+    let _server = create_variable_test_server()
+        .await
+        .expect("Failed to start variable test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test reading different variable types
-    let i16_value: i16 = client
-        .read_i16(0)
+    // Test reading different variable types with expected values from MockServer configuration
+    assert_eq!(
+        client
+            .read_i16(0)
+            .await
+            .expect("Failed to read I16 variable"),
+        100
+    );
+    assert_eq!(
+        client
+            .read_i16(1)
+            .await
+            .expect("Failed to read I16 variable"),
+        200
+    );
+
+    assert_eq!(
+        client
+            .read_i32(10)
+            .await
+            .expect("Failed to read I32 variable"),
+        1000
+    );
+    assert_eq!(
+        client
+            .read_i32(11)
+            .await
+            .expect("Failed to read I32 variable"),
+        2000
+    );
+
+    assert_eq!(
+        client
+            .read_f32(20)
+            .await
+            .expect("Failed to read F32 variable"),
+        1.5
+    );
+    assert_eq!(
+        client
+            .read_f32(21)
+            .await
+            .expect("Failed to read F32 variable"),
+        2.5
+    );
+
+    assert_eq!(
+        client.read_u8(30).await.expect("Failed to read U8 variable"),
+        10
+    );
+    assert_eq!(
+        client.read_u8(31).await.expect("Failed to read U8 variable"),
+        20
+    );
+
+    // Test string variables
+    let s0 = client
+        .read_string(40)
         .await
-        .expect("Failed to read I16 variable");
+        .expect("Failed to read string variable");
+    assert_eq!(String::from_utf8_lossy(&s0), "Hello");
 
-    let i32_value: i32 = client
-        .read_i32(0)
+    let s1 = client
+        .read_string(41)
         .await
-        .expect("Failed to read I32 variable");
-
-    let f32_value: f32 = client
-        .read_f32(0)
-        .await
-        .expect("Failed to read F32 variable");
-
-    let _u8_value: u8 = client.read_u8(0).await.expect("Failed to read U8 variable");
-
-    // Verify values are within expected ranges (mock server should return predictable values)
-    assert!(i16_value >= -32768);
-    assert!(i32_value >= -2147483648);
-    assert!(f32_value.is_finite());
-    // Note: u8 values are always <= 255, so this assertion is not needed
+        .expect("Failed to read string variable");
+    assert_eq!(String::from_utf8_lossy(&s1), "World");
 });
 
 test_with_logging!(test_variable_write_operations, {
     let _server = create_variable_test_server()
         .await
-        .expect("Failed to start mock server");
+        .expect("Failed to start variable test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -51,44 +96,88 @@ test_with_logging!(test_variable_write_operations, {
         .expect("Failed to write i16 variable");
 
     client
-        .write_i32(1, 12345)
+        .write_i32(11, 12345)
         .await
         .expect("Failed to write i32 variable");
 
     client
-        .write_f32(1, 3.14159)
+        .write_f32(21, 3.14159)
         .await
         .expect("Failed to write f32 variable");
 
     client
-        .write_u8(1, 255)
+        .write_u8(31, 255)
         .await
         .expect("Failed to write u8 variable");
 
     wait_for_operation().await;
+
+    // Verify written values
+    assert_eq!(
+        client
+            .read_i16(1)
+            .await
+            .expect("Failed to read i16 after write"),
+        42
+    );
+    assert_eq!(
+        client
+            .read_i32(11)
+            .await
+            .expect("Failed to read i32 after write"),
+        12345
+    );
+    assert!(
+        (client
+            .read_f32(21)
+            .await
+            .expect("Failed to read f32 after write")
+            - 3.14159)
+            .abs()
+            < 0.001
+    );
+    assert_eq!(
+        client
+            .read_u8(31)
+            .await
+            .expect("Failed to read u8 after write"),
+        255
+    );
 });
 
 test_with_logging!(test_string_variable_operations, {
     let _server = create_variable_test_server()
         .await
-        .expect("Failed to start mock server");
+        .expect("Failed to start variable test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test string operations
-    let test_string = "Hello, Robot!";
+    // Test string operations with expected initial values
+    // Verify initial string values
+    let s0 = client
+        .read_string(40)
+        .await
+        .expect("Failed to read initial string");
+    assert_eq!(String::from_utf8_lossy(&s0), "Hello");
 
-    // Write string
+    let s1 = client
+        .read_string(41)
+        .await
+        .expect("Failed to read initial string");
+    assert_eq!(String::from_utf8_lossy(&s1), "World");
+
+    // Test writing new string
+    let test_string = "Hello, Robot!";
     client
-        .write_string(0, test_string.as_bytes().to_vec())
+        .write_string(40, test_string.as_bytes().to_vec())
         .await
         .expect("Failed to write string variable");
 
     wait_for_operation().await;
 
-    // Read string back
+    // Read string back and verify
     let read_string_bytes = client
-        .read_string(0)
+        .read_string(40)
         .await
         .expect("Failed to read string variable");
 
@@ -99,12 +188,30 @@ test_with_logging!(test_string_variable_operations, {
 test_with_logging!(test_invalid_variable_handling, {
     let _server = create_variable_test_server()
         .await
-        .expect("Failed to start mock server");
+        .expect("Failed to start variable test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test invalid variable index
-    let result: Result<i16, _> = client.read_variable::<i16>(255).await;
+    // Test invalid variable index for read
+    let result: Result<i16, _> = client.read_i16(255).await;
+    assert!(
+        result.is_err(),
+        "Invalid variable index should return error"
+    );
+
+    let result: Result<i32, _> = client.read_i32(255).await;
+    assert!(
+        result.is_err(),
+        "Invalid variable index should return error"
+    );
+
+    let result: Result<f32, _> = client.read_f32(255).await;
+    assert!(
+        result.is_err(),
+        "Invalid variable index should return error"
+    );
+
+    let result: Result<u8, _> = client.read_u8(255).await;
     assert!(
         result.is_err(),
         "Invalid variable index should return error"
@@ -116,61 +223,18 @@ test_with_logging!(test_invalid_variable_handling, {
         result.is_err(),
         "Invalid string variable index should return error"
     );
+
+    // Test invalid variable index for write
+    let result: Result<(), _> = client.write_i16(255, 42).await;
+    assert!(
+        result.is_err(),
+        "Invalid variable index write should return error"
+    );
+
+    let result: Result<(), _> = client.write_string(255, b"test".to_vec()).await;
+    assert!(
+        result.is_err(),
+        "Invalid string variable index write should return error"
+    );
 });
 
-test_with_logging!(test_variable_operations_comprehensive, {
-    let _server = create_variable_test_server()
-        .await
-        .expect("Failed to start mock server");
-
-    let client = create_test_client().await.expect("Failed to create client");
-
-    // Comprehensive test covering all variable operations
-    // Test i16
-    client
-        .write_variable(0, 42i16)
-        .await
-        .expect("Failed to write i16");
-    wait_for_operation().await;
-    let read_i16: i16 = client
-        .read_variable::<i16>(0)
-        .await
-        .expect("Failed to read i16");
-    assert_eq!(read_i16, 42);
-
-    // Test i32
-    client
-        .write_variable(1, 12345i32)
-        .await
-        .expect("Failed to write i32");
-    wait_for_operation().await;
-    let read_i32: i32 = client
-        .read_variable::<i32>(1)
-        .await
-        .expect("Failed to read i32");
-    assert_eq!(read_i32, 12345);
-
-    // Test f32
-    client
-        .write_variable(2, 3.14159f32)
-        .await
-        .expect("Failed to write f32");
-    wait_for_operation().await;
-    let read_f32: f32 = client
-        .read_variable::<f32>(2)
-        .await
-        .expect("Failed to read f32");
-    assert!((read_f32 - 3.14159).abs() < 0.001);
-
-    // Test u8
-    client
-        .write_variable(3, 255u8)
-        .await
-        .expect("Failed to write u8");
-    wait_for_operation().await;
-    let read_u8: u8 = client
-        .read_variable::<u8>(3)
-        .await
-        .expect("Failed to read u8");
-    assert_eq!(read_u8, 255);
-});
