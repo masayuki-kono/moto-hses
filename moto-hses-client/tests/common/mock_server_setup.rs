@@ -247,6 +247,25 @@ pub async fn create_register_test_server(
     Ok(manager)
 }
 
+pub async fn create_position_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up position data with known values for testing
+            let test_position =
+                moto_hses_proto::Position::Pulse(moto_hses_proto::PulsePosition::new(
+                    [100, 200, 300, 400, 500, 600, 700, 800], // Known test values
+                    1,                                        // control_group = 1
+                ));
+            builder.with_position(test_position)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

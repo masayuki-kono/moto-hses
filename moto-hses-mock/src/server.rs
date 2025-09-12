@@ -28,6 +28,9 @@ impl MockServer {
 
         let mut mock_state = MockState::default();
 
+        // Apply configured position
+        mock_state.position = config.default_position.clone();
+
         // Apply configured alarms if any
         if !config.alarms.is_empty() {
             mock_state.alarms = config.alarms.clone();
@@ -370,6 +373,11 @@ impl MockServerBuilder {
 
     pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
         self.config.io_states.insert(io_number, state);
+        self
+    }
+
+    pub fn with_position(mut self, position: proto::Position) -> Self {
+        self.config.default_position = position;
         self
     }
 

@@ -1,16 +1,17 @@
 // Integration tests for position operations
 
 use crate::common::{
-    mock_server_setup::MockServerManager,
-    test_utils::{create_test_client, wait_for_operation},
+    mock_server_setup::{create_position_test_server, MockServerManager},
+    test_utils::create_test_client,
 };
 use crate::test_with_logging;
 
-test_with_logging!(test_robot_pulse_position, {
-    log::info!("Creating mock server...");
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-    log::info!("Mock server started successfully");
+test_with_logging!(test_read_robot_pulse_position, {
+    log::info!("Creating position test server...");
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
+    log::info!("Position test server started successfully");
 
     log::info!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
@@ -21,31 +22,35 @@ test_with_logging!(test_robot_pulse_position, {
         .await
         .expect("Failed to read robot pulse position");
 
-    // Verify position data structure
-    // Position is a struct, not a collection, so we verify it was read successfully
+    // Verify position data matches expected values
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "Robot pulse position should have at least 6 axes"
+            assert_eq!(
+                pulse_pos.joints.len(),
+                8,
+                "Robot pulse position should have 8 axes"
             );
 
-            // Verify all values are finite numbers
-            for (i, &value) in pulse_pos.joints.iter().enumerate() {
-                assert!(
-                    value >= -2147483648,
-                    "Position value at axis {} should be within i32 range",
-                    i
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "Position value at axis {} should be {}",
+                    i, expected
                 );
             }
+
+            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         _ => panic!("Expected pulse position type"),
     }
 });
 
-test_with_logging!(test_base_pulse_position, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_read_base_pulse_position, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -56,26 +61,32 @@ test_with_logging!(test_base_pulse_position, {
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "Base pulse position should have at least 6 axes"
+            assert_eq!(
+                pulse_pos.joints.len(),
+                8,
+                "Base pulse position should have 8 axes"
             );
 
-            for (i, &value) in pulse_pos.joints.iter().enumerate() {
-                assert!(
-                    value >= -2147483648,
-                    "Base pulse position value at axis {} should be within i32 range",
-                    i
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "Base pulse position value at axis {} should be {}",
+                    i, expected
                 );
             }
+
+            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         _ => panic!("Expected pulse position type"),
     }
 });
 
-test_with_logging!(test_station_pulse_position, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_read_station_pulse_position, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -86,26 +97,32 @@ test_with_logging!(test_station_pulse_position, {
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "Station pulse position should have at least 6 axes"
+            assert_eq!(
+                pulse_pos.joints.len(),
+                8,
+                "Station pulse position should have 8 axes"
             );
 
-            for (i, &value) in pulse_pos.joints.iter().enumerate() {
-                assert!(
-                    value >= -2147483648,
-                    "Station pulse position value at axis {} should be within i32 range",
-                    i
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "Station pulse position value at axis {} should be {}",
+                    i, expected
                 );
             }
+
+            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         _ => panic!("Expected pulse position type"),
     }
 });
 
-test_with_logging!(test_robot_cartesian_position, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_read_robot_cartesian_position, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -144,15 +161,26 @@ test_with_logging!(test_robot_cartesian_position, {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
             // Mock server may return pulse position instead of cartesian
             // This is acceptable for testing purposes
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "Pulse position should have at least 6 axes"
+            assert_eq!(
+                pulse_pos.joints.len(),
+                8,
+                "Pulse position should have 8 axes"
             );
+
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "Pulse position value at axis {} should be {}",
+                    i, expected
+                );
+            }
         }
     }
 });
 
-test_with_logging!(test_r1_position, {
+test_with_logging!(test_read_r1_position, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
@@ -182,7 +210,7 @@ test_with_logging!(test_r1_position, {
     }
 });
 
-test_with_logging!(test_r2_position, {
+test_with_logging!(test_read_r2_position, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
@@ -212,101 +240,116 @@ test_with_logging!(test_r2_position, {
     }
 });
 
-test_with_logging!(test_b1_position, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_read_b1_position, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::BasePulse)
+        .read_position(11, moto_hses_proto::CoordinateSystemType::RobotPulse)
         .await
         .expect("Failed to read B1 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "B1 position should have at least 6 values"
-            );
+            assert_eq!(pulse_pos.joints.len(), 8, "B1 position should have 8 axes");
 
-            for (i, &value) in pulse_pos.joints.iter().enumerate() {
-                assert!(
-                    value >= -2147483648,
-                    "B1 position value at index {} should be within i32 range",
-                    i
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "B1 position value at axis {} should be {}",
+                    i, expected
                 );
             }
+
+            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         _ => panic!("Expected pulse position type"),
     }
 });
 
-test_with_logging!(test_b2_position, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_read_b2_position, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(2, moto_hses_proto::CoordinateSystemType::BasePulse)
+        .read_position(12, moto_hses_proto::CoordinateSystemType::RobotPulse)
         .await
         .expect("Failed to read B2 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
-            assert!(
-                pulse_pos.joints.len() >= 6,
-                "B2 position should have at least 6 values"
-            );
+            assert_eq!(pulse_pos.joints.len(), 8, "B2 position should have 8 axes");
 
-            for (i, &value) in pulse_pos.joints.iter().enumerate() {
-                assert!(
-                    value >= -2147483648,
-                    "B2 position value at index {} should be within i32 range",
-                    i
+            // Verify expected values from MockServer configuration
+            let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+            for (i, &expected) in expected_values.iter().enumerate() {
+                assert_eq!(
+                    pulse_pos.joints[i], expected,
+                    "B2 position value at axis {} should be {}",
+                    i, expected
                 );
             }
+
+            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         _ => panic!("Expected pulse position type"),
     }
 });
 
-test_with_logging!(test_position_monitoring, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
+test_with_logging!(test_continuous_position_monitoring, {
+    let _server = create_position_test_server()
+        .await
+        .expect("Failed to start position test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test position monitoring for a short duration
-    let start_time = std::time::Instant::now();
-    let monitoring_duration = std::time::Duration::from_secs(1);
-
-    while start_time.elapsed() < monitoring_duration {
-        let robot_pos = client
+    // Test position monitoring for 5 seconds (as per legacy example)
+    log::info!("Monitoring position for 5 seconds...");
+    for i in 1..=5 {
+        match client
             .read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse)
-            .await;
-        let base_pos = client
-            .read_position(1, moto_hses_proto::CoordinateSystemType::BasePulse)
-            .await;
-        let cartesian_pos = client
-            .read_position(1, moto_hses_proto::CoordinateSystemType::RobotCartesian)
-            .await;
+            .await
+        {
+            Ok(position) => {
+                log::info!("  [{}s] Position: {:?}", i, position);
 
-        // All operations should succeed
-        assert!(
-            robot_pos.is_ok(),
-            "Robot position reading should succeed during monitoring"
-        );
-        assert!(
-            base_pos.is_ok(),
-            "Base position reading should succeed during monitoring"
-        );
-        assert!(
-            cartesian_pos.is_ok(),
-            "Cartesian position reading should succeed during monitoring"
-        );
+                // Verify position data matches expected values
+                match position {
+                    moto_hses_proto::Position::Pulse(pulse_pos) => {
+                        assert_eq!(pulse_pos.joints.len(), 8, "Position should have 8 axes");
 
-        wait_for_operation().await;
+                        // Verify expected values from MockServer configuration
+                        let expected_values = [100, 200, 300, 400, 500, 600, 700, 800];
+                        for (i, &expected) in expected_values.iter().enumerate() {
+                            assert_eq!(
+                                pulse_pos.joints[i], expected,
+                                "Position value at axis {} should be {}",
+                                i, expected
+                            );
+                        }
+
+                        assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
+                    }
+                    _ => panic!("Expected pulse position type"),
+                }
+            }
+            Err(e) => {
+                log::error!("  [{}s] Failed to read position: {}", i, e);
+                panic!("Position reading should succeed during monitoring");
+            }
+        }
+
+        if i < 5 {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
     }
+    log::info!("Position monitoring completed successfully");
 });
