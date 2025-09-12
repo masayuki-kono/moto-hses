@@ -2,29 +2,36 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug cargo test (prompt for test name)",
       "type": "lldb",
       "request": "launch",
-      "name": "Debug Variable Operations",
-      "program": "${workspaceFolder}/target/debug/examples/variable_operations",
+      "cargo": {
+        "args": [
+          "test",
+          "--package",
+          "moto-hses-client",
+          "--test",
+          "integration_tests",
+          "--no-run"
+        ],
+        "filter": {
+          "kind": "test"
+        }
+      },
       "args": [
-        "127.0.0.1",
-        "10040"
+        "--",
+        "${input:testName}"
       ],
       "cwd": "${workspaceFolder}",
-      "env": {},
-      "console": "integratedTerminal",
-      "stopOnEntry": false,
-    },
+      "preLaunchTask": "cargo test build"
+    }
+  ],
+  "inputs": [
     {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug Mock Server",
-      "program": "${workspaceFolder}/target/debug/moto-hses-mock",
-      "args": [],
-      "cwd": "${workspaceFolder}",
-      "env": {},
-      "console": "integratedTerminal",
-      "stopOnEntry": false,
+      "id": "testName",
+      "type": "promptString",
+      "description": "Enter test name to run",
+      "default": "test_read_complete_job_info"
     }
   ]
 }

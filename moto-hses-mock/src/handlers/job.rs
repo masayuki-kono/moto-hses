@@ -4,6 +4,45 @@ use super::CommandHandler;
 use crate::state::MockState;
 use moto_hses_proto as proto;
 
+/// Handler for reading executing job information (0x73)
+pub struct ExecutingJobInfoHandler;
+
+impl CommandHandler for ExecutingJobInfoHandler {
+    fn handle(
+        &self,
+        message: &proto::HsesRequestMessage,
+        state: &mut MockState,
+    ) -> Result<Vec<u8>, proto::ProtocolError> {
+        let task_type = message.sub_header.instance;
+        let attribute = message.sub_header.attribute;
+        let service = message.sub_header.service;
+
+        // Validate task type (1-6)
+        if !matches!(task_type, 1..=6) {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
+        // Validate attribute (0-4)
+        if attribute > 4 {
+            return Err(proto::ProtocolError::InvalidService);
+        }
+
+        // Create ExecutingJobInfo based on attribute
+        let job_info = match attribute {
+            0..=4 => state.executing_job.clone().unwrap_or_default(),
+            _ => {
+                return Err(proto::ProtocolError::InvalidService);
+            }
+        };
+
+        match service {
+            0x0e => job_info.serialize(attribute),
+            0x01 => job_info.serialize_complete(),
+            _ => Err(proto::ProtocolError::InvalidService),
+        }
+    }
+}
+
 /// Handler for job start (0x86)
 pub struct JobStartHandler;
 
@@ -33,7 +72,12 @@ impl CommandHandler for JobSelectHandler {
             // Set execution job
             if message.payload.len() >= 4 {
                 // In a real implementation, this would parse the job name
-                state.set_current_job(Some("SELECTED.JOB".to_string()));
+                state.set_executing_job(Some(proto::ExecutingJobInfo::new(
+                    "SELECTED.JOB".to_string(),
+                    0,
+                    0,
+                    0,
+                )));
             }
         }
 

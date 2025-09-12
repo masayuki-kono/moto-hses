@@ -2,58 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Start Mock Server",
+      "label": "cargo test build",
       "type": "shell",
       "command": "cargo",
       "args": [
-        "run",
-        "-p",
-        "moto-hses-mock"
+        "test",
+        "--no-run"
       ],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new"
+      "group": {
+        "kind": "build",
+        "isDefault": true
       },
-      "isBackground": true,
-      "problemMatcher": {
-        "owner": "rust",
-        "fileLocation": "absolute",
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+):\\s+(\\d+):\\s+(error|warning|info):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 5,
-          "message": 6
-        }
-      }
-    },
-    {
-      "label": "Run Variable Operations",
-      "type": "shell",
-      "command": "cargo",
-      "args": [
-        "run",
-        "-p",
-        "moto-hses-client",
-        "--example",
-        "variable_operations",
-        "--",
-        "127.0.0.1",
-        "10040"
-      ],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "new"
-      },
-      "dependsOn": "Start Mock Server",
-      "dependsOrder": "sequence"
+      "problemMatcher": [
+        "$rustc"
+      ]
     }
   ]
 }

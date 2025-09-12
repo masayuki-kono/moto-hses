@@ -8,6 +8,14 @@ license = "Apache-2.0"
 tokio = { workspace = true }
 thiserror = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
+futures = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
+moto-hses-mock = { path = "../moto-hses-mock" }
+env_logger = "0.11"
+log = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 
 [[example]]
 name = "read_status"
@@ -44,3 +52,7 @@ path = "examples/io_operations.rs"
 [[example]]
 name = "read_executing_job_info"
 path = "examples/read_executing_job_info.rs"
+
+[[example]]
+name = "hold_servo_control"
+path = "examples/hold_servo_control.rs"

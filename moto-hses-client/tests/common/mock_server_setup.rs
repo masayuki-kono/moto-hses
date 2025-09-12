@@ -1,0 +1,450 @@
+// Mock server setup utilities for integration tests
+
+use crate::common::test_logging;
+use moto_hses_mock::{server::MockServerBuilder, MockConfig, MockServer};
+use moto_hses_proto::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
+use std::time::Duration;
+use tokio::time::sleep;
+
+/// Create a new MockServerManager with default settings
+pub fn create_test_server() -> MockServerManager {
+    MockServerManager::new()
+}
+
+/// Create a new MockServerManager with custom host
+pub fn create_test_server_with_host(host: &str) -> MockServerManager {
+    MockServerManager::new_with_host(host.to_string())
+}
+
+pub struct MockServerManager {
+    handle: Option<tokio::task::JoinHandle<()>>,
+    host: String,
+    robot_port: u16,
+    file_port: u16,
+}
+
+impl Default for MockServerManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MockServerManager {
+    /// Create a new MockServerManager with default host and ports
+    pub fn new() -> Self {
+        Self::new_with_host_and_ports(
+            "127.0.0.1".to_string(),
+            ROBOT_CONTROL_PORT,
+            FILE_CONTROL_PORT,
+        )
+    }
+
+    /// Create a new MockServerManager with custom host and default ports
+    pub fn new_with_host(host: String) -> Self {
+        Self::new_with_host_and_ports(host, ROBOT_CONTROL_PORT, FILE_CONTROL_PORT)
+    }
+
+    /// Create a new MockServerManager with custom host and ports
+    pub fn new_with_host_and_ports(host: String, robot_port: u16, file_port: u16) -> Self {
+        Self {
+            handle: None,
+            host,
+            robot_port,
+            file_port,
+        }
+    }
+
+    pub async fn start(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        // Create mock server with default configuration
+        let config = MockConfig::new(&self.host, self.robot_port, self.file_port);
+        let server = match MockServer::new(config).await {
+            Ok(server) => server,
+            Err(e) => {
+                test_logging::log_mock_server_startup_failure(
+                    &self.host,
+                    self.robot_port,
+                    &e.to_string(),
+                );
+                return Err(e);
+            }
+        };
+
+        // Start server in background task
+        let handle = tokio::spawn(async move {
+            if let Err(e) = server.run().await {
+                eprintln!("Mock server error: {}", e);
+            }
+        });
+
+        self.handle = Some(handle);
+
+        // Wait for server to be ready
+        match self.wait_for_server().await {
+            Ok(_) => {
+                test_logging::log_mock_server_startup(&self.host, self.robot_port);
+                Ok(())
+            }
+            Err(e) => {
+                test_logging::log_mock_server_startup_failure(
+                    &self.host,
+                    self.robot_port,
+                    &e.to_string(),
+                );
+                Err(e)
+            }
+        }
+    }
+
+    pub async fn start_with_builder<F>(
+        &mut self,
+        builder_fn: F,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+    where
+        F: FnOnce(MockServerBuilder) -> MockServerBuilder,
+    {
+        // Create mock server with custom configuration
+        let builder = MockServerBuilder::new()
+            .host(&self.host)
+            .robot_port(self.robot_port)
+            .file_port(self.file_port);
+
+        let server = builder_fn(builder).build().await?;
+
+        // Start server in background task
+        let handle = tokio::spawn(async move {
+            if let Err(e) = server.run().await {
+                eprintln!("Mock server error: {}", e);
+            }
+        });
+
+        self.handle = Some(handle);
+
+        // Wait for server to be ready
+        self.wait_for_server().await?;
+        Ok(())
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.handle.is_some()
+    }
+
+    async fn wait_for_server(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let max_attempts = 30;
+        for _ in 0..max_attempts {
+            if self.is_server_ready().await {
+                return Ok(());
+            }
+            sleep(Duration::from_millis(100)).await;
+        }
+        Err("Mock server failed to start within timeout".into())
+    }
+
+    async fn is_server_ready(&self) -> bool {
+        // Try to connect to the server
+        match tokio::net::UdpSocket::bind("0.0.0.0:0").await {
+            Ok(socket) => {
+                // Send a simple ping to check if server is responding
+                let test_data = b"test";
+                (socket
+                    .send_to(test_data, format!("{}:{}", self.host, self.robot_port))
+                    .await)
+                    .is_ok()
+            }
+            Err(_) => false,
+        }
+    }
+
+    /// Get the robot port number
+    pub fn robot_port(&self) -> u16 {
+        self.robot_port
+    }
+
+    /// Get the file port number
+    pub fn file_port(&self) -> u16 {
+        self.file_port
+    }
+}
+
+impl Drop for MockServerManager {
+    fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            handle.abort();
+            // Give a moment for the server to fully shut down
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    }
+}
+
+// Helper functions for common test configurations
+
+pub async fn create_io_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            builder
+                .with_io_state(1, true) // Input 1 = ON
+                .with_io_state(2, false) // Input 2 = OFF
+                .with_io_state(1001, false) // Output 1 = OFF
+                .with_io_state(1002, true) // Output 2 = ON
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_alarm_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            builder
+                // Add test alarms for instances 1-4
+                .with_alarm(moto_hses_proto::alarm::test_alarms::servo_error()) // Instance 1
+                .with_alarm(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Instance 2
+                .with_alarm(moto_hses_proto::alarm::test_alarms::safety_error()) // Instance 3
+                .with_alarm(moto_hses_proto::alarm::test_alarms::communication_error()) // Instance 4
+                // Add alarm history for testing
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::servo_error()) // Major failure #1
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Major failure #2
+                .with_alarm_history(moto_hses_proto::alarm::test_alarms::safety_error())
+            // Major failure #3
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_position_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up position data with known values for testing
+            let test_position =
+                moto_hses_proto::Position::Pulse(moto_hses_proto::PulsePosition::new(
+                    [100, 200, 300, 400, 500, 600, 700, 800], // Known test values
+                    1,                                        // control_group = 1
+                ));
+            builder.with_position(test_position)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_job_info_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up job information with known values for testing
+            builder.with_executing_job(moto_hses_proto::job::ExecutingJobInfo::new(
+                "TEST_JOB".to_string(),
+                2,
+                1,
+                100,
+            ))
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_status_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with known values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: false,
+                    one_cycle: false,
+                    continuous: true,
+                    running: true,
+                    speed_limited: false,
+                    teach: false,
+                    play: true,
+                    remote: false,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: false,
+                    external_hold: false,
+                    command_hold: false,
+                    alarm: true,
+                    error: false,
+                    servo_on: true,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_status_all_true_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with all true values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: true,
+                    one_cycle: true,
+                    continuous: true,
+                    running: true,
+                    speed_limited: true,
+                    teach: true,
+                    play: true,
+                    remote: true,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: true,
+                    external_hold: true,
+                    command_hold: true,
+                    alarm: true,
+                    error: true,
+                    servo_on: true,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_status_all_false_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up status data with all false values for testing
+            let test_status = moto_hses_proto::Status::new(
+                moto_hses_proto::StatusData1 {
+                    step: false,
+                    one_cycle: false,
+                    continuous: false,
+                    running: false,
+                    speed_limited: false,
+                    teach: false,
+                    play: false,
+                    remote: false,
+                },
+                moto_hses_proto::StatusData2 {
+                    teach_pendant_hold: false,
+                    external_hold: false,
+                    command_hold: false,
+                    alarm: false,
+                    error: false,
+                    servo_on: false,
+                },
+            );
+            builder.with_status(test_status)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_register_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up register data with known values for testing
+            // Register 0: 0 (default)
+            // Register 1: 100
+            // Register 2: 200
+            // Register 3: 300
+            // Register 4: 400
+            let mut registers = std::collections::HashMap::new();
+            registers.insert(0, 0);
+            registers.insert(1, 100);
+            registers.insert(2, 200);
+            registers.insert(3, 300);
+            registers.insert(4, 400);
+
+            builder.with_registers(registers)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+pub async fn create_variable_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up variable data with known values for testing
+            // Each variable type uses different indices to avoid conflicts
+            let mut variables = std::collections::HashMap::new();
+
+            // I16 variables (I variables) - indices 0, 1
+            variables.insert(0, vec![100, 0]); // I000 = 100
+            variables.insert(1, vec![200, 0]); // I001 = 200
+
+            // I32 variables (D variables) - indices 10, 11
+            variables.insert(10, vec![232, 3, 0, 0]); // D010 = 1000 (little endian)
+            variables.insert(11, vec![208, 7, 0, 0]); // D011 = 2000 (little endian)
+
+            // F32 variables (R variables) - indices 20, 21
+            variables.insert(20, vec![0, 0, 192, 63]); // R020 = 1.5 (little endian)
+            variables.insert(21, vec![0, 0, 32, 64]); // R021 = 2.5 (little endian)
+
+            // U8 variables (B variables) - indices 30, 31
+            variables.insert(30, vec![10]); // B030 = 10
+            variables.insert(31, vec![20]); // B031 = 20
+
+            // String variables (S variables) - indices 40, 41
+            variables.insert(40, b"Hello".to_vec()); // S040 = "Hello"
+            variables.insert(41, b"World".to_vec()); // S041 = "World"
+
+            builder.with_variables(variables)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_mock_server_startup() {
+        test_logging::init_test_logging();
+        test_logging::log_test_start("test_mock_server_startup");
+
+        let mut server = MockServerManager::new();
+        let result = server.start().await.is_ok();
+
+        test_logging::log_test_completion("test_mock_server_startup", result);
+        assert!(result);
+    }
+
+    #[tokio::test]
+    async fn test_variable_test_server() {
+        let server = create_variable_test_server().await;
+        assert!(server.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_io_test_server() {
+        let server = create_io_test_server().await;
+        assert!(server.is_ok());
+    }
+}

@@ -10,11 +10,17 @@ pub struct StatusHandler;
 impl CommandHandler for StatusHandler {
     fn handle(
         &self,
-        _message: &proto::HsesRequestMessage,
+        message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         use moto_hses_proto::VariableType;
-        let mut data = state.status.serialize()?;
+
+        let attribute = message.sub_header.attribute;
+        let mut data = match attribute {
+            1 => state.status.data1.serialize()?,
+            2 => state.status.data2.serialize()?,
+            _ => state.status.serialize()?, // Default to complete status
+        };
 
         // Extend to 8 bytes if needed
         if data.len() < 8 {
@@ -22,38 +28,6 @@ impl CommandHandler for StatusHandler {
         }
 
         Ok(data)
-    }
-}
-
-/// Handler for executing job info reading (0x73)
-pub struct ExecutingJobInfoHandler;
-
-impl CommandHandler for ExecutingJobInfoHandler {
-    fn handle(
-        &self,
-        message: &proto::HsesRequestMessage,
-        state: &mut MockState,
-    ) -> Result<Vec<u8>, proto::ProtocolError> {
-        // Create job info based on current state
-        let job_info = proto::ExecutingJobInfo::new(
-            state
-                .current_job
-                .clone()
-                .unwrap_or_else(|| "NO_JOB".to_string()),
-            1000, // Line number
-            1,    // Step number
-            100,  // Speed override value
-        );
-
-        // Check if we need to serialize specific attribute or all
-        let attribute = message.sub_header.attribute;
-        if attribute == 0 {
-            // Return all attributes
-            job_info.serialize_complete()
-        } else {
-            // Return specific attribute
-            job_info.serialize(attribute)
-        }
     }
 }
 

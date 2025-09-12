@@ -1,3 +1,9 @@
+---
+description: "Pre-push / PR checklist. Apply when committing, pushing, or creating a pull request."
+globs: "**/*"
+alwaysApply: true
+---
+
 # Pre-Push and Pull Request Rules
 
 ## Pre-Push Checklist
@@ -44,7 +50,7 @@ cargo test --test protocol_communication_tests
 
 ```bash
 # Comprehensive client-server integration tests
-./scripts/integration_test.sh
+cargo test --test integration_tests
 ```
 
 - **Required**: Both test types must pass locally before pushing
@@ -212,8 +218,3 @@ If issues are discovered after merge:
 2. Revert problematic changes
 3. Follow normal PR process
 4. Investigate root cause separately
-   description:
-   globs:
-   alwaysApply: true
-
----

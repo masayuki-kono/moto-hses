@@ -26,7 +26,37 @@ impl MockServer {
         let robot_socket = Arc::new(UdpSocket::bind(robot_addr).await?);
         let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
 
-        let state = SharedState::new(MockState::default());
+        let mut mock_state = MockState {
+            status: config.default_status.clone(),
+            position: config.default_position.clone(),
+            registers: config.registers.clone(),
+            variables: config.variables.clone(),
+            ..Default::default()
+        };
+
+        // Apply configured job information
+        if let Some(job) = &config.executing_job {
+            mock_state.executing_job = Some(job.clone());
+        }
+
+        // Apply configured alarms if any
+        if !config.alarms.is_empty() {
+            mock_state.alarms = config.alarms.clone();
+        }
+
+        // Apply configured alarm history if any
+        if !config.alarm_history.is_empty() {
+            // Add alarms to appropriate history categories
+            for alarm in &config.alarm_history {
+                // Determine category based on alarm code or use a default category
+                // For simplicity, we'll add all to major_failure category
+                mock_state
+                    .alarm_history
+                    .add_alarm(proto::alarm::AlarmCategory::MajorFailure, alarm.clone());
+            }
+        }
+
+        let state = SharedState::new(mock_state);
         let handlers = CommandHandlerRegistry::default();
 
         eprintln!("Mock server listening on {}", robot_addr);
@@ -334,19 +364,43 @@ impl MockServerBuilder {
         self
     }
 
-    pub fn with_alarm(self, _alarm: proto::Alarm) -> Self {
-        // Note: This would need to be applied after server creation
-        // since we can't modify the config's state directly
+    pub fn with_alarm(mut self, alarm: proto::Alarm) -> Self {
+        self.config.alarms.push(alarm);
         self
     }
 
-    pub fn with_variable(mut self, index: u8, value: Vec<u8>) -> Self {
-        self.config.variables.insert(index, value);
+    pub fn with_alarm_history(mut self, alarm: proto::Alarm) -> Self {
+        self.config.alarm_history.push(alarm);
         self
     }
 
     pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
         self.config.io_states.insert(io_number, state);
+        self
+    }
+
+    pub fn with_position(mut self, position: proto::Position) -> Self {
+        self.config.default_position = position;
+        self
+    }
+
+    pub fn with_status(mut self, status: proto::Status) -> Self {
+        self.config.default_status = status;
+        self
+    }
+
+    pub fn with_executing_job(mut self, job: proto::ExecutingJobInfo) -> Self {
+        self.config.executing_job = Some(job);
+        self
+    }
+
+    pub fn with_registers(mut self, registers: std::collections::HashMap<u16, i16>) -> Self {
+        self.config.registers = registers;
+        self
+    }
+
+    pub fn with_variables(mut self, variables: std::collections::HashMap<u8, Vec<u8>>) -> Self {
+        self.config.variables = variables;
         self
     }
 

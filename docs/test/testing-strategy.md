@@ -95,8 +95,8 @@ async fn test_status_command() {
 These tests verify the complete client-server integration using the actual client library:
 
 ```bash
-# Run comprehensive end-to-end tests
-./scripts/integration_test.sh
+# Run comprehensive integration tests
+cargo test --test integration_tests
 ```
 
 The script tests:
@@ -157,8 +157,8 @@ cargo test
 # Run mock server protocol tests specifically
 cargo test --test protocol_communication_tests
 
-# Run comprehensive end-to-end tests
-./scripts/integration_test.sh
+# Run comprehensive integration tests
+cargo test --test integration_tests
 ```
 
 ### CI/CD Integration

@@ -15,7 +15,7 @@ pub struct MockState {
     pub registers: HashMap<u16, i16>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: AlarmHistory,
-    pub current_job: Option<String>,
+    pub executing_job: Option<proto::ExecutingJobInfo>,
     pub servo_on: bool,
     pub hold_state: bool,
     pub hlock_state: bool,
@@ -173,7 +173,12 @@ impl Default for MockState {
             registers,
             alarms,
             alarm_history,
-            current_job: Some("TEST.JOB".to_string()),
+            executing_job: Some(proto::ExecutingJobInfo::new(
+                "TEST.JOB".to_string(),
+                2,
+                1,
+                100,
+            )),
             servo_on: true,
             hold_state: false,
             hlock_state: false,
@@ -249,9 +254,9 @@ impl MockState {
         self.status.data1.running = running;
     }
 
-    /// Set current job
-    pub fn set_current_job(&mut self, job: Option<String>) {
-        self.current_job = job;
+    /// Set executing job
+    pub fn set_executing_job(&mut self, job: Option<proto::ExecutingJobInfo>) {
+        self.executing_job = job;
     }
 
     /// Update position
