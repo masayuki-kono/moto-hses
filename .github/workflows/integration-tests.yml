@@ -35,9 +35,14 @@ jobs:
           echo "Running protocol communication tests..."
           cargo test --test protocol_communication_tests
 
-      - name: Run End-to-End Integration Tests
+      - name: Run New Integration Tests (Rust Framework)
         run: |
-          echo "Running end-to-end integration tests..."
+          echo "Running new integration tests with Rust test framework..."
+          cargo test --test integration_tests
+
+      - name: Run Legacy End-to-End Integration Tests
+        run: |
+          echo "Running legacy end-to-end integration tests..."
           ./scripts/integration_test.sh
 
       - name: Show Test Logs on Failure
@@ -81,9 +86,14 @@ jobs:
           echo "Running protocol communication tests in release mode..."
           cargo test --test protocol_communication_tests --release
 
-      - name: Run End-to-End Integration Tests (Release)
+      - name: Run New Integration Tests (Rust Framework) (Release)
         run: |
-          echo "Running end-to-end integration tests in release mode..."
+          echo "Running new integration tests with Rust test framework in release mode..."
+          cargo test --test integration_tests --release
+
+      - name: Run Legacy End-to-End Integration Tests (Release)
+        run: |
+          echo "Running legacy end-to-end integration tests in release mode..."
           ./scripts/integration_test.sh
 
       - name: Show Test Logs on Failure (Release)
