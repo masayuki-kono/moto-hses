@@ -21,7 +21,7 @@ test_with_logging!(test_read_io, {
     log::info!("Reading robot user input I/O #1...");
     let io1_state = client.read_io(1).await.expect("Failed to read I/O #1");
     log::info!("I/O #1 state: {}", io1_state);
-    assert_eq!(io1_state, true, "I/O #1 should be ON (initial state)");
+    assert!(io1_state, "I/O #1 should be ON (initial state)");
 
     // Test reading robot user output I/O
     log::info!("Reading robot user output I/O #1001...");
@@ -30,8 +30,8 @@ test_with_logging!(test_read_io, {
         .await
         .expect("Failed to read I/O #1001");
     log::info!("I/O #1001 state: {}", io1001_state);
-    assert_eq!(
-        io1001_state, false,
+    assert!(
+        !io1001_state,
         "I/O #1001 should be OFF (initial state)"
     );
 
@@ -39,7 +39,7 @@ test_with_logging!(test_read_io, {
     log::info!("Reading robot user input I/O #2...");
     let io2_state = client.read_io(2).await.expect("Failed to read I/O #2");
     log::info!("I/O #2 state: {}", io2_state);
-    assert_eq!(io2_state, false, "I/O #2 should be OFF (initial state)");
+    assert!(!io2_state, "I/O #2 should be OFF (initial state)");
 
     log::info!("I/O state verification passed");
 });
@@ -68,8 +68,8 @@ test_with_logging!(test_write_io, {
         .expect("Failed to read I/O #1001 after write");
 
     log::info!("I/O #1001 state after write: {}", io_state_after_write);
-    assert_eq!(
-        io_state_after_write, true,
+    assert!(
+        io_state_after_write,
         "I/O #1001 should be ON after write"
     );
 
@@ -90,8 +90,8 @@ test_with_logging!(test_write_io, {
         .expect("Failed to read I/O #1002 after write");
 
     log::info!("I/O #1002 state after write: {}", io1002_state_after_write);
-    assert_eq!(
-        io1002_state_after_write, false,
+    assert!(
+        !io1002_state_after_write,
         "I/O #1002 should be OFF after write"
     );
 });

@@ -107,7 +107,7 @@ test_with_logging!(test_variable_write_operations, {
         .expect("Failed to write i32 variable");
 
     client
-        .write_f32(21, 3.14159)
+        .write_f32(21, std::f32::consts::PI)
         .await
         .expect("Failed to write f32 variable");
 
@@ -138,7 +138,7 @@ test_with_logging!(test_variable_write_operations, {
             .read_f32(21)
             .await
             .expect("Failed to read f32 after write")
-            - 3.14159)
+            - std::f32::consts::PI)
             .abs()
             < 0.001
     );

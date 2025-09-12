@@ -148,7 +148,7 @@ test_with_logging!(test_alarm_instances, {
         let alarm_instance = client
             .read_alarm_data(instance, 0) // Read complete alarm data
             .await
-            .expect(&format!("Failed to read alarm instance {}", instance));
+            .unwrap_or_else(|_| panic!("Failed to read alarm instance {}", instance));
 
         log::info!(
             "Alarm instance {}: Code={}, Name={}",
@@ -198,19 +198,15 @@ test_with_logging!(test_alarm_history_major_failure, {
         let alarm_history_code = client
             .read_alarm_history(instance, AlarmAttribute::Code as u8)
             .await
-            .expect(&format!(
-                "Failed to read major failure alarm code {}",
-                instance
-            ));
+            .unwrap_or_else(|_| panic!("Failed to read major failure alarm code {}",
+                instance));
 
         // Test alarm history name
         let alarm_history_name = client
             .read_alarm_history(instance, AlarmAttribute::Name as u8)
             .await
-            .expect(&format!(
-                "Failed to read major failure alarm name {}",
-                instance
-            ));
+            .unwrap_or_else(|_| panic!("Failed to read major failure alarm name {}",
+                instance));
 
         log::info!(
             "Major failure alarm {}: Code={}, Name={}",
@@ -252,7 +248,7 @@ test_with_logging!(test_alarm_history_monitor, {
         let alarm_history = client
             .read_alarm_history(instance, AlarmAttribute::Name as u8)
             .await
-            .expect(&format!("Failed to read monitor alarm {}", instance));
+            .unwrap_or_else(|_| panic!("Failed to read monitor alarm {}", instance));
 
         if alarm_history.code != 0 {
             log::info!(
@@ -437,7 +433,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _instance = client
             .read_alarm_data(i, 0) // Read complete alarm data
             .await
-            .expect(&format!("Failed to read alarm instance {}", i));
+            .unwrap_or_else(|_| panic!("Failed to read alarm instance {}", i));
     }
 
     // Test alarm history - major failure alarms
@@ -445,7 +441,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _major_failure = client
             .read_alarm_history(i, AlarmAttribute::Code as u8)
             .await
-            .expect(&format!("Failed to read major failure alarm {}", i));
+            .unwrap_or_else(|_| panic!("Failed to read major failure alarm {}", i));
     }
 
     // Test alarm history - monitor alarms
@@ -453,7 +449,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _monitor_alarm = client
             .read_alarm_history(i, AlarmAttribute::Name as u8)
             .await
-            .expect(&format!("Failed to read monitor alarm {}", i));
+            .unwrap_or_else(|_| panic!("Failed to read monitor alarm {}", i));
     }
 
     // Test alarm history attributes

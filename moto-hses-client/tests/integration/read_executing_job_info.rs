@@ -124,7 +124,7 @@ test_with_logging!(test_read_task_types, {
         let job_info = client
             .read_executing_job_info(task_type, 1)
             .await
-            .expect(&format!("Failed to read task type {}", task_type));
+            .unwrap_or_else(|_| panic!("Failed to read task type {}", task_type));
 
         // Verify job name matches expected value for all task types
         assert_eq!(

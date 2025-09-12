@@ -92,8 +92,8 @@ test_with_logging!(test_actual_communication, {
             log::info!("  Servo on: {}", status.is_servo_on());
 
             // Verify status values are reasonable
-            assert!(status.is_running() == false || status.is_running() == true);
-            assert!(status.is_servo_on() == false || status.is_servo_on() == true);
+            assert!(!status.is_running() || status.is_running());
+            assert!(!status.is_servo_on() || status.is_servo_on());
         }
         Err(moto_hses_client::ClientError::TimeoutError(_)) => {
             log::warn!("✗ Communication timeout - robot may be busy or network slow");

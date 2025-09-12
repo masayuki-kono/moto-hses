@@ -84,16 +84,14 @@ test_with_logging!(test_multiple_register_operations, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test operations on multiple registers with expected initial values
-    let test_registers = vec![1, 2, 3, 4];
-    let expected_initial_values = vec![100, 200, 300, 400];
-    let test_values = vec![150, 250, 350, 450];
+    let test_registers = [1, 2, 3, 4];
+    let expected_initial_values = [100, 200, 300, 400];
+    let test_values = [150, 250, 350, 450];
 
     // First, verify initial values
     for (register, expected_value) in test_registers.iter().zip(expected_initial_values.iter()) {
-        let initial_value = client.read_register(*register).await.expect(&format!(
-            "Failed to read initial value from register {}",
-            register
-        ));
+        let initial_value = client.read_register(*register).await.unwrap_or_else(|_| panic!("Failed to read initial value from register {}",
+            register));
         assert_eq!(initial_value, *expected_value);
     }
 
@@ -102,14 +100,14 @@ test_with_logging!(test_multiple_register_operations, {
         client
             .write_register(*register, *value)
             .await
-            .expect(&format!("Failed to write to register {}", register));
+            .unwrap_or_else(|_| panic!("Failed to write to register {}", register));
 
         wait_for_operation().await;
 
         let read_value = client
             .read_register(*register)
             .await
-            .expect(&format!("Failed to read register {}", register));
+            .unwrap_or_else(|_| panic!("Failed to read register {}", register));
 
         assert_eq!(read_value, *value);
     }

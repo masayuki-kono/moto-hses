@@ -26,19 +26,13 @@ impl MockServer {
         let robot_socket = Arc::new(UdpSocket::bind(robot_addr).await?);
         let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
 
-        let mut mock_state = MockState::default();
-
-        // Apply configured status
-        mock_state.status = config.default_status.clone();
-
-        // Apply configured position
-        mock_state.position = config.default_position.clone();
-
-        // Apply configured registers
-        mock_state.registers = config.registers.clone();
-
-        // Apply configured variables
-        mock_state.variables = config.variables.clone();
+        let mut mock_state = MockState {
+            status: config.default_status.clone(),
+            position: config.default_position.clone(),
+            registers: config.registers.clone(),
+            variables: config.variables.clone(),
+            ..Default::default()
+        };
 
         // Apply configured job information
         if let Some(job) = &config.executing_job {

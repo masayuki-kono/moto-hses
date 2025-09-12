@@ -38,9 +38,7 @@ impl CommandHandler for ExecutingJobInfoHandler {
         match service {
             0x0e => job_info.serialize(attribute),
             0x01 => job_info.serialize_complete(),
-            _ => {
-                return Err(proto::ProtocolError::InvalidService);
-            }
+            _ => Err(proto::ProtocolError::InvalidService),
         }
     }
 }

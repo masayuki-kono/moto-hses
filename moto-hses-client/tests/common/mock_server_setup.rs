@@ -23,6 +23,12 @@ pub struct MockServerManager {
     file_port: u16,
 }
 
+impl Default for MockServerManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MockServerManager {
     /// Create a new MockServerManager with default host and ports
     pub fn new() -> Self {
@@ -139,13 +145,9 @@ impl MockServerManager {
             Ok(socket) => {
                 // Send a simple ping to check if server is responding
                 let test_data = b"test";
-                match socket
+                (socket
                     .send_to(test_data, format!("{}:{}", self.host, self.robot_port))
-                    .await
-                {
-                    Ok(_) => true,
-                    Err(_) => false,
-                }
+                    .await).is_ok()
             }
             Err(_) => false,
         }
