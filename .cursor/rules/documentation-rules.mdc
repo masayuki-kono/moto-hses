@@ -1,3 +1,9 @@
+---
+description: "Documentation rules. USE WHEN: writing or reviewing code/project documentation."
+globs: "**/*.md"
+alwaysApply: true
+---
+
 # Documentation Rules
 
 ## Language Requirement
@@ -177,13 +183,3 @@ let status = client.send_command(ReadStatus)?;
 - 包括的なエラーハンドリング
 - テスト用のモックサーバー
 ````
-
----
-
-## rule_type: Always
-
-description:
-globs:
-alwaysApply: true
-
----

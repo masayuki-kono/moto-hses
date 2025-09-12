@@ -1,3 +1,9 @@
+---
+description: "Implementation rules for Moto-HSES Rust Client. USE WHEN: implementing features, running tests, or reviewing code."
+globs: "**/*"
+alwaysApply: true
+---
+
 # Moto-HSES Rust Client Library Development Rules
 
 ## Development Approach
@@ -200,7 +206,3 @@ cd moto-hses-mock && cargo test
 2. Verify batch operation optimization
 3. Analyze memory usage and allocation count
 4. Improve algorithms if necessary
-
----
-
-## rule_type: Always

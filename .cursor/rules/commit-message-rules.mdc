@@ -1,3 +1,9 @@
+---
+description: "Commit message rules. USE WHEN: writing commits, naming branches, or creating PRs."
+globs: "**/*"
+alwaysApply: true
+---
+
 # Commit Message Rules
 
 ## Language Requirement
@@ -107,13 +113,3 @@ refactor: split lib.rs into multiple module files for better maintainability and
 - Reference related issues
 - Ensure all tests pass
 - Follow code review checklist
-
----
-
-## rule_type: Always
-
-description:
-globs:
-alwaysApply: true
-
----
