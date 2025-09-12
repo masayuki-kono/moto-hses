@@ -31,6 +31,11 @@ impl MockServer {
         // Apply configured position
         mock_state.position = config.default_position.clone();
 
+        // Apply configured job information
+        if let Some(job) = &config.executing_job {
+            mock_state.executing_job = Some(job.clone());
+        }
+
         // Apply configured alarms if any
         if !config.alarms.is_empty() {
             mock_state.alarms = config.alarms.clone();
@@ -378,6 +383,11 @@ impl MockServerBuilder {
 
     pub fn with_position(mut self, position: proto::Position) -> Self {
         self.config.default_position = position;
+        self
+    }
+
+    pub fn with_executing_job(mut self, job: proto::ExecutingJobInfo) -> Self {
+        self.config.executing_job = Some(job);
         self
     }
 

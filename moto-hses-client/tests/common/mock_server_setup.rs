@@ -266,6 +266,25 @@ pub async fn create_position_test_server(
     Ok(manager)
 }
 
+pub async fn create_job_info_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up job information with known values for testing
+            builder.with_executing_job(moto_hses_proto::job::ExecutingJobInfo::new(
+                "TEST_JOB".to_string(),
+                2,
+                1,
+                100,
+            ))
+        })
+        .await?;
+
+    Ok(manager)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

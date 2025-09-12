@@ -24,6 +24,7 @@ pub struct MockConfig {
     pub io_states: HashMap<u16, bool>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: Vec<proto::Alarm>,
+    pub executing_job: Option<proto::ExecutingJobInfo>,
 }
 
 impl MockConfig {
@@ -70,6 +71,12 @@ impl MockConfig {
             io_states,
             alarms: Vec::new(),
             alarm_history: Vec::new(),
+            executing_job: Some(proto::ExecutingJobInfo::new(
+                "TEST.JOB".to_string(),
+                2,
+                1,
+                100,
+            )),
         }
     }
 

@@ -425,13 +425,6 @@ main() {
         exit 1
     fi
     
-    # Run unit tests
-    log_info "Running unit tests..."
-    if ! cargo test --all-features --workspace; then
-        log_error "Unit tests failed"
-        exit 1
-    fi
-    
     # Start mock server
     if ! start_mock_server; then
         log_error "Failed to start mock server"

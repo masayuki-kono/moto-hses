@@ -25,38 +25,6 @@ impl CommandHandler for StatusHandler {
     }
 }
 
-/// Handler for executing job info reading (0x73)
-pub struct ExecutingJobInfoHandler;
-
-impl CommandHandler for ExecutingJobInfoHandler {
-    fn handle(
-        &self,
-        message: &proto::HsesRequestMessage,
-        state: &mut MockState,
-    ) -> Result<Vec<u8>, proto::ProtocolError> {
-        // Create job info based on current state
-        let job_info = proto::ExecutingJobInfo::new(
-            state
-                .current_job
-                .clone()
-                .unwrap_or_else(|| "NO_JOB".to_string()),
-            1000, // Line number
-            1,    // Step number
-            100,  // Speed override value
-        );
-
-        // Check if we need to serialize specific attribute or all
-        let attribute = message.sub_header.attribute;
-        if attribute == 0 {
-            // Return all attributes
-            job_info.serialize_complete()
-        } else {
-            // Return specific attribute
-            job_info.serialize(attribute)
-        }
-    }
-}
-
 /// Handler for axis name reading (0x74)
 pub struct AxisNameHandler;
 

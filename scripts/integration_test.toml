@@ -358,7 +358,7 @@ description = "Read executing job info job name"
 
 [[tests.read_executing_job_info.expected_outputs]]
 type = "line_number"
-pattern = "Line number: 1000"
+pattern = "Line number: 2"
 description = "Read executing job info line number"
 
 [[tests.read_executing_job_info.expected_outputs]]

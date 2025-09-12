@@ -9,14 +9,17 @@ use std::sync::Arc;
 use super::alarm::{AlarmDataHandler, AlarmInfoHandler, AlarmResetHandler};
 use super::file::FileControlHandler;
 use super::io::{IoHandler, RegisterHandler};
-use super::job::{JobSelectHandler, JobStartHandler, MovHandler, PmovHandler, SelectCycleHandler};
+use super::job::{
+    ExecutingJobInfoHandler, JobSelectHandler, JobStartHandler, MovHandler, PmovHandler,
+    SelectCycleHandler,
+};
 use super::position::{
     BasePositionVarHandler, ExternalAxisVarHandler, PositionErrorHandler, PositionHandler,
     PositionVarHandler,
 };
 use super::system::{
-    AxisNameHandler, ExecutingJobInfoHandler, HoldServoHandler, ManagementTimeHandler,
-    StatusHandler, SystemInfoHandler, TextDisplayHandler, TorqueHandler,
+    AxisNameHandler, HoldServoHandler, ManagementTimeHandler, StatusHandler, SystemInfoHandler,
+    TextDisplayHandler, TorqueHandler,
 };
 use super::variable::{
     ByteVarHandler, DoubleVarHandler, IntegerVarHandler, RealVarHandler, StringVarHandler,
