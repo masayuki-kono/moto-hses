@@ -40,7 +40,6 @@ jobs:
           echo "Running new integration tests with Rust test framework..."
           cargo test --test integration_tests
 
-
       - name: Show Test Logs on Failure
         if: failure()
         run: |
@@ -82,7 +81,6 @@ jobs:
         run: |
           echo "Running new integration tests with Rust test framework in release mode..."
           cargo test --test integration_tests --release
-
 
       - name: Show Test Logs on Failure (Release)
         if: failure()

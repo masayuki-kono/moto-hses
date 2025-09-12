@@ -261,37 +261,6 @@ cargo test --test integration_tests
 - 📋 File operations
 - 📋 Advanced robot control commands
 
-## Development
-
-### Prerequisites
-
-- Rust 1.70+
-- Tokio runtime
-- Network access for UDP communication
-
-### Building
-
-```bash
-# Build all crates
-cargo build
-
-# Run examples
-cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
-```
-
-### Testing
-
-```bash
-# Unit tests
-cargo test
-
-# Protocol communication tests (Mock server protocol)
-cargo test --test protocol_communication_tests
-
-# Comprehensive integration tests (Client + Mock server)
-cargo test --test integration_tests
-```
-
 ## License
 
 Apache-2.0
