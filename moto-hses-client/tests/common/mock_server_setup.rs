@@ -387,6 +387,32 @@ pub async fn create_status_all_false_server(
     Ok(manager)
 }
 
+pub async fn create_register_test_server(
+) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+    let mut manager = MockServerManager::new();
+
+    manager
+        .start_with_builder(|builder| {
+            // Set up register data with known values for testing
+            // Register 0: 0 (default)
+            // Register 1: 100
+            // Register 2: 200
+            // Register 3: 300
+            // Register 4: 400
+            let mut registers = std::collections::HashMap::new();
+            registers.insert(0, 0);
+            registers.insert(1, 100);
+            registers.insert(2, 200);
+            registers.insert(3, 300);
+            registers.insert(4, 400);
+
+            builder.with_registers(registers)
+        })
+        .await?;
+
+    Ok(manager)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -34,6 +34,9 @@ impl MockServer {
         // Apply configured position
         mock_state.position = config.default_position.clone();
 
+        // Apply configured registers
+        mock_state.registers = config.registers.clone();
+
         // Apply configured job information
         if let Some(job) = &config.executing_job {
             mock_state.executing_job = Some(job.clone());
@@ -396,6 +399,11 @@ impl MockServerBuilder {
 
     pub fn with_executing_job(mut self, job: proto::ExecutingJobInfo) -> Self {
         self.config.executing_job = Some(job);
+        self
+    }
+
+    pub fn with_registers(mut self, registers: std::collections::HashMap<u16, i16>) -> Self {
+        self.config.registers = registers;
         self
     }
 

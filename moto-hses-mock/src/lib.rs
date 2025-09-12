@@ -20,6 +20,7 @@ pub struct MockConfig {
     pub file_port: u16,
     pub default_status: proto::Status,
     pub default_position: proto::Position,
+    pub registers: HashMap<u16, i16>,
     pub variables: HashMap<u8, Vec<u8>>,
     pub io_states: HashMap<u16, bool>,
     pub alarms: Vec<proto::Alarm>,
