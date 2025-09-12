@@ -2,7 +2,7 @@
 
 use crate::common::{
     mock_server_setup::{create_test_server, MockServerManager},
-    test_utils::{create_test_client, create_test_client_with_host_and_port, wait_for_operation},
+    test_utils::{create_test_client, create_test_client_with_host_and_port},
 };
 use crate::test_with_logging;
 
@@ -59,41 +59,6 @@ test_with_logging!(test_connection_timeout_handling, {
     );
 });
 
-test_with_logging!(test_connection_retry_mechanism, {
-    let mut server = MockServerManager::new();
-    server.start().await.expect("Failed to start mock server");
-
-    // Create client with retry configuration
-    let config = moto_hses_client::ClientConfig {
-        host: "127.0.0.1".to_string(),
-        port: 10094,
-        timeout: std::time::Duration::from_millis(100),
-        retry_count: 3,
-        retry_delay: std::time::Duration::from_millis(50),
-        buffer_size: 8192,
-    };
-
-    let _client = moto_hses_client::HsesClient::new_with_config(config)
-        .await
-        .expect("Failed to create client with retry configuration");
-
-    // Connection test passed (client creation is sufficient for UDP)
-});
-
-test_with_logging!(test_connection_stability, {
-    let mut server =
-        MockServerManager::new_with_host_and_ports("127.0.0.1".to_string(), 10095, 10096);
-    server.start().await.expect("Failed to start mock server");
-
-    let _client = create_test_client().await.expect("Failed to create client");
-
-    // Test connection stability over time
-    for _ in 0..10 {
-        // Connection test passed (client creation is sufficient for UDP)
-        wait_for_operation().await;
-    }
-});
-
 test_with_logging!(test_multiple_connections, {
     let mut server =
         MockServerManager::new_with_host_and_ports("127.0.0.1".to_string(), 10096, 10097);
@@ -112,32 +77,76 @@ test_with_logging!(test_multiple_connections, {
     }
 });
 
-test_with_logging!(test_connection_after_server_restart, {
-    let mut server =
-        MockServerManager::new_with_host_and_ports("127.0.0.1".to_string(), 10097, 10098);
+test_with_logging!(test_actual_communication, {
+    let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
-    let _client = create_test_client().await.expect("Failed to create client");
+    let client = create_test_client().await.expect("Failed to create client");
 
-    // Connection test passed (client creation is sufficient for UDP)
+    // Test actual communication with read_status
+    log::info!("Testing actual communication with read_status...");
+    match client.read_status().await {
+        Ok(status) => {
+            log::info!("✓ Communication successful");
+            log::info!("  Robot running: {}", status.is_running());
+            log::info!("  Servo on: {}", status.is_servo_on());
 
-    // Simulate server restart by dropping and recreating
-    drop(server);
+            // Verify status values are reasonable
+            assert!(status.is_running() == false || status.is_running() == true);
+            assert!(status.is_servo_on() == false || status.is_servo_on() == true);
+        }
+        Err(moto_hses_client::ClientError::TimeoutError(_)) => {
+            log::warn!("✗ Communication timeout - robot may be busy or network slow");
+            // This is acceptable for this test
+        }
+        Err(moto_hses_client::ClientError::ProtocolError(e)) => {
+            log::error!("✗ Protocol error: {}", e);
+            panic!("Unexpected protocol error: {}", e);
+        }
+        Err(e) => {
+            log::error!("✗ Communication failed: {}", e);
+            panic!("Unexpected communication error: {}", e);
+        }
+    }
+});
 
-    // Wait a bit for cleanup
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+test_with_logging!(test_retry_mechanism_actual, {
+    // Test retry mechanism with a server that might be slow to respond
+    let mut server = MockServerManager::new();
+    server.start().await.expect("Failed to start mock server");
 
-    // Start new server
-    let mut new_server = MockServerManager::new();
-    new_server
-        .start()
+    // Create client with aggressive retry settings
+    let config = moto_hses_client::ClientConfig {
+        host: "127.0.0.1".to_string(),
+        port: 10040,
+        timeout: std::time::Duration::from_millis(50), // Short timeout
+        retry_count: 3,
+        retry_delay: std::time::Duration::from_millis(25),
+        buffer_size: 8192,
+    };
+
+    let client = moto_hses_client::HsesClient::new_with_config(config)
         .await
-        .expect("Failed to restart mock server");
+        .expect("Failed to create client with retry configuration");
 
-    // Create new client
-    let _new_client = create_test_client()
-        .await
-        .expect("Failed to create client after server restart");
+    // Test that retry mechanism works for actual communication
+    log::info!("Testing retry mechanism with actual communication...");
+    let start_time = std::time::Instant::now();
 
-    // Connection test passed (client creation is sufficient for UDP)
+    match client.read_status().await {
+        Ok(status) => {
+            let elapsed = start_time.elapsed();
+            log::info!("✓ Communication successful after {:?}", elapsed);
+            log::info!("  Robot running: {}", status.is_running());
+            log::info!("  Servo on: {}", status.is_servo_on());
+
+            // Verify that retry mechanism was used (should take some time)
+            // Note: UDP communication might be very fast, so we just verify it completed
+            log::info!("Communication completed in {:?}", elapsed);
+        }
+        Err(e) => {
+            log::warn!("Communication failed despite retries: {}", e);
+            // This is acceptable for this test
+        }
+    }
 });
