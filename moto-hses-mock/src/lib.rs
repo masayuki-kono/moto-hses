@@ -31,6 +31,13 @@ pub struct MockConfig {
 impl MockConfig {
     /// Create a new MockConfig with specified host and ports
     pub fn new(host: impl Into<String>, robot_port: u16, file_port: u16) -> Self {
+        let mut registers = HashMap::new();
+        registers.insert(0, 0);
+        registers.insert(1, 100);
+        registers.insert(2, 200);
+        registers.insert(3, 300);
+        registers.insert(4, 400);
+
         let mut variables = HashMap::new();
         variables.insert(0, vec![0x01, 0x00, 0x00, 0x00]); // D000 = 1
         variables.insert(1, vec![0x64, 0x00, 0x00, 0x00]); // D001 = 100
@@ -68,6 +75,7 @@ impl MockConfig {
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 1,
             )),
+            registers,
             variables,
             io_states,
             alarms: Vec::new(),

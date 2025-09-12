@@ -231,22 +231,6 @@ pub async fn create_alarm_test_server(
     Ok(manager)
 }
 
-pub async fn create_register_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
-    let mut manager = MockServerManager::new();
-
-    manager
-        .start_with_builder(|builder| {
-            builder
-                .with_variable(0, vec![0x00, 0x00, 0x00, 0x00]) // Register 0 = 0
-                .with_variable(1, vec![0x64, 0x00, 0x00, 0x00]) // Register 1 = 100
-                .with_variable(2, vec![0xC8, 0x00, 0x00, 0x00]) // Register 2 = 200
-        })
-        .await?;
-
-    Ok(manager)
-}
-
 pub async fn create_position_test_server(
 ) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
