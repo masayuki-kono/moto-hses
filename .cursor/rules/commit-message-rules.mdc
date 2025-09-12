@@ -9,8 +9,8 @@ alwaysApply: true
 ## Language Requirement
 
 - **All commit messages must be written in English**
-- This ensures international collaboration and code review accessibility
-- Use clear, descriptive English that follows conventional commit format
+- Ensure clarity for international contributors and reviewers
+- Use concise and descriptive English that follows the _Conventional Commits_ specification
 
 ## Conventional Commit Format
 
@@ -27,25 +27,26 @@ Detailed changes (if necessary)
 
 ### Commit Types
 
-- `feat`: New feature
-- `fix`: Bug fix
-- `refactor`: Code refactoring (no functional changes)
-- `docs`: Documentation changes
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks, dependencies, etc.
-- `style`: Code style changes (formatting, etc.)
-- `perf`: Performance improvements
-- `ci`: CI/CD changes
-- `build`: Build system changes
+- `feat`: Introduce a new feature
+- `fix`: Resolve a bug
+- `refactor`: Code restructuring without changing behavior
+- `docs`: Documentation-only changes
+- `test`: Add or update tests
+- `chore`: Maintenance tasks (dependencies, configs, etc.)
+- `style`: Code style changes (formatting, naming, etc.)
+- `perf`: Performance optimizations
+- `ci`: CI/CD pipeline changes
+- `build`: Build system or dependency changes
 
 ### Guidelines
 
-- Keep the first line under 50 characters
-- Use imperative mood ("Add" not "Added")
-- Start with lowercase letter
-- Don't end with a period
-- Provide detailed description in body if needed
-- Reference issues or related commits when applicable
+- Keep the first line ≤ 50 characters (recommended max: 72 for body lines)
+- Use **imperative mood** ("Add", not "Added" or "Adds")
+- Start with lowercase after the type (e.g., `feat: add parser`)
+- Do **not** end the subject line with a period
+- Use body section for reasoning, context, or details
+- Reference related issues or PRs when relevant
+- Prefer `scope` for clarity in multi-module projects (e.g., `feat(protocol): add HSES parser`)
 
 ## Examples
 
@@ -100,16 +101,19 @@ refactor: split lib.rs into multiple module files for better maintainability and
 
 ## Branch Naming Convention
 
-- `feature/description`: New features
-- `fix/description`: Bug fixes
-- `refactor/description`: Code refactoring
-- `docs/description`: Documentation updates
-- `test/description`: Test-related changes
+- `feature/<short-description>`: New features
+- `fix/<short-description>`: Bug fixes
+- `refactor/<short-description>`: Code refactoring
+- `docs/<short-description>`: Documentation updates
+- `test/<short-description>`: Test-related changes
+- `chore/<short-description>`: Maintenance or setup
+
+> Use `-` instead of `_` for readability (e.g., `feature/add-hses-parser`).
 
 ## Pull Request Guidelines
 
 - Use descriptive titles in English
-- Include summary of changes
-- Reference related issues
-- Ensure all tests pass
-- Follow code review checklist
+- Provide a summary of changes and rationale
+- Reference related issues or PRs
+- Ensure all tests pass before requesting review
+- Follow the code review checklist (clarity, style, tests, docs)
