@@ -8,7 +8,7 @@ alwaysApply: true
 
 ## Development Approach
 
-This project follows the implementation guide (`docs/design/implementation-guide.md`) to implement features step by step, ensuring that unit tests pass at each stage of development.
+This project implement features step by step, ensuring that unit tests pass at each stage of development.
 
 ## Basic Rules
 
@@ -22,10 +22,9 @@ This project follows the implementation guide (`docs/design/implementation-guide
 
 When there are unclear points, refer to specifications in the following order:
 
-1. `docs/design/implementation-guide.md` - Implementation Guide
-2. `docs/design/client-api.md` - API Design Specification
-3. `docs/design/architecture.md` - Architecture Design
-4. `docs/specs/hses-protocol.md` - HSES Protocol Specification
+1. `docs/design/client-api.md` - API Design Specification
+2. `docs/design/architecture.md` - Architecture Design
+3. `docs/specs/hses-protocol.md` - HSES Protocol Specification
 
 ### 3. Code Quality
 

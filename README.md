@@ -33,8 +33,7 @@ This library provides a type-safe, asynchronous Rust client for communicating wi
 ### Design Documents
 
 - [`docs/design/architecture.md`](docs/design/architecture.md) — System architecture and design principles
-- [`docs/design/client-api.md`](docs/design/api-design.md) — API design and usage examples
-- [`docs/design/implementation-guide.md`](docs/design/implementation-guide.md) — Step-by-step implementation guide
+- [`docs/design/client-api.md`](docs/design/api-design.md) — API design
 
 ### Testing
 
