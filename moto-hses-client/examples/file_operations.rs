@@ -1,9 +1,8 @@
 //! File operations example for HSES client
-//! This example demonstrates file operations using the file control port
+//! This example demonstrates file operations using the HsesClient API
 
-use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, FILE_CONTROL_PORT};
-use std::net::SocketAddr;
-use tokio::net::UdpSocket;
+use moto_hses_client::HsesClient;
+use moto_hses_proto::FILE_CONTROL_PORT;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,26 +26,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("HSES Client File Operations Example");
     println!("File Control: {}:{}", host, file_port);
 
-    // Create file control socket
-    let file_socket = match UdpSocket::bind("0.0.0.0:0").await {
-        Ok(socket) => {
-            println!("✓ Successfully created file control socket");
-            socket
+    // Create HsesClient for file operations
+    let client = match HsesClient::new(&format!("{}:{}", host, file_port)).await {
+        Ok(client) => {
+            println!("✓ Successfully created HsesClient");
+            client
         }
         Err(e) => {
-            eprintln!("✗ Failed to create file control socket: {}", e);
+            eprintln!("✗ Failed to create HsesClient: {}", e);
             return Ok(());
         }
     };
-
-    let file_addr: SocketAddr = format!("{}:{}", host, file_port).parse()?;
 
     // File operations demonstration
     println!("\n--- File Operations Test ---");
 
     // Step 1: Get file list
     println!("1. Getting file list...");
-    let files = match get_file_list(&file_socket, &file_addr).await {
+    let files = match client.read_file_list().await {
         Ok(files) => {
             println!("✓ File list retrieved successfully");
             for file in files.iter() {
@@ -62,9 +59,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Step 2: Process files or create test file
     if let Some(first_file) = files.first() {
-        process_existing_file(&file_socket, &file_addr, first_file).await?;
+        process_existing_file(&client, first_file).await?;
     } else {
-        create_and_cleanup_test_file(&file_socket, &file_addr).await?;
+        create_and_cleanup_test_file(&client).await?;
     }
 
     println!("\n--- File Operations Test Completed ---");
@@ -73,13 +70,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn process_existing_file(
-    file_socket: &UdpSocket,
-    file_addr: &SocketAddr,
+    client: &HsesClient,
     first_file: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. Getting content of file: {}", first_file);
 
-    let content = match receive_file(file_socket, file_addr, first_file).await {
+    let content = match client.receive_file(first_file).await {
         Ok(content) => {
             println!("✓ File content retrieved successfully");
             println!("  Content length: {} bytes", content.len());
@@ -120,13 +116,9 @@ async fn process_existing_file(
     println!("\n3. Creating modified file: {}", new_filename);
     println!("  Modified content: {}", modified_content);
 
-    if let Err(e) = send_file(
-        file_socket,
-        file_addr,
-        &new_filename,
-        modified_content.as_bytes(),
-    )
-    .await
+    if let Err(e) = client
+        .send_file(&new_filename, modified_content.as_bytes())
+        .await
     {
         eprintln!("✗ Failed to send modified file: {}", e);
         return Ok(());
@@ -134,24 +126,22 @@ async fn process_existing_file(
     println!("✓ Modified file sent successfully");
 
     // Step 4: Verify file creation and content
-    verify_file_creation_and_content(file_socket, file_addr, &new_filename, &modified_content)
-        .await?;
+    verify_file_creation_and_content(client, &new_filename, &modified_content).await?;
 
     // Step 5: Cleanup
-    cleanup_file(file_socket, file_addr, &new_filename, "modified").await?;
+    cleanup_file(client, &new_filename, "modified").await?;
 
     Ok(())
 }
 
 async fn verify_file_creation_and_content(
-    file_socket: &UdpSocket,
-    file_addr: &SocketAddr,
+    client: &HsesClient,
     filename: &str,
     expected_content: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Get updated file list
     println!("\n4. Getting updated file list...");
-    let updated_files = match get_file_list(file_socket, file_addr).await {
+    let updated_files = match client.read_file_list().await {
         Ok(files) => {
             println!("✓ Updated file list retrieved successfully");
             for file in files.iter() {
@@ -174,7 +164,7 @@ async fn verify_file_creation_and_content(
 
     // Get content of new file and verify
     println!("\n5. Verifying new file content...");
-    let received_content = match receive_file(file_socket, file_addr, filename).await {
+    let received_content = match client.receive_file(filename).await {
         Ok(content) => {
             println!("✓ New file content retrieved successfully");
             content
@@ -211,8 +201,7 @@ async fn verify_file_creation_and_content(
 }
 
 async fn create_and_cleanup_test_file(
-    file_socket: &UdpSocket,
-    file_addr: &SocketAddr,
+    client: &HsesClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("\n2. No files found, creating a test file...");
     let test_content = "This is a test file content";
@@ -221,13 +210,9 @@ async fn create_and_cleanup_test_file(
     println!("  Creating file: {}", test_filename);
     println!("  Content: {}", test_content);
 
-    if let Err(e) = send_file(
-        file_socket,
-        file_addr,
-        test_filename,
-        test_content.as_bytes(),
-    )
-    .await
+    if let Err(e) = client
+        .send_file(test_filename, test_content.as_bytes())
+        .await
     {
         eprintln!("✗ Failed to create test file: {}", e);
         return Ok(());
@@ -236,7 +221,7 @@ async fn create_and_cleanup_test_file(
 
     // Verify the file was created
     println!("\n3. Verifying test file creation...");
-    let updated_files = match get_file_list(file_socket, file_addr).await {
+    let updated_files = match client.read_file_list().await {
         Ok(files) => {
             println!("✓ Updated file list retrieved successfully");
             for file in files.iter() {
@@ -257,14 +242,13 @@ async fn create_and_cleanup_test_file(
     println!("✓ Test file '{}' found in list", test_filename);
 
     // Cleanup
-    cleanup_file(file_socket, file_addr, test_filename, "test").await?;
+    cleanup_file(client, test_filename, "test").await?;
 
     Ok(())
 }
 
 async fn cleanup_file(
-    file_socket: &UdpSocket,
-    file_addr: &SocketAddr,
+    client: &HsesClient,
     filename: &str,
     file_type: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -273,7 +257,7 @@ async fn cleanup_file(
         file_type, filename
     );
 
-    if let Err(e) = delete_file(file_socket, file_addr, filename).await {
+    if let Err(e) = client.delete_file(filename).await {
         eprintln!("✗ Failed to delete {} file: {}", file_type, e);
         return Ok(());
     }
@@ -281,7 +265,7 @@ async fn cleanup_file(
 
     // Verify the file was deleted
     println!("\n7. Verifying cleanup...");
-    let final_files = match get_file_list(file_socket, file_addr).await {
+    let final_files = match client.read_file_list().await {
         Ok(files) => {
             println!("✓ Final file list retrieved successfully");
             for file in files.iter() {
@@ -305,137 +289,6 @@ async fn cleanup_file(
     }
 
     Ok(())
-}
-
-/// Get file list from controller
-async fn get_file_list(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let message = HsesRequestMessage::new(
-        0x02,   // Division: File control
-        0x00,   // ACK: Request
-        0x01,   // Request ID
-        0x00,   // Command
-        0x00,   // Instance
-        0x00,   // Attribute
-        0x32,   // Service: Get file list
-        vec![], // Empty payload
-    );
-
-    let response = send_message(socket, addr, &message).await?;
-
-    // Parse file list from response
-    let content = String::from_utf8_lossy(&response.payload);
-    let files: Vec<String> = content
-        .split('\0')
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
-        .collect();
-
-    Ok(files)
-}
-
-/// Send file to controller
-async fn send_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-    content: &[u8],
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-    payload.extend_from_slice(content);
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x15, // Service: Send file
-        payload,
-    );
-
-    let _response = send_message(socket, addr, &message).await?;
-    Ok(())
-}
-
-/// Receive file from controller
-async fn receive_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x16, // Service: Receive file
-        payload,
-    );
-
-    let response = send_message(socket, addr, &message).await?;
-
-    // Extract file content from response
-    // Response format: filename\0content
-    if let Some(null_pos) = response.payload.iter().position(|&b| b == 0) {
-        let content = response.payload[null_pos + 1..].to_vec();
-        Ok(content)
-    } else {
-        Ok(response.payload)
-    }
-}
-
-/// Delete file from controller
-async fn delete_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x09, // Service: Delete file
-        payload,
-    );
-
-    let _response = send_message(socket, addr, &message).await?;
-    Ok(())
-}
-
-/// Send message and wait for response
-async fn send_message(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    message: &HsesRequestMessage,
-) -> Result<HsesResponseMessage, Box<dyn std::error::Error>> {
-    let data = message.encode();
-
-    // Send message
-    socket.send_to(&data, addr).await?;
-
-    // Wait for response
-    let mut buf = vec![0u8; 2048];
-    let (n, _) = socket.recv_from(&mut buf).await?;
-
-    // Parse response
-    let response = HsesResponseMessage::decode(&buf[..n])?;
-    Ok(response)
 }
 
 /// Modify JOB file name in the content

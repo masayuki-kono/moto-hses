@@ -2,302 +2,179 @@
 
 use crate::common::mock_server_setup::MockServerManager;
 use crate::test_with_logging;
-use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, FILE_CONTROL_PORT};
-use std::net::SocketAddr;
-use tokio::net::UdpSocket;
+use moto_hses_client::HsesClient;
+use moto_hses_proto::FILE_CONTROL_PORT;
 
-// Helper functions for file operations (based on legacy implementation)
-async fn create_file_socket() -> Result<UdpSocket, Box<dyn std::error::Error>> {
-    let socket = UdpSocket::bind("0.0.0.0:0").await?;
-    Ok(socket)
-}
+// Tests using HsesClient API
 
-async fn send_file_message(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    message: &HsesRequestMessage,
-) -> Result<HsesResponseMessage, Box<dyn std::error::Error>> {
-    let data = message.encode();
-    socket.send_to(&data, addr).await?;
-
-    let mut buf = vec![0u8; 2048];
-    let (n, _) = socket.recv_from(&mut buf).await?;
-
-    let response = HsesResponseMessage::decode(&buf[..n])?;
-    Ok(response)
-}
-
-async fn get_file_list(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let message = HsesRequestMessage::new(
-        0x02,   // Division: File control
-        0x00,   // ACK: Request
-        0x01,   // Request ID
-        0x00,   // Command
-        0x00,   // Instance
-        0x00,   // Attribute
-        0x32,   // Service: Get file list
-        vec![], // Empty payload
-    );
-
-    let response = send_file_message(socket, addr, &message).await?;
-
-    // Parse file list from response
-    let content = String::from_utf8_lossy(&response.payload);
-    let files: Vec<String> = content
-        .split('\0')
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
-        .collect();
-
-    Ok(files)
-}
-
-async fn send_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-    content: &[u8],
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-    payload.extend_from_slice(content);
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x15, // Service: Send file
-        payload,
-    );
-
-    let _response = send_file_message(socket, addr, &message).await?;
-    Ok(())
-}
-
-async fn receive_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x16, // Service: Receive file
-        payload,
-    );
-
-    let response = send_file_message(socket, addr, &message).await?;
-
-    // Extract file content from response
-    if let Some(null_pos) = response.payload.iter().position(|&b| b == 0) {
-        let content = response.payload[null_pos + 1..].to_vec();
-        Ok(content)
-    } else {
-        Ok(response.payload)
-    }
-}
-
-async fn delete_file(
-    socket: &UdpSocket,
-    addr: &SocketAddr,
-    filename: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut payload = filename.as_bytes().to_vec();
-    payload.push(0); // Null terminator
-
-    let message = HsesRequestMessage::new(
-        0x02, // Division: File control
-        0x00, // ACK: Request
-        0x01, // Request ID
-        0x00, // Command
-        0x00, // Instance
-        0x00, // Attribute
-        0x09, // Service: Delete file
-        payload,
-    );
-
-    let _response = send_file_message(socket, addr, &message).await?;
-    Ok(())
-}
-
-test_with_logging!(test_file_list_operations, {
+test_with_logging!(test_file_list_initial_state, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
-    // Create file control socket
-    let file_socket = create_file_socket()
+    // Create client for file operations
+    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
         .await
-        .expect("Failed to create file socket");
-    let file_addr: SocketAddr = format!("127.0.0.1:{}", FILE_CONTROL_PORT)
-        .parse()
-        .expect("Invalid address");
+        .expect("Failed to create client");
 
-    // Test file list retrieval
-    log::info!("Testing file list retrieval...");
-    let files = get_file_list(&file_socket, &file_addr)
+    // Test file list retrieval and verify initial state
+    let files = client
+        .read_file_list()
         .await
         .expect("Failed to get file list");
 
-    log::info!("✓ File list retrieved successfully");
-    log::info!("  Number of files: {}", files.len());
-    for file in files.iter() {
-        log::info!("  - {}", file);
-    }
+    // MockServer starts with TEST.JOB file
+    assert_eq!(files.len(), 1, "MockServer should start with 1 file");
+    assert!(
+        files.contains(&"TEST.JOB".to_string()),
+        "TEST.JOB should be in initial file list"
+    );
 
-    // Verify we got a response (even if empty)
-    // Note: files.len() is always >= 0, so we just verify we got a response
-    log::info!("File list operation completed successfully");
+    log::info!("✓ Initial file list verified: {:?}", files);
 });
 
 test_with_logging!(test_file_send_receive_operations, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
-    // Create file control socket
-    let file_socket = create_file_socket()
+    // Create client for file operations
+    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
         .await
-        .expect("Failed to create file socket");
-    let file_addr: SocketAddr = format!("127.0.0.1:{}", FILE_CONTROL_PORT)
-        .parse()
-        .expect("Invalid address");
+        .expect("Failed to create client");
 
     // Test file send operation
-    let test_filename = "TEST.JOB";
-    let test_content = "//NAME TEST_JOB\r\n//TYPE JOB\r\n//END";
+    let test_filename = "API_TEST.JOB";
+    let test_content = "//NAME API_TEST\r\n//TYPE JOB\r\n//END";
 
-    log::info!("Testing file send operation...");
-    log::info!("  Filename: {}", test_filename);
-    log::info!("  Content: {}", test_content);
+    client
+        .send_file(test_filename, test_content.as_bytes())
+        .await
+        .expect("Failed to send file");
 
-    send_file(
-        &file_socket,
-        &file_addr,
-        test_filename,
-        test_content.as_bytes(),
-    )
-    .await
-    .expect("Failed to send file");
-
-    log::info!("✓ File sent successfully");
+    // Verify file was added to list
+    let files_after_send = client
+        .read_file_list()
+        .await
+        .expect("Failed to get file list after send");
+    assert!(
+        files_after_send.contains(&test_filename.to_string()),
+        "New file should be in file list after sending"
+    );
+    assert_eq!(
+        files_after_send.len(),
+        2,
+        "Should have 2 files after adding one"
+    );
 
     // Test file receive operation
-    log::info!("Testing file receive operation...");
-    let received_content = receive_file(&file_socket, &file_addr, test_filename)
+    let received_content = client
+        .receive_file(test_filename)
         .await
         .expect("Failed to receive file");
 
     let received_str = String::from_utf8_lossy(&received_content);
-    log::info!("✓ File received successfully");
-    log::info!("  Received content: {}", received_str);
-
-    // Verify content matches
     assert_eq!(
         received_str, test_content,
         "Received content should match sent content"
     );
+
+    log::info!("✓ File send/receive operations verified successfully");
 });
 
 test_with_logging!(test_file_delete_operations, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
-    // Create file control socket
-    let file_socket = create_file_socket()
+    // Create client for file operations
+    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
         .await
-        .expect("Failed to create file socket");
-    let file_addr: SocketAddr = format!("127.0.0.1:{}", FILE_CONTROL_PORT)
-        .parse()
-        .expect("Invalid address");
+        .expect("Failed to create client");
 
-    // First, send a test file
-    let test_filename = "DELETE_TEST.JOB";
-    let test_content = "//NAME DELETE_TEST\r\n//TYPE JOB\r\n//END";
-
-    log::info!("Creating test file for deletion...");
-    send_file(
-        &file_socket,
-        &file_addr,
-        test_filename,
-        test_content.as_bytes(),
-    )
-    .await
-    .expect("Failed to send test file");
-
-    log::info!("✓ Test file created");
-
-    // Test file deletion
-    log::info!("Testing file delete operation...");
-    delete_file(&file_socket, &file_addr, test_filename)
+    // Verify initial state
+    let initial_files = client
+        .read_file_list()
         .await
-        .expect("Failed to delete file");
+        .expect("Failed to get initial file list");
+    assert_eq!(initial_files.len(), 1, "Should start with 1 file");
+    assert!(
+        initial_files.contains(&"TEST.JOB".to_string()),
+        "TEST.JOB should be present initially"
+    );
 
-    log::info!("✓ File deleted successfully");
+    // Delete the initial TEST.JOB file
+    client
+        .delete_file("TEST.JOB")
+        .await
+        .expect("Failed to delete TEST.JOB file");
+
+    // Verify file was deleted
+    let files_after_delete = client
+        .read_file_list()
+        .await
+        .expect("Failed to get file list after delete");
+    assert_eq!(
+        files_after_delete.len(),
+        0,
+        "Should have 0 files after deleting TEST.JOB"
+    );
+    assert!(
+        !files_after_delete.contains(&"TEST.JOB".to_string()),
+        "TEST.JOB should not be in file list after deletion"
+    );
+
+    log::info!("✓ File delete operations verified successfully");
 });
 
 test_with_logging!(test_file_operations_comprehensive, {
     let mut server = MockServerManager::new();
     server.start().await.expect("Failed to start mock server");
 
-    // Create file control socket
-    let file_socket = create_file_socket()
+    // Create client for file operations
+    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
         .await
-        .expect("Failed to create file socket");
-    let file_addr: SocketAddr = format!("127.0.0.1:{}", FILE_CONTROL_PORT)
-        .parse()
-        .expect("Invalid address");
+        .expect("Failed to create client");
 
-    // Comprehensive file operations test
-    log::info!("Starting comprehensive file operations test...");
-
-    // 1. Get initial file list
-    log::info!("1. Getting initial file list...");
-    let initial_files = get_file_list(&file_socket, &file_addr)
+    // 1. Verify initial state (TEST.JOB should exist)
+    let initial_files = client
+        .read_file_list()
         .await
         .expect("Failed to get initial file list");
-    log::info!("  Initial files count: {}", initial_files.len());
+    assert_eq!(initial_files.len(), 1, "Should start with 1 file");
+    assert!(
+        initial_files.contains(&"TEST.JOB".to_string()),
+        "TEST.JOB should be present initially"
+    );
 
-    // 2. Create a test file
+    // 2. Create a new test file
     let test_filename = "COMPREHENSIVE_TEST.JOB";
     let test_content = "//NAME COMPREHENSIVE_TEST\r\n//TYPE JOB\r\n//END";
 
-    log::info!("2. Creating test file: {}", test_filename);
-    send_file(
-        &file_socket,
-        &file_addr,
-        test_filename,
-        test_content.as_bytes(),
-    )
-    .await
-    .expect("Failed to create test file");
-    log::info!("  ✓ Test file created");
-
-    // 3. Verify file exists in list
-    log::info!("3. Verifying file exists in updated list...");
-    let updated_files = get_file_list(&file_socket, &file_addr)
+    client
+        .send_file(test_filename, test_content.as_bytes())
         .await
-        .expect("Failed to get updated file list");
-    assert!(
-        updated_files.contains(&test_filename.to_string()),
-        "Test file should exist in file list"
+        .expect("Failed to create test file");
+
+    // 3. Verify file exists in list (should have 2 files now)
+    let files_after_send = client
+        .read_file_list()
+        .await
+        .expect("Failed to get file list after send");
+    assert_eq!(
+        files_after_send.len(),
+        2,
+        "Should have 2 files after adding one"
     );
-    log::info!("  ✓ File found in list");
+    assert!(
+        files_after_send.contains(&test_filename.to_string()),
+        "New file should exist in file list"
+    );
+    assert!(
+        files_after_send.contains(&"TEST.JOB".to_string()),
+        "Original TEST.JOB should still exist"
+    );
 
     // 4. Retrieve and verify file content
-    log::info!("4. Retrieving and verifying file content...");
-    let received_content = receive_file(&file_socket, &file_addr, test_filename)
+    let received_content = client
+        .receive_file(test_filename)
         .await
         .expect("Failed to receive file");
 
@@ -306,25 +183,27 @@ test_with_logging!(test_file_operations_comprehensive, {
         received_str, test_content,
         "Received content should match sent content"
     );
-    log::info!("  ✓ File content verified");
 
-    // 5. Delete the test file
-    log::info!("5. Deleting test file...");
-    delete_file(&file_socket, &file_addr, test_filename)
+    // 5. Delete the new test file
+    client
+        .delete_file(test_filename)
         .await
         .expect("Failed to delete test file");
-    log::info!("  ✓ Test file deleted");
 
-    // 6. Verify file is removed from list
-    log::info!("6. Verifying file removal...");
-    let final_files = get_file_list(&file_socket, &file_addr)
+    // 6. Verify file is removed from list (back to 1 file)
+    let final_files = client
+        .read_file_list()
         .await
         .expect("Failed to get final file list");
+    assert_eq!(final_files.len(), 1, "Should have 1 file after deletion");
     assert!(
         !final_files.contains(&test_filename.to_string()),
-        "Test file should be removed from list"
+        "Deleted file should not be in list"
     );
-    log::info!("  ✓ File removal verified");
+    assert!(
+        final_files.contains(&"TEST.JOB".to_string()),
+        "Original TEST.JOB should still exist"
+    );
 
     log::info!("✓ Comprehensive file operations test completed successfully");
 });

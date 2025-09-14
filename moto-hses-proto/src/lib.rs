@@ -2,6 +2,7 @@
 
 pub mod alarm;
 pub mod error;
+pub mod file;
 pub mod job;
 pub mod message;
 pub mod position;
@@ -12,6 +13,8 @@ pub mod variables;
 // Re-export commonly used items for convenience
 pub use alarm::{Alarm, AlarmAttribute, ReadAlarmData};
 pub use error::ProtocolError;
+pub use file::response::{parse_file_content, parse_file_list};
+pub use file::{DeleteFile, ReadFileList, ReceiveFile, SendFile};
 pub use job::{ExecutingJobInfo, JobInfoAttribute, ReadExecutingJobInfo, TaskType};
 pub use message::{
     HsesCommonHeader, HsesRequestMessage, HsesRequestSubHeader, HsesResponseMessage,
