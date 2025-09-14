@@ -1,10 +1,12 @@
 //! Protocol communication for HSES client
 
 use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
+use moto_hses_proto::{parse_file_content, parse_file_list};
 use moto_hses_proto::{
-    Alarm, Command, CoordinateSystemType, ExecutingJobInfo, HoldServoControl, Position,
-    ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo, ReadIo, ReadStatus, ReadStatusData1,
-    ReadStatusData2, ReadVar, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
+    Alarm, Command, CoordinateSystemType, DeleteFile, Division, ExecutingJobInfo, HoldServoControl,
+    Position, ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo, ReadFileList, ReadIo,
+    ReadStatus, ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile, SendFile, Status,
+    StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
 };
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
@@ -21,7 +23,9 @@ impl HsesClient {
             index,
             _phantom: std::marker::PhantomData,
         };
-        let response = self.send_command_with_retry(command).await?;
+        let response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         self.deserialize_response(&response)
     }
 
@@ -30,26 +34,34 @@ impl HsesClient {
         T: VariableType,
     {
         let command = WriteVar::<T> { index, value };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
     /// Read complete status information (both Data 1 and Data 2) efficiently
     /// Uses service=0x01 (Get_Attribute_All) with attribute=0 to get both data in one request
     pub async fn read_status(&self) -> Result<Status, ClientError> {
-        let response = self.send_command_with_retry(ReadStatus).await?;
+        let response = self
+            .send_command_with_retry(ReadStatus, Division::Robot)
+            .await?;
         self.deserialize_response(&response)
     }
 
     /// Read status data 1 (basic status information)
     pub async fn read_status_data1(&self) -> Result<StatusData1, ClientError> {
-        let response = self.send_command_with_retry(ReadStatusData1).await?;
+        let response = self
+            .send_command_with_retry(ReadStatusData1, Division::Robot)
+            .await?;
         self.deserialize_response(&response)
     }
 
     /// Read status data 2 (additional status information)
     pub async fn read_status_data2(&self) -> Result<StatusData2, ClientError> {
-        let response = self.send_command_with_retry(ReadStatusData2).await?;
+        let response = self
+            .send_command_with_retry(ReadStatusData2, Division::Robot)
+            .await?;
         self.deserialize_response(&response)
     }
 
@@ -62,7 +74,9 @@ impl HsesClient {
             control_group,
             coordinate_system: coord_system,
         };
-        let response = self.send_command_with_retry(command).await?;
+        let response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         self.deserialize_response(&response)
     }
 
@@ -89,7 +103,9 @@ impl HsesClient {
     /// This command resets the current alarm state.
     pub async fn reset_alarm(&self) -> Result<(), ClientError> {
         let command = AlarmReset::reset();
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -98,7 +114,9 @@ impl HsesClient {
     /// This command cancels the current error state.
     pub async fn cancel_error(&self) -> Result<(), ClientError> {
         let command = AlarmReset::cancel();
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -112,7 +130,9 @@ impl HsesClient {
         } else {
             HoldServoControl::hold_off()
         };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -126,7 +146,9 @@ impl HsesClient {
         } else {
             HoldServoControl::servo_off()
         };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -143,7 +165,9 @@ impl HsesClient {
         } else {
             HoldServoControl::hlock_off()
         };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -158,7 +182,9 @@ impl HsesClient {
         attribute: u8,
     ) -> Result<ExecutingJobInfo, ClientError> {
         let command = ReadExecutingJobInfo::new(task_type, attribute);
-        let response = self.send_command_with_retry(command).await?;
+        let response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
 
         // Use attribute-specific deserialization for single attributes
         if attribute > 0 {
@@ -191,12 +217,16 @@ impl HsesClient {
     {
         if attribute == 0 {
             // Service = 0x01 (Get_Attribute_All) - Return all data
-            let response = self.send_command_with_retry(command).await?;
+            let response = self
+                .send_command_with_retry(command, Division::Robot)
+                .await?;
             let deserialized: C::Response = self.deserialize_response(&response)?;
             Ok(deserialized.into())
         } else {
             // Service = 0x0E (Get_Attribute_Single) - Return only specified attribute
-            let response = self.send_command_with_retry(command).await?;
+            let response = self
+                .send_command_with_retry(command, Division::Robot)
+                .await?;
 
             // Attribute-specific deserialization
             match attribute {
@@ -272,7 +302,9 @@ impl HsesClient {
 
     pub async fn read_io(&self, io_number: u16) -> Result<bool, ClientError> {
         let command = ReadIo { io_number };
-        let response = self.send_command_with_retry(command).await?;
+        let response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
 
         if response.len() >= 4 {
             let value = i32::from_le_bytes([response[0], response[1], response[2], response[3]]);
@@ -288,14 +320,18 @@ impl HsesClient {
 
     pub async fn write_io(&self, io_number: u16, value: bool) -> Result<(), ClientError> {
         let command = WriteIo { io_number, value };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
     pub async fn read_register(&self, register_number: u16) -> Result<i16, ClientError> {
         use moto_hses_proto::types::ReadRegister;
         let command = ReadRegister { register_number };
-        let response = self.send_command_with_retry(command).await?;
+        let response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
 
         if response.len() >= 2 {
             // Register data is 2 bytes (i16) + 2 bytes reserved = 4 bytes total
@@ -321,7 +357,9 @@ impl HsesClient {
             register_number,
             value,
         };
-        let _response = self.send_command_with_retry(command).await?;
+        let _response = self
+            .send_command_with_retry(command, Division::Robot)
+            .await?;
         Ok(())
     }
 
@@ -341,16 +379,69 @@ impl HsesClient {
         ))
     }
 
+    // File operations (Division = 0x02)
+
+    /// Get file list from controller
+    ///
+    /// Returns a list of filenames available on the controller.
+    pub async fn read_file_list(&self) -> Result<Vec<String>, ClientError> {
+        let command = ReadFileList;
+        let response = self
+            .send_command_with_retry(command, Division::File)
+            .await?;
+        parse_file_list(&response).map_err(ClientError::from)
+    }
+
+    /// Send file to controller
+    ///
+    /// # Arguments
+    /// * `filename` - Name of the file to send
+    /// * `content` - File content as bytes
+    pub async fn send_file(&self, filename: &str, content: &[u8]) -> Result<(), ClientError> {
+        let command = SendFile::new(filename.to_string(), content.to_vec());
+        let _response = self
+            .send_command_with_retry(command, Division::File)
+            .await?;
+        Ok(())
+    }
+
+    /// Receive file from controller
+    ///
+    /// # Arguments
+    /// * `filename` - Name of the file to receive
+    ///
+    /// Returns the file content as bytes.
+    pub async fn receive_file(&self, filename: &str) -> Result<Vec<u8>, ClientError> {
+        let command = ReceiveFile::new(filename.to_string());
+        let response = self
+            .send_command_with_retry(command, Division::File)
+            .await?;
+        parse_file_content(&response).map_err(ClientError::from)
+    }
+
+    /// Delete file from controller
+    ///
+    /// # Arguments
+    /// * `filename` - Name of the file to delete
+    pub async fn delete_file(&self, filename: &str) -> Result<(), ClientError> {
+        let command = DeleteFile::new(filename.to_string());
+        let _response = self
+            .send_command_with_retry(command, Division::File)
+            .await?;
+        Ok(())
+    }
+
     // Command sending with retry logic (returns raw bytes)
     async fn send_command_with_retry<C: Command>(
         &self,
         command: C,
+        division: Division,
     ) -> Result<Vec<u8>, ClientError> {
         let mut last_error = None;
         let mut attempts = 0;
 
         while attempts < self.config.retry_count {
-            match self.send_command_once(&command).await {
+            match self.send_command_once(&command, division).await {
                 Ok(response) => return Ok(response),
                 Err(e) => {
                     last_error = Some(e);
@@ -367,7 +458,11 @@ impl HsesClient {
     }
 
     // Single command sending (no retry, returns raw bytes)
-    async fn send_command_once<C: Command>(&self, command: &C) -> Result<Vec<u8>, ClientError> {
+    async fn send_command_once<C: Command>(
+        &self,
+        command: &C,
+        division: Division,
+    ) -> Result<Vec<u8>, ClientError> {
         let request_id = self.inner.request_id.fetch_add(1, Ordering::Relaxed);
         let payload = command.serialize()?;
 
@@ -379,6 +474,7 @@ impl HsesClient {
             command.instance(),
             command.attribute(),
             command.service(),
+            division,
         )?;
         eprintln!(
             "Sending message to {}: {} bytes",
@@ -405,6 +501,7 @@ impl HsesClient {
         instance: u16,
         attribute: u8,
         service: u8,
+        division: Division,
     ) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
@@ -420,8 +517,8 @@ impl HsesClient {
         // Reserved magic constant
         message.push(0x03);
 
-        // Division (Robot)
-        message.push(0x01);
+        // Division (Robot or File)
+        message.push(division as u8);
 
         // ACK (Request)
         message.push(0x00);
