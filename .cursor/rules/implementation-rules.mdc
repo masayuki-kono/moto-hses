@@ -34,63 +34,6 @@ When there are unclear points, refer to specifications in the following order:
 - Use `cargo fmt` to standardize code formatting
 - Implement appropriate error handling
 
-## Implementation Phase Rules
-
-### Phase 1: Protocol Layer (moto-hses-proto)
-
-#### Step 1: Core Types and Traits
-
-- Implement `Command` trait and `VariableType` trait
-- Define basic enum types (`Division`, `Service`, `CoordinateSystem`, etc.)
-- Implement `Variable<T>` struct
-- Unit tests: Test type definitions and basic functionality
-
-#### Step 2: Enhanced Command System
-
-- Type-safe command definitions (`ReadVar<T>`, `WriteVar<T>`, etc.)
-- Structures for multiple variable operations (`ReadVars<T>`, `WriteVars<T>`)
-- Status and position information operation command definitions
-- Unit tests: Test command serialization/deserialization
-
-#### Step 3: Enhanced Error Handling
-
-- Implement `ProtocolError` enum
-- Error handling with detailed error information
-- Implement `Status` struct and bit flag processing
-- Unit tests: Test error cases and status parsing
-
-#### Step 4: Efficient Variable Operations
-
-- Automatic grouping of consecutive variables
-- Efficient batch operations using multiple commands (0x33)
-- Padding processing for 1-byte variable types
-- Unit tests: Test batch operation optimization and padding processing
-
-### Phase 2: Client Layer (moto-hses-client)
-
-#### Step 1: Client Structure
-
-- Implement `HsesClient` struct and `ClientConfig`
-- Basic UDP socket communication functionality
-- Request ID management and pending request tracking
-- Unit tests: Test client creation and basic configuration
-
-#### Step 2: Client Implementation
-
-- Implement high-level API methods
-- Generic command sending functionality
-- Response waiting and deserialization
-- Unit tests: Test API calls and response processing
-
-### Phase 3: Mock Server (moto-hses-mock)
-
-#### Step 1: Mock Server Structure
-
-- Implement `MockHsesServer` struct
-- Custom handler registration functionality
-- Basic request processing functionality
-- Unit tests: Test mock server basic functionality
-
 ## Testing Strategy
 
 ### Unit Test Execution
@@ -106,12 +49,20 @@ cd moto-hses-client && cargo test
 cd moto-hses-mock && cargo test
 ```
 
+### Integration Test Execution
+
+```bash
+# Run protocol communication tests in moto-hses-mock
+cargo test --test protocol_communication_tests
+
+# Run comprehensive integration tests between moto-hses-client and moto-hses-mock
+cargo test --test integration_tests
+```
+
 ### Test Quality Standards
 
 - Test both normal and abnormal cases for each feature
 - Test edge cases (boundary values, invalid data)
-- Verify performance requirements (batch operation efficiency, etc.)
-- Check for memory leaks and resource management
 
 ## Code Review Criteria
 
@@ -149,42 +100,6 @@ cd moto-hses-mock && cargo test
 - Use `println!` or `dbg!` macros to output debug information
 - Use Wireshark to analyze network packets
 
-## Performance Considerations
-
-### Memory Management
-
-- Use `bytes` crate for efficient buffer management
-- Utilize zero-copy operations
-- Reduce allocations through buffer reuse
-
-### Concurrency
-
-- Use atomic operations for request ID management
-- Use thread-safe HashMap for pending request tracking
-- Use connection pooling for high-performance operations
-
-### Batch Operations
-
-- Automatic grouping of consecutive variables
-- Utilize multiple commands (0x33)
-- Reduce network round trips
-
-## Continuous Integration
-
-### Automated Checks
-
-- `cargo check` - Check for compilation errors
-- `cargo clippy` - Check code quality
-- `cargo test` - Run unit tests
-- `cargo fmt --check` - Check code formatting
-
-### Quality Gates
-
-- All tests must pass
-- Clippy warnings must be resolved
-- Code formatting must be standardized
-- Consistency with implementation guide must be maintained
-
 ## Emergency Response
 
 ### Inconsistency with Implementation Guide
@@ -199,10 +114,3 @@ cd moto-hses-mock && cargo test
 2. Verify consistency between implementation and specification
 3. Apply fixes incrementally
 4. Re-run all tests after fixes
-
-### Performance Issues
-
-1. Identify bottlenecks using profiling tools
-2. Verify batch operation optimization
-3. Analyze memory usage and allocation count
-4. Improve algorithms if necessary

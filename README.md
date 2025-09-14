@@ -40,10 +40,6 @@ This library provides a type-safe, asynchronous Rust client for communicating wi
 
 - [`docs/test/testing-strategy.md`](docs/test/testing-strategy.md) — Testing strategy and best practices
 
-### Architecture Decision Records
-
-- `docs/adr/0001-adopt-hses.md` — Decision to adopt HSES protocol
-
 ## Quick Start
 
 ### Basic Usage
