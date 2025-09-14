@@ -22,7 +22,7 @@ This project implement features step by step, ensuring that unit tests pass at e
 
 When there are unclear points, refer to specifications in the following order:
 
-1. `docs/design/client-api.md` - API Design Specification
+1. `docs/design/protocol-commands.md` - HSES Protocol Command Reference
 2. `docs/design/architecture.md` - Architecture Design
 3. `docs/specs/hses-protocol.md` - HSES Protocol Specification
 
@@ -104,7 +104,7 @@ cargo test --test integration_tests
 ### Inconsistency with Implementation Guide
 
 1. Recheck the relevant section of the implementation guide
-2. Refer to related specifications (client-api.md, architecture.md, hses-protocol.md)
+2. Refer to related specifications (protocol-commands.md.md, architecture.md, hses-protocol.md)
 3. Update implementation guide if necessary
 
 ### Test Failure Response
