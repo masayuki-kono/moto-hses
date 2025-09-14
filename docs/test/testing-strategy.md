@@ -20,73 +20,32 @@ This document outlines the comprehensive testing strategy for the Rust HSES clie
 
 ### Protocol Layer Tests
 
-### Mock Server Protocol Tests
+These tests verify individual protocol components without network communication:
 
-```rust
-#[cfg(test)]
-mod serialization_tests {
-    #[test]
-    fn test_serialize_read_variable_command() {
-        let command = Command::ReadVariable {
-            var_type: VariableType::Integer,
-            var_number: 0,
-        };
-
-        let data = Serializer::serialize_command(&command).unwrap();
-        assert_eq!(data.len(), 4);
-        assert_eq!(data[0..2], [0x00, 0x01]); // Variable type
-        assert_eq!(data[2..4], [0x00, 0x01]); // Variable number
-    }
-}
-```
+- **Message serialization/deserialization**: `HsesRequestMessage` and `HsesResponseMessage` encoding/decoding
+- **Command structures**: Individual command types (`ReadVar`, `WriteVar`, `ReadStatus`, etc.)
+- **Data type serialization**: Variable type serialization for `u8`, `i32`, `f32`, etc.
+- **Enum validation**: Division, Service, CoordinateSystem enum values
+- **Status data parsing**: `StatusData1` and `StatusData2` bit field parsing
+- **Alarm data structures**: Alarm serialization with various attributes
+- **Position data**: Pulse and Cartesian position creation and validation
+- **Job information**: Executing job info serialization and validation
 
 ### Client Layer Tests
 
-```rust
-#[cfg(test)]
-mod client_tests {
-    #[tokio::test]
-    async fn test_client_creation() {
-        let client = HsesClient::new("127.0.0.1:10040").await;
-        assert!(client.is_ok());
-    }
-}
-```
+These tests verify client-side components in isolation:
 
-These tests verify the mock server's protocol implementation by sending UDP messages directly:
+- **Configuration validation**: `ClientConfig` default values and validation
+- **Error handling**: `ClientError` types and display formatting
+- **Mock server utilities**: Test server creation and configuration helpers
 
-```rust
-#[tokio::test]
-async fn test_status_command() {
-    let (addr, _handle) = test_utils::start_test_server().await.unwrap();
+### Mock Server Tests
 
-    // Create a UDP socket to send commands
-    let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+These tests verify mock server components without actual UDP communication:
 
-    // Create status read command (0x72)
-    let message = proto::HsesRequestMessage::new(
-        1,      // Division: Robot
-        0,      // ACK: Request
-        1,      // Request ID
-        0x72,   // Command: Read Status
-        1,      // Instance
-        1,      // Attribute: Data 1
-        0x0e,   // Service: Get_Attribute_Single
-        vec![], // No payload
-    );
-
-    let data = message.encode();
-    socket.send_to(&data, addr).await.unwrap();
-
-    // Wait for response and validate
-    let mut buf = vec![0u8; 1024];
-    let (n, _) = socket.recv_from(&mut buf).await.unwrap();
-    let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
-
-    assert_eq!(response.header.ack, 1); // Should be ACK
-    assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
-}
-```
+- **Server startup**: Mock server initialization and port binding
+- **Test utilities**: Server creation helpers for different test scenarios
+- **Configuration validation**: Mock server configuration and expected value setup
 
 ## End-to-End Integration Tests
 
@@ -108,43 +67,6 @@ The script tests:
 - Variable read/write operations
 - Convenience methods
 - Communication integrity validation
-
-## Performance Tests
-
-```rust
-#[tokio::test]
-async fn test_read_throughput() {
-    let server = MockHsesServer::new("127.0.0.1:10048")
-        .await
-        .unwrap()
-        .with_variable(0, 42i32)
-        .await;
-
-    server.start().await.unwrap();
-    tokio::time::sleep(Duration::from_millis(100)).await;
-
-    let client = HsesClient::new("127.0.0.1:10048").await.unwrap();
-
-    let start = Instant::now();
-    let iterations = 1000;
-
-    for _ in 0..iterations {
-        let _: i32 = client.read_variable(0, VariableType::Integer).await.unwrap();
-    }
-
-    let duration = start.elapsed();
-    let throughput = iterations as f64 / duration.as_secs_f64();
-
-    assert!(throughput > 100.0); // Minimum 100 ops/sec
-}
-```
-
-## Test Coverage Goals
-
-- **Unit Tests**: >90% line coverage (including protocol and mock server tests)
-- **End-to-End Tests**: >80% integration coverage
-- **Error Paths**: 100% error handling coverage
-- **Performance**: All performance benchmarks pass
 
 ## Test Execution
 
