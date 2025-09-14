@@ -59,8 +59,6 @@ feat: add HSES protocol implementation
 - Add basic enums (Division, Service, CoordinateSystem)
 - Add Variable<T> struct for type-safe operations
 - Add unit tests for core functionality
-
-Closes #123
 ```
 
 ```
@@ -109,11 +107,3 @@ refactor: split lib.rs into multiple module files for better maintainability and
 - `chore/<short-description>`: Maintenance or setup
 
 > Use `-` instead of `_` for readability (e.g., `feature/add-hses-parser`).
-
-## Pull Request Guidelines
-
-- Use descriptive titles in English
-- Provide a summary of changes and rationale
-- Reference related issues or PRs
-- Ensure all tests pass before requesting review
-- Follow the code review checklist (clarity, style, tests, docs)

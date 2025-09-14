@@ -2,421 +2,180 @@
 
 ## Overview
 
-This document describes the architecture of the Rust HSES client library, inspired by the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) and incorporating design insights from the Python implementation [fs100](https://github.com/fih-mobile/fs100).
+This document describes the high-level architecture of the Rust HSES client library, focusing on design principles, component relationships, and architectural patterns rather than implementation details.
+
+The library is inspired by the C++ reference implementation from [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) and incorporates design insights from the Python implementation [fs100](https://github.com/fih-mobile/fs100).
 
 ## Core Design Principles
 
-1. **Type Safety**: Leverage Rust's type system for compile-time safety
-2. **Async-First**: Modern async/await patterns with Tokio
-3. **Zero-Copy**: Efficient memory usage with the bytes crate
-4. **Error Handling**: Comprehensive error handling with thiserror
-5. **Template-Based Commands**: Type-safe command definitions inspired by C++ templates
-6. **Efficient Batch Operations**: Optimized multiple variable operations incorporating successful design patterns
-7. **Design Insights**: Architecture incorporating successful patterns from existing implementations
+1. **Type Safety**: Leverage Rust's type system for compile-time safety and preventing runtime errors
+2. **Async-First**: Modern async/await patterns for non-blocking I/O operations
+3. **Zero-Copy**: Efficient memory usage to minimize allocations and improve performance
+4. **Comprehensive Error Handling**: Structured error handling with clear error propagation
+5. **Modular Design**: Clear separation of concerns across different layers
+6. **Performance Optimization**: Efficient batch operations and connection management
+7. **Testability**: Built-in support for testing with mock implementations
 
 ## Architecture Overview
 
+This repository provides a Rust HSES client library with a layered architecture. The library consists of three main components, while the Application Layer represents user code that consumes this library:
+
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   moto-hses-    │    │   moto-hses-    │    │   moto-hses-    │
-│      proto      │    │     client      │    │      mock       │
-│                 │    │                 │    │                 │
-│ • Protocol      │    │ • Async Client  │    │ • Mock Server   │
-│ • Message Types │    │ • High-level    │    │ • Test Utils    │
-│ • Serialization │    │   API           │    │ • Scenarios     │
-│ • Commands      │    │ • Connection    │    │ • Assertions    │
-│ • Types         │    │   Management    │    │                 │
-│ • Variable      │    │ • Batch Ops     │    │                 │
-│   Operations    │    │ • Error Handling│    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Application   │
-                    │                 │
-                    │ • Robot Control │
-                    │ • File Operations│
-                    │ • Status Monitor│
-                    │ • Variable Mgmt │
-                    └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│              Application Layer (User Code)                  │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Robot Control│ │File Ops     │ │Status Monitor│          │
+│  │Applications │ │Applications │ │Applications │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Uses
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              moto-hses-client (This Repository)            │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  • High-level API • Connection Management               ││
+│  │  • File Operations • Batch Operations                   ││
+│  │  • Error Handling • Robot Control APIs                  ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Uses
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              moto-hses-proto (This Repository)             │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  • Message Serialization • Type Definitions            ││
+│  │  • Command Structures • Variable Operations             ││
+│  │  • HSES Protocol Implementation                         ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              │ Uses
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              moto-hses-mock (This Repository)              │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  • Mock Server • Test Scenarios • Assertions           ││
+│  │  • Development and Testing Support                     ││
+│  └─────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Core Components
 
-### moto-hses-proto
+### moto-hses-proto (Protocol Layer)
 
-Protocol definitions and serialization layer with enhanced variable support.
+**Responsibility**: Low-level protocol implementation and data serialization
 
-#### Key Types
+**Key Responsibilities**:
 
-```rust
-// Variable type definitions incorporating design insights from Python implementation
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum VariableType {
-    Io = 0x78,           // 1 byte
-    Register = 0x79,     // 2 bytes
-    Byte = 0x7a,         // 1 byte
-    Integer = 0x7b,      // 2 bytes
-    Double = 0x7c,       // 4 bytes
-    Real = 0x7d,         // 4 bytes
-    String = 0x7e,       // 16 bytes
-    RobotPosition = 0x7f, // Position data
-    BasePosition = 0x80,  // Base position data
-    ExternalAxis = 0x81,  // External axis data
-}
+- HSES protocol message serialization/deserialization
+- Type-safe variable definitions and operations
+- Command structure definitions
+- Error handling for protocol-level issues
+- Position and coordinate system abstractions
 
-// Variable object for type-safe operations
-#[derive(Debug, Clone)]
-pub struct Variable<T> {
-    pub var_type: VariableType,
-    pub index: u8,
-    pub value: T,
-}
+**Design Patterns**:
 
-// Type-safe command definitions with improved variable support
-pub trait Command {
-    type Response;
-    fn command_id() -> u16;
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
-}
+- **Type Safety**: Generic types ensure compile-time safety for variable operations
+- **Command Pattern**: Unified interface for all HSES commands
+- **Error Propagation**: Structured error handling with detailed error types
 
-// Single variable operations
-pub struct ReadVar<T> {
-    pub index: u8,
-    _phantom: PhantomData<T>,
-}
+### moto-hses-client (Client Layer)
 
-pub struct WriteVar<T> {
-    pub index: u8,
-    pub value: T,
-}
+**Responsibility**: High-level API and connection management
 
-// Multiple variable operations incorporating efficient design patterns
-pub struct ReadVars<T> {
-    pub start_index: u8,
-    pub count: u8,
-    _phantom: PhantomData<T>,
-}
+**Key Responsibilities**:
 
-pub struct WriteVars<T> {
-    pub start_index: u8,
-    pub values: Vec<T>,
-}
+- Async client implementation with connection pooling
+- High-level API for robot operations and control
+- File operations (upload, download, list, delete)
+- Batch operation optimization
+- Error handling and retry logic
+- Configuration management
 
-// Unified Position type using enum
-#[derive(Debug, Clone)]
-pub enum Position {
-    Pulse(PulsePosition),
-    Cartesian(CartesianPosition),
-}
+**Design Patterns**:
 
-// Enhanced coordinate system definitions
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum CoordinateSystem {
-    Base,
-    Robot,
-    Tool,
-    User(u8), // User1-User16
-}
+- **Facade Pattern**: Simplified interface hiding protocol complexity
+- **Connection Pool**: Efficient resource management for high-performance applications
+- **Batch Optimization**: Automatic grouping of operations to reduce network overhead
 
-// Pose configuration with bit flags
-#[derive(Debug, Clone, Copy)]
-pub struct PoseConfiguration {
-    pub no_flip: bool,
-    pub lower_arm: bool,
-    pub back: bool,
-    pub high_r: bool,
-    pub high_t: bool,
-    pub high_s: bool,
-}
-```
+### moto-hses-mock (Testing Layer)
 
-#### Enhanced Error Handling
+**Responsibility**: Mock server implementation for testing and development
 
-```rust
-#[derive(Debug, Error)]
-pub enum ProtocolError {
-    #[error("buffer underflow")]
-    Underflow,
-    #[error("invalid header")]
-    InvalidHeader,
-    #[error("unknown command 0x{0:04X}")]
-    UnknownCommand(u16),
-    #[error("unsupported operation")]
-    Unsupported,
-    #[error("serialization error: {0}")]
-    Serialization(String),
-    #[error("deserialization error: {0}")]
-    Deserialization(String),
-    #[error("invalid variable type")]
-    InvalidVariableType,
-    #[error("invalid coordinate system")]
-    InvalidCoordinateSystem,
-    #[error("position data error: {0}")]
-    PositionError(String),
-    #[error("file operation error: {0}")]
-    FileError(String),
-    #[error("system info error: {0}")]
-    SystemInfoError(String),
-}
-```
+**Key Responsibilities**:
 
-### moto-hses-client
+- Mock HSES server for unit and integration testing
+- Configurable test scenarios and responses
+- Test assertion utilities
+- Protocol validation and verification
 
-High-level client API with enhanced functionality.
+**Design Patterns**:
 
-#### Client Features
+- **Mock Object Pattern**: Simulates real server behavior for testing
+- **Strategy Pattern**: Configurable handlers for different command types
+- **Test Builder Pattern**: Fluent API for setting up test scenarios
 
-```rust
-pub struct HsesClient {
-    socket: UdpSocket,
-    controller: SocketAddr,
-    seq: u16,
-    config: ClientConfig,
-}
+## Key Design Patterns
 
-pub struct ClientConfig {
-    pub timeout: Duration,
-    pub retry_count: u32,
-    pub retry_delay: Duration,
-    pub buffer_size: usize,
-    pub enable_debug: bool,
-    pub connection_pool_size: usize,
-}
+### 1. Layered Architecture
 
-// Enhanced variable operations
-impl HsesClient {
-    // Single variable operations
-    pub async fn read_variable<T>(&mut self, var: &mut Variable<T>) -> Result<(), ClientError>
-    where T: VariableType;
+The library follows a strict layered architecture where each layer has a specific responsibility and communicates only with adjacent layers:
 
-    pub async fn write_variable<T>(&mut self, var: &Variable<T>) -> Result<(), ClientError>
-    where T: VariableType;
+- **Application Layer**: User code that consumes this library (outside repository scope)
+- **Client Layer**: High-level API, connection management, and file operations
+- **Protocol Layer**: Low-level protocol implementation and serialization
+- **Testing Layer**: Mock implementations and test utilities
 
-    // Multiple variable operations with automatic optimization
-    pub async fn read_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
-    where T: VariableType;
+### 2. Type-Safe Operations
 
-    pub async fn write_variables<T>(&mut self, vars: &[Variable<T>]) -> Result<(), ClientError>
-    where T: VariableType;
+Leverages Rust's type system to ensure compile-time safety for all variable operations, preventing runtime type errors and improving code reliability.
 
-    // Status and position operations
-    pub async fn read_status(&mut self) -> Result<Status, ClientError>;
-    pub async fn read_position(&mut self, control_group: u8, coord_system: CoordinateSystemType) -> Result<Position, ClientError>;
-    pub async fn read_position_error(&mut self, robot_no: u8) -> Result<PositionError, ClientError>;
-    pub async fn read_torque(&mut self, robot_no: u8) -> Result<TorqueData, ClientError>;
+### 3. Efficient Batch Operations
 
-    // File operations
-    pub async fn get_file_list(&mut self, extension: &str) -> Result<Vec<String>, ClientError>;
-    pub async fn send_file(&mut self, filename: &str) -> Result<(), ClientError>;
-    pub async fn recv_file(&mut self, filename: &str, local_dir: &str) -> Result<(), ClientError>;
-    pub async fn delete_file(&mut self, filename: &str) -> Result<(), ClientError>;
+Implements intelligent optimization for multiple variable operations:
 
-    // System information
-    pub async fn get_system_info(&mut self, system_type: u8, info_type: u8) -> Result<SystemInfo, ClientError>;
-    pub async fn get_management_time(&mut self, time_type: u8) -> Result<ManagementTime, ClientError>;
+- **Consecutive Grouping**: Automatically groups consecutive variables of the same type
+- **Plural Commands**: Uses HSES plural commands to reduce network round trips
+- **Automatic Padding**: Handles protocol-specific padding requirements
 
-    // Power and control operations
-    pub async fn switch_power(&mut self, power_type: u8, switch_action: u8) -> Result<(), ClientError>;
-    pub async fn select_cycle(&mut self, cycle_type: u8) -> Result<(), ClientError>;
-    pub async fn move_to_position(&mut self, move_type: u8, coordinate: u8, speed_class: u8,
-                                 speed: f32, position: Position, form: u8, extended_form: u8,
-                                 robot_no: u8, station_no: u8, tool_no: u8, user_coor_no: u8) -> Result<(), ClientError>;
-}
-```
+### 4. Comprehensive Error Handling
 
-#### Efficient Variable Operations
+Structured error handling with clear error propagation:
 
-The client automatically optimizes multiple variable operations by grouping consecutive variables of the same type, incorporating efficient design patterns:
+- **Protocol Errors**: Low-level protocol and serialization issues
+- **Client Errors**: Connection, timeout, and high-level operation failures
+- **Mock Errors**: Testing and validation errors
 
-```rust
-// Automatic grouping of consecutive variables
-impl HsesClient {
-    fn group_consecutive_variables<T>(vars: &[Variable<T>]) -> Vec<Vec<&Variable<T>>> {
-        // Implementation that groups consecutive variables for efficient batch operations
-        // Uses the same logic as Python implementation's _group_nums method
-    }
+### 5. Async-First Design
 
-    async fn read_consecutive_variables<T>(&mut self, vars: &mut [Variable<T>]) -> Result<(), ClientError>
-    where T: VariableType {
-        // Uses plural command (0x33) for efficient batch reading
-        // Automatically handles padding for 1-byte variable types
-        // Similar to Python implementation's _read_consecutive_variables method
-    }
-}
-```
-
-### moto-hses-mock
-
-Mock server for testing and development.
-
-```rust
-pub struct MockServer {
-    socket: UdpSocket,
-    handlers: HashMap<u16, Box<dyn CommandHandler>>,
-}
-
-// Mock implementations for all command types
-impl MockServer {
-    pub fn new() -> Self;
-    pub async fn start(addr: SocketAddr) -> Result<Self, MockError>;
-    pub fn register_handler<C: Command>(&mut self, handler: impl CommandHandler + 'static);
-    pub async fn run(&mut self) -> Result<(), MockError>;
-}
-```
-
-## Design Patterns
-
-### 1. Type-Safe Variable Operations
-
-Incorporating design insights from both C++ templates and Python's Variable class:
-
-```rust
-// Type-safe variable reading
-let int_value: i32 = client.read_variable::<i32>(0).await?;
-let float_value: f32 = client.read_variable::<f32>(1).await?;
-let byte_value: u8 = client.read_variable::<u8>(2).await?;
-
-// Type-safe variable writing
-client.write_variable(0, 42i32).await?;
-client.write_variable(1, 3.14f32).await?;
-client.write_variable(2, 255u8).await?;
-```
-
-### 2. Efficient Batch Operations
-
-Optimized multiple variable operations with automatic optimization:
-
-```rust
-// Automatic grouping and optimization
-let mut vars = vec![
-    Variable::with_default(VariableType::Integer, 0),
-    Variable::with_default(VariableType::Integer, 1),
-    Variable::with_default(VariableType::Integer, 2),
-    Variable::with_default(VariableType::Integer, 3),
-];
-
-// Automatically uses plural command for efficiency
-client.read_variables(&mut vars).await?;
-```
-
-The optimization includes:
-
-1. **Consecutive Variable Grouping**: Automatically groups consecutive variables of the same type
-2. **Plural Commands**: Uses HSE plural commands (0x33) for reading multiple variables in a single network call
-3. **Automatic Padding**: Handles padding requirements for 1-byte variable types
-
-### 3. Error Handling
-
-Comprehensive error handling with detailed error types:
-
-```rust
-match client.read_variable(&mut var).await {
-    Ok(_) => println!("Success"),
-    Err(ClientError::Proto(ProtocolError::InvalidVariableType)) => {
-        println!("Invalid variable type");
-    }
-    Err(ClientError::Timeout) => {
-        println!("Operation timed out");
-    }
-    Err(ClientError::Io(e)) => {
-        println!("IO error: {}", e);
-    }
-}
-```
-
-## Performance Considerations
-
-### 1. Zero-Copy Operations
-
-- Use of `Bytes` and `BytesMut` for efficient memory management
-- Minimal allocations during serialization/deserialization
-- Efficient buffer reuse
-
-### 2. Efficient Variable Operations
-
-- Automatic grouping of consecutive variables
-- Use of plural commands (0x33) for efficiency
-- Reduced network round trips
-- Automatic padding handling for 1-byte variable types
-
-### 3. Connection Management
-
-- Connection pooling for high-performance applications
-- Automatic retry logic with exponential backoff
-- Configurable timeouts and buffer sizes
-
-### 4. Async/Await
+Modern async/await patterns throughout the library:
 
 - Non-blocking I/O operations
 - Efficient resource utilization
 - Support for concurrent operations
 
-## Design Insights
+## Testing Strategy
 
-The architecture incorporates successful patterns from existing implementations:
+The library provides comprehensive testing support through the mock layer:
 
-### Variable Object Pattern
+### Unit Testing
 
-The `Variable<T>` object pattern provides type safety while maintaining flexibility, incorporating design insights from successful implementations.
+- Mock server for isolated component testing
+- Type-safe test utilities and assertions
+- Configurable test scenarios
 
-### Efficient Batch Operations
+### Integration Testing
 
-The library implements efficient batch operations that automatically optimize network usage, reducing round trips and improving performance for applications that need to read multiple variables.
+- End-to-end workflow testing
+- Protocol validation and verification
+- Performance and reliability testing
 
 ## Future Enhancements
 
-1. **Plugin System**: Extensible command support
-2. **Performance Monitoring**: Built-in metrics and profiling
-3. **Configuration Management**: YAML/JSON configuration files
-4. **Logging Integration**: Structured logging with tracing
-
-## Testing Strategy
-
-### Unit Tests
-
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_read_variable() {
-        let server = MockHsesServer::new()
-            .with_variable(0, 42i32)
-            .start()
-            .await?;
-
-        let client = HsesClient::connect("127.0.0.1:10040").await?;
-        let value: i32 = client.read_variable(0).await?;
-        assert_eq!(value, 42);
-    }
-}
-```
-
-### Integration Tests
-
-```rust
-#[tokio::test]
-async fn test_full_workflow() {
-    let server = MockHsesServer::new()
-        .with_variable(0, 100i32)
-        .with_position(1, Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1)))
-        .start()
-        .await?;
-
-    let client = HsesClient::connect("127.0.0.1:10040").await?;
-
-    // Read variable
-    let value: i32 = client.read_variable(0).await?;
-    assert_eq!(value, 100);
-
-    // Read position
-    let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
-    assert!(position.is_pulse());
-
-    // Write variable
-    client.write_variable(0, 200i32).await?;
-}
-```
+1. **Plugin System**: Extensible command support for custom operations
+2. **Performance Monitoring**: Built-in metrics and profiling capabilities
+3. **Configuration Management**: YAML/JSON configuration file support
+4. **Logging Integration**: Structured logging with tracing support

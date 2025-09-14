@@ -33,27 +33,22 @@ This library provides a type-safe, asynchronous Rust client for communicating wi
 ### Design Documents
 
 - [`docs/design/architecture.md`](docs/design/architecture.md) — System architecture and design principles
-- [`docs/design/client-api.md`](docs/design/api-design.md) — API design and usage examples
-- [`docs/design/implementation-guide.md`](docs/design/implementation-guide.md) — Step-by-step implementation guide
+- [`docs/design/protocol-commands.md`](docs/design/protocol-commands.md) — HSES Protocol Command Reference
 
 ### Testing
 
 - [`docs/test/testing-strategy.md`](docs/test/testing-strategy.md) — Testing strategy and best practices
-
-### Architecture Decision Records
-
-- `docs/adr/0001-adopt-hses.md` — Decision to adopt HSES protocol
 
 ## Quick Start
 
 ### Basic Usage
 
 ```rust
-use moto_hses_client::{HsesClient, VariableType};
+use moto_hses_client::{HsesClient, VariableType, ClientError};
 use std::time::Duration;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), ClientError> {
     // Create client with default configuration
     let client = HsesClient::new("192.168.1.100:10040").await?;
 
@@ -88,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Alarm Operations
 
 ```rust
-use moto_hses_client::{HsesClient, Alarm};
+use moto_hses_client::{HsesClient, Alarm, ClientError};
 
 // Read alarm data
 let alarm = client.read_alarm_data(1, 0).await?;
@@ -104,7 +99,7 @@ let alarm_name = client.read_alarm_data(1, 5).await?; // Name only
 ### I/O Operations
 
 ```rust
-use moto_hses_client::HsesClient;
+use moto_hses_client::{HsesClient, ClientError};
 
 // Read I/O state
 let io_state = client.read_io(1).await?; // Read robot user input #1
@@ -119,11 +114,11 @@ client.write_io(1001, true).await?; // Set robot user output #1001 to ON
 ### Advanced Usage with Custom Configuration
 
 ```rust
-use moto_hses_client::{HsesClient, ClientConfig};
+use moto_hses_client::{HsesClient, ClientConfig, ClientError};
 use std::time::Duration;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), ClientError> {
     // Create custom configuration
     let config = ClientConfig {
         host: "192.168.1.100".to_string(),
@@ -146,24 +141,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-```
-
-### Available Examples
-
-```bash
-# Basic usage (status, position, variables, alarm data)
-cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
-
-# Detailed alarm operations
-cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
-
-# I/O operations (0x78 command)
-cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
-
-# Other examples
-cargo run -p moto-hses-client --example connection_management -- 127.0.0.1 10040
-cargo run -p moto-hses-client --example file_operations -- 127.0.0.1 10041
-cargo run -p moto-hses-client --example read_status -- 127.0.0.1 10040
 ```
 
 ### Mock Server Testing
@@ -204,62 +181,6 @@ cargo test --test integration_tests
 - Communication integrity
 - Automatic resource cleanup
 - MockServer configuration and expected value validation
-
-## Implementation Status
-
-### Phase 1: Protocol Layer (moto-hses-proto) ✅
-
-- [x] Protocol specification
-- [x] Message types and structures
-- [x] Serialization/deserialization
-- [x] Error handling
-
-### Phase 2: Client Layer (moto-hses-client) ✅
-
-- [x] Client architecture design
-- [x] API design
-- [x] Basic client implementation
-- [x] Connection management
-- [x] Error handling and retry logic
-- [x] Variable read/write operations
-- [x] Status and position reading
-- [x] Convenience methods
-
-### Phase 3: Mock Server (moto-hses-mock) 🔄
-
-- [x] Mock server design
-- [x] Mock server implementation
-- [x] Test utilities
-
-### Phase 4: Testing & Documentation ✅
-
-- [x] Testing strategy
-- [x] Unit tests
-- [x] Integration tests
-- [ ] Performance tests
-- [x] Basic documentation
-
-## ⚠️ Implementation Notes
-
-### Currently Implemented Features
-
-- ✅ Client connection and configuration
-- ✅ Variable reading/writing (Integer, Float, Byte)
-- ✅ Robot status reading
-- ✅ Position reading
-- ✅ Alarm data reading (0x70 command)
-- ✅ I/O operations (`read_io`, `write_io`) - 0x78 command fully implemented
-- ✅ Error handling and retry logic
-
-### Partially Implemented Features
-
-- 🔄 Job control (`execute_job`, `stop_job`) - Basic structure exists but not fully implemented
-
-### Planned Features
-
-- 📋 Multiple variable batch operations
-- 📋 File operations
-- 📋 Advanced robot control commands
 
 ## License
 
