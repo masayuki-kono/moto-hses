@@ -9,16 +9,11 @@ use crate::common::{
 use crate::test_with_logging;
 
 test_with_logging!(test_read_complete_status, {
-    let _server = create_status_test_server()
-        .await
-        .expect("Failed to start status test server");
+    let _server = create_status_test_server().await.expect("Failed to start status test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let status = client
-        .read_status()
-        .await
-        .expect("Failed to read complete status");
+    let status = client.read_status().await.expect("Failed to read complete status");
 
     // Verify status matches expected values from MockServer configuration
     // Data1 expectations
@@ -50,16 +45,12 @@ test_with_logging!(test_read_complete_status, {
 });
 
 test_with_logging!(test_read_complete_status_all_true, {
-    let _server = create_status_all_true_server()
-        .await
-        .expect("Failed to start status all true test server");
+    let _server =
+        create_status_all_true_server().await.expect("Failed to start status all true test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let status = client
-        .read_status()
-        .await
-        .expect("Failed to read complete status");
+    let status = client.read_status().await.expect("Failed to read complete status");
 
     // Verify all status values are true
     // Data1 expectations
@@ -97,10 +88,7 @@ test_with_logging!(test_read_complete_status_all_false, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let status = client
-        .read_status()
-        .await
-        .expect("Failed to read complete status");
+    let status = client.read_status().await.expect("Failed to read complete status");
 
     // Verify all status values are false
     // Data1 expectations
@@ -132,16 +120,11 @@ test_with_logging!(test_read_complete_status_all_false, {
 });
 
 test_with_logging!(test_read_status_data1_mixed, {
-    let _server = create_status_test_server()
-        .await
-        .expect("Failed to start status test server");
+    let _server = create_status_test_server().await.expect("Failed to start status test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data1 = client
-        .read_status_data1()
-        .await
-        .expect("Failed to read status data1");
+    let data1 = client.read_status_data1().await.expect("Failed to read status data1");
 
     // Verify data1 matches expected values from MockServer configuration
     assert!(!data1.step);
@@ -155,16 +138,12 @@ test_with_logging!(test_read_status_data1_mixed, {
 });
 
 test_with_logging!(test_read_status_data1_all_true, {
-    let _server = create_status_all_true_server()
-        .await
-        .expect("Failed to start status all true test server");
+    let _server =
+        create_status_all_true_server().await.expect("Failed to start status all true test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data1 = client
-        .read_status_data1()
-        .await
-        .expect("Failed to read status data1");
+    let data1 = client.read_status_data1().await.expect("Failed to read status data1");
 
     // Verify all data1 values are true
     assert!(data1.step);
@@ -184,10 +163,7 @@ test_with_logging!(test_read_status_data1_all_false, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data1 = client
-        .read_status_data1()
-        .await
-        .expect("Failed to read status data1");
+    let data1 = client.read_status_data1().await.expect("Failed to read status data1");
 
     // Verify all data1 values are false
     assert!(!data1.step);
@@ -201,16 +177,11 @@ test_with_logging!(test_read_status_data1_all_false, {
 });
 
 test_with_logging!(test_read_status_data2_mixed, {
-    let _server = create_status_test_server()
-        .await
-        .expect("Failed to start status test server");
+    let _server = create_status_test_server().await.expect("Failed to start status test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data2 = client
-        .read_status_data2()
-        .await
-        .expect("Failed to read status data2");
+    let data2 = client.read_status_data2().await.expect("Failed to read status data2");
 
     // Verify data2 matches expected values from MockServer configuration
     assert!(!data2.teach_pendant_hold);
@@ -222,16 +193,12 @@ test_with_logging!(test_read_status_data2_mixed, {
 });
 
 test_with_logging!(test_read_status_data2_all_true, {
-    let _server = create_status_all_true_server()
-        .await
-        .expect("Failed to start status all true test server");
+    let _server =
+        create_status_all_true_server().await.expect("Failed to start status all true test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data2 = client
-        .read_status_data2()
-        .await
-        .expect("Failed to read status data2");
+    let data2 = client.read_status_data2().await.expect("Failed to read status data2");
 
     // Verify all data2 values are true
     assert!(data2.teach_pendant_hold);
@@ -249,10 +216,7 @@ test_with_logging!(test_read_status_data2_all_false, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let data2 = client
-        .read_status_data2()
-        .await
-        .expect("Failed to read status data2");
+    let data2 = client.read_status_data2().await.expect("Failed to read status data2");
 
     // Verify all data2 values are false
     assert!(!data2.teach_pendant_hold);

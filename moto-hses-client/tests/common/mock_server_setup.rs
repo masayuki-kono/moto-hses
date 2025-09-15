@@ -1,7 +1,7 @@
 // Mock server setup utilities for integration tests
 
 use crate::common::test_logging;
-use moto_hses_mock::{server::MockServerBuilder, MockConfig, MockServer};
+use moto_hses_mock::{MockConfig, MockServer, server::MockServerBuilder};
 use moto_hses_proto::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 use tokio::time::sleep;
@@ -46,12 +46,7 @@ impl MockServerManager {
 
     /// Create a new MockServerManager with custom host and ports
     pub fn new_with_host_and_ports(host: String, robot_port: u16, file_port: u16) -> Self {
-        Self {
-            handle: None,
-            host,
-            robot_port,
-            file_port,
-        }
+        Self { handle: None, host, robot_port, file_port }
     }
 
     pub async fn start(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -145,9 +140,7 @@ impl MockServerManager {
             Ok(socket) => {
                 // Send a simple ping to check if server is responding
                 let test_data = b"test";
-                (socket
-                    .send_to(test_data, format!("{}:{}", self.host, self.robot_port))
-                    .await)
+                (socket.send_to(test_data, format!("{}:{}", self.host, self.robot_port)).await)
                     .is_ok()
             }
             Err(_) => false,
@@ -177,8 +170,8 @@ impl Drop for MockServerManager {
 
 // Helper functions for common test configurations
 
-pub async fn create_io_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_io_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -194,8 +187,8 @@ pub async fn create_io_test_server(
     Ok(manager)
 }
 
-pub async fn create_alarm_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_alarm_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -217,8 +210,8 @@ pub async fn create_alarm_test_server(
     Ok(manager)
 }
 
-pub async fn create_position_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_position_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -236,8 +229,8 @@ pub async fn create_position_test_server(
     Ok(manager)
 }
 
-pub async fn create_job_info_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_job_info_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -255,8 +248,8 @@ pub async fn create_job_info_test_server(
     Ok(manager)
 }
 
-pub async fn create_status_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_status_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -289,8 +282,8 @@ pub async fn create_status_test_server(
     Ok(manager)
 }
 
-pub async fn create_status_all_true_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_status_all_true_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -323,8 +316,8 @@ pub async fn create_status_all_true_server(
     Ok(manager)
 }
 
-pub async fn create_status_all_false_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_status_all_false_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -357,8 +350,8 @@ pub async fn create_status_all_false_server(
     Ok(manager)
 }
 
-pub async fn create_register_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_register_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager
@@ -383,8 +376,8 @@ pub async fn create_register_test_server(
     Ok(manager)
 }
 
-pub async fn create_variable_test_server(
-) -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn create_variable_test_server()
+-> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
 
     manager

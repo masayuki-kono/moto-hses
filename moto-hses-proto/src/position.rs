@@ -13,10 +13,7 @@ pub struct PulsePosition {
 
 impl PulsePosition {
     pub fn new(joints: [i32; 8], control_group: u8) -> Self {
-        Self {
-            joints,
-            control_group,
-        }
+        Self { joints, control_group }
     }
 }
 
@@ -46,17 +43,7 @@ impl CartesianPosition {
         user_coord_no: u8,
         coordinate_system: CoordinateSystem,
     ) -> Self {
-        Self {
-            x,
-            y,
-            z,
-            rx,
-            ry,
-            rz,
-            tool_no,
-            user_coord_no,
-            coordinate_system,
-        }
+        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, coordinate_system }
     }
 }
 

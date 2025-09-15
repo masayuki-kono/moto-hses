@@ -93,13 +93,7 @@ pub struct HsesRequestSubHeader {
 
 impl HsesRequestSubHeader {
     pub fn new(command: u16, instance: u16, attribute: u8, service: u8) -> Self {
-        Self {
-            command,
-            instance,
-            attribute,
-            service,
-            padding: 0,
-        }
+        Self { command, instance, attribute, service, padding: 0 }
     }
 
     pub fn encode(&self, dst: &mut BytesMut) {
@@ -124,13 +118,7 @@ impl HsesRequestSubHeader {
 
         *src = buf;
 
-        Ok(Self {
-            command,
-            instance,
-            attribute,
-            service,
-            padding,
-        })
+        Ok(Self { command, instance, attribute, service, padding })
     }
 }
 
@@ -181,14 +169,7 @@ impl HsesResponseSubHeader {
 
         *src = buf;
 
-        Ok(Self {
-            service,
-            status,
-            added_status_size,
-            padding1,
-            added_status,
-            padding2,
-        })
+        Ok(Self { service, status, added_status_size, padding1, added_status, padding2 })
     }
 }
 
@@ -214,11 +195,7 @@ impl HsesRequestMessage {
     ) -> Self {
         let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
         let sub_header = HsesRequestSubHeader::new(command, instance, attribute, service);
-        Self {
-            header,
-            sub_header,
-            payload,
-        }
+        Self { header, sub_header, payload }
     }
 
     pub fn encode(&self) -> BytesMut {
@@ -235,11 +212,7 @@ impl HsesRequestMessage {
         let sub_header = HsesRequestSubHeader::decode(&mut buf)?;
         let payload = buf.to_vec();
 
-        Ok(Self {
-            header,
-            sub_header,
-            payload,
-        })
+        Ok(Self { header, sub_header, payload })
     }
 }
 
@@ -263,11 +236,7 @@ impl HsesResponseMessage {
     ) -> Self {
         let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
         let sub_header = HsesResponseSubHeader::new(service, status, added_status);
-        Self {
-            header,
-            sub_header,
-            payload,
-        }
+        Self { header, sub_header, payload }
     }
 
     pub fn encode(&self) -> BytesMut {
@@ -284,11 +253,7 @@ impl HsesResponseMessage {
         let sub_header = HsesResponseSubHeader::decode(&mut buf)?;
         let payload = buf.to_vec();
 
-        Ok(Self {
-            header,
-            sub_header,
-            payload,
-        })
+        Ok(Self { header, sub_header, payload })
     }
 }
 
@@ -433,10 +398,7 @@ mod tests {
         assert_eq!(message.header.payload_size, decoded.header.payload_size);
         assert_eq!(message.sub_header.service, decoded.sub_header.service);
         assert_eq!(message.sub_header.status, decoded.sub_header.status);
-        assert_eq!(
-            message.sub_header.added_status,
-            decoded.sub_header.added_status
-        );
+        assert_eq!(message.sub_header.added_status, decoded.sub_header.added_status);
         assert_eq!(message.payload, decoded.payload);
     }
 }

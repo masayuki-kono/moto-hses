@@ -43,9 +43,8 @@ impl CommandHandler for AxisNameHandler {
         let mut data = vec![0u8; 56]; // 7 axes * 8 bytes each
 
         // Set default axis names
-        let axis_names = [
-            "1st_axis", "2nd_axis", "3rd_axis", "4th_axis", "5th_axis", "6th_axis", "7th_axis",
-        ];
+        let axis_names =
+            ["1st_axis", "2nd_axis", "3rd_axis", "4th_axis", "5th_axis", "6th_axis", "7th_axis"];
 
         for (i, name) in axis_names.iter().enumerate() {
             let name_bytes = name.as_bytes();

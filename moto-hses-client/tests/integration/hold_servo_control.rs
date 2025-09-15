@@ -14,10 +14,7 @@ test_with_logging!(test_hold_control_commands, {
 
     // Read initial status
     log::info!("Reading initial status...");
-    let initial_status = client
-        .read_status()
-        .await
-        .expect("Failed to read initial status");
+    let initial_status = client.read_status().await.expect("Failed to read initial status");
 
     log::info!("✓ Initial status retrieved");
     log::info!("  Servo on: {}", initial_status.is_servo_on());
@@ -33,27 +30,15 @@ test_with_logging!(test_hold_control_commands, {
         initial_hold_state,
         initial_status.data1.running
     );
-    log::info!(
-        "  Setting HOLD to opposite state: {}...",
-        opposite_hold_state
-    );
+    log::info!("  Setting HOLD to opposite state: {}...", opposite_hold_state);
 
-    client
-        .set_hold(opposite_hold_state)
-        .await
-        .expect("Failed to set HOLD");
+    client.set_hold(opposite_hold_state).await.expect("Failed to set HOLD");
 
-    log::info!(
-        "  ✓ HOLD {} command sent",
-        if opposite_hold_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ HOLD {} command sent", if opposite_hold_state { "ON" } else { "OFF" });
 
     // Wait and verify the change
     wait_for_operation().await;
-    let hold_test_status = client
-        .read_status()
-        .await
-        .expect("Failed to read HOLD test status");
+    let hold_test_status = client.read_status().await.expect("Failed to read HOLD test status");
 
     let expected_running = !opposite_hold_state; // If HOLD is ON, running should be false
     log::info!(
@@ -70,19 +55,10 @@ test_with_logging!(test_hold_control_commands, {
     );
 
     // Set HOLD back to initial state
-    log::info!(
-        "  Setting HOLD back to initial state: {}...",
-        initial_hold_state
-    );
-    client
-        .set_hold(initial_hold_state)
-        .await
-        .expect("Failed to set HOLD back");
+    log::info!("  Setting HOLD back to initial state: {}...", initial_hold_state);
+    client.set_hold(initial_hold_state).await.expect("Failed to set HOLD back");
 
-    log::info!(
-        "  ✓ HOLD {} command sent",
-        if initial_hold_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ HOLD {} command sent", if initial_hold_state { "ON" } else { "OFF" });
 });
 
 test_with_logging!(test_servo_control_commands, {
@@ -93,10 +69,7 @@ test_with_logging!(test_servo_control_commands, {
 
     // Read initial status
     log::info!("Reading initial status...");
-    let initial_status = client
-        .read_status()
-        .await
-        .expect("Failed to read initial status");
+    let initial_status = client.read_status().await.expect("Failed to read initial status");
 
     log::info!("✓ Initial status retrieved");
     log::info!("  Servo on: {}", initial_status.is_servo_on());
@@ -107,27 +80,15 @@ test_with_logging!(test_servo_control_commands, {
 
     log::info!("Testing Servo control...");
     log::info!("  Initial Servo state: {}", initial_servo_state);
-    log::info!(
-        "  Setting Servo to opposite state: {}...",
-        opposite_servo_state
-    );
+    log::info!("  Setting Servo to opposite state: {}...", opposite_servo_state);
 
-    client
-        .set_servo(opposite_servo_state)
-        .await
-        .expect("Failed to set Servo");
+    client.set_servo(opposite_servo_state).await.expect("Failed to set Servo");
 
-    log::info!(
-        "  ✓ Servo {} command sent",
-        if opposite_servo_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ Servo {} command sent", if opposite_servo_state { "ON" } else { "OFF" });
 
     // Wait and verify the change
     wait_for_operation().await;
-    let servo_test_status = client
-        .read_status()
-        .await
-        .expect("Failed to read Servo test status");
+    let servo_test_status = client.read_status().await.expect("Failed to read Servo test status");
 
     log::info!(
         "  ✓ Servo state verification: Servo ON = {} (expected: {})",
@@ -143,19 +104,10 @@ test_with_logging!(test_servo_control_commands, {
     );
 
     // Set Servo back to initial state
-    log::info!(
-        "  Setting Servo back to initial state: {}...",
-        initial_servo_state
-    );
-    client
-        .set_servo(initial_servo_state)
-        .await
-        .expect("Failed to set Servo back");
+    log::info!("  Setting Servo back to initial state: {}...", initial_servo_state);
+    client.set_servo(initial_servo_state).await.expect("Failed to set Servo back");
 
-    log::info!(
-        "  ✓ Servo {} command sent",
-        if initial_servo_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ Servo {} command sent", if initial_servo_state { "ON" } else { "OFF" });
 });
 
 test_with_logging!(test_hlock_control_commands, {
@@ -170,27 +122,15 @@ test_with_logging!(test_hlock_control_commands, {
 
     log::info!("Testing HLOCK control...");
     log::info!("  Initial HLOCK state: {}", initial_hlock_state);
-    log::info!(
-        "  Setting HLOCK to opposite state: {}...",
-        opposite_hlock_state
-    );
+    log::info!("  Setting HLOCK to opposite state: {}...", opposite_hlock_state);
 
-    client
-        .set_hlock(opposite_hlock_state)
-        .await
-        .expect("Failed to set HLOCK");
+    client.set_hlock(opposite_hlock_state).await.expect("Failed to set HLOCK");
 
-    log::info!(
-        "  ✓ HLOCK {} command sent",
-        if opposite_hlock_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ HLOCK {} command sent", if opposite_hlock_state { "ON" } else { "OFF" });
 
     // Wait and verify the change
     wait_for_operation().await;
-    let _hlock_test_status = client
-        .read_status()
-        .await
-        .expect("Failed to read HLOCK test status");
+    let _hlock_test_status = client.read_status().await.expect("Failed to read HLOCK test status");
 
     log::info!(
         "  ✓ HLOCK state verification: HLOCK set to {} (command executed)",
@@ -198,17 +138,8 @@ test_with_logging!(test_hlock_control_commands, {
     );
 
     // Set HLOCK back to initial state
-    log::info!(
-        "  Setting HLOCK back to initial state: {}...",
-        initial_hlock_state
-    );
-    client
-        .set_hlock(initial_hlock_state)
-        .await
-        .expect("Failed to set HLOCK back");
+    log::info!("  Setting HLOCK back to initial state: {}...", initial_hlock_state);
+    client.set_hlock(initial_hlock_state).await.expect("Failed to set HLOCK back");
 
-    log::info!(
-        "  ✓ HLOCK {} command sent",
-        if initial_hlock_state { "ON" } else { "OFF" }
-    );
+    log::info!("  ✓ HLOCK {} command sent", if initial_hlock_state { "ON" } else { "OFF" });
 });

@@ -62,12 +62,7 @@ impl MockServer {
         eprintln!("Mock server listening on {}", robot_addr);
         eprintln!("Mock server listening on {}", file_addr);
 
-        Ok(Self {
-            robot_socket,
-            file_socket,
-            state,
-            handlers,
-        })
+        Ok(Self { robot_socket, file_socket, state, handlers })
     }
 
     /// Get the local address of the server
@@ -109,19 +104,20 @@ impl MockServer {
                         }
                     };
 
-                    eprintln!("Received packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]", 
-                    src,
-                    message.header.division,
-                    message.header.ack,
-                    message.header.request_id,
-                    message.header.payload_size,
-                    message.sub_header.command,
-                    message.sub_header.instance,
-                    message.sub_header.attribute,
-                    message.sub_header.service,
-                    message.payload.len(),
-                    message.payload
-                );
+                    eprintln!(
+                        "Received packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]",
+                        src,
+                        message.header.division,
+                        message.header.ack,
+                        message.header.request_id,
+                        message.header.payload_size,
+                        message.sub_header.command,
+                        message.sub_header.instance,
+                        message.sub_header.attribute,
+                        message.sub_header.service,
+                        message.payload.len(),
+                        message.payload
+                    );
 
                     // Handle the message
                     let response = Self::handle_message_internal(&message, &state, &handlers).await;
@@ -133,21 +129,25 @@ impl MockServer {
                             if let Ok(response_message) =
                                 proto::HsesResponseMessage::decode(&response_data)
                             {
-                                eprintln!("Sending response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]", 
-                                src,
-                                response_message.header.division,
-                                response_message.header.ack,
-                                response_message.header.request_id,
-                                response_message.header.payload_size,
-                                response_message.sub_header.service,
-                                response_message.sub_header.status,
-                                response_message.sub_header.added_status_size,
-                                response_message.sub_header.added_status,
-                                response_message.payload.len(),
-                                response_message.payload
-                            );
+                                eprintln!(
+                                    "Sending response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]",
+                                    src,
+                                    response_message.header.division,
+                                    response_message.header.ack,
+                                    response_message.header.request_id,
+                                    response_message.header.payload_size,
+                                    response_message.sub_header.service,
+                                    response_message.sub_header.status,
+                                    response_message.sub_header.added_status_size,
+                                    response_message.sub_header.added_status,
+                                    response_message.payload.len(),
+                                    response_message.payload
+                                );
                             } else {
-                                eprintln!("Sending response: {} bytes (failed to decode for detailed logging)", response_data.len());
+                                eprintln!(
+                                    "Sending response: {} bytes (failed to decode for detailed logging)",
+                                    response_data.len()
+                                );
                             }
                             if let Err(e) = robot_socket.send_to(&response_data, src).await {
                                 eprintln!("Error sending response: {:?}", e);
@@ -188,19 +188,20 @@ impl MockServer {
                         }
                     };
 
-                    eprintln!("Received file packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]", 
-                    src,
-                    message.header.division,
-                    message.header.ack,
-                    message.header.request_id,
-                    message.header.payload_size,
-                    message.sub_header.command,
-                    message.sub_header.instance,
-                    message.sub_header.attribute,
-                    message.sub_header.service,
-                    message.payload.len(),
-                    message.payload
-                );
+                    eprintln!(
+                        "Received file packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]",
+                        src,
+                        message.header.division,
+                        message.header.ack,
+                        message.header.request_id,
+                        message.header.payload_size,
+                        message.sub_header.command,
+                        message.sub_header.instance,
+                        message.sub_header.attribute,
+                        message.sub_header.service,
+                        message.payload.len(),
+                        message.payload
+                    );
 
                     // Handle the message
                     let response = Self::handle_message_internal(&message, &state, &handlers).await;
@@ -212,21 +213,25 @@ impl MockServer {
                             if let Ok(response_message) =
                                 proto::HsesResponseMessage::decode(&response_data)
                             {
-                                eprintln!("Sending file response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]", 
-                                src,
-                                response_message.header.division,
-                                response_message.header.ack,
-                                response_message.header.request_id,
-                                response_message.header.payload_size,
-                                response_message.sub_header.service,
-                                response_message.sub_header.status,
-                                response_message.sub_header.added_status_size,
-                                response_message.sub_header.added_status,
-                                response_message.payload.len(),
-                                response_message.payload
-                            );
+                                eprintln!(
+                                    "Sending file response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]",
+                                    src,
+                                    response_message.header.division,
+                                    response_message.header.ack,
+                                    response_message.header.request_id,
+                                    response_message.header.payload_size,
+                                    response_message.sub_header.service,
+                                    response_message.sub_header.status,
+                                    response_message.sub_header.added_status_size,
+                                    response_message.sub_header.added_status,
+                                    response_message.payload.len(),
+                                    response_message.payload
+                                );
                             } else {
-                                eprintln!("Sending file response: {} bytes (failed to decode for detailed logging)", response_data.len());
+                                eprintln!(
+                                    "Sending file response: {} bytes (failed to decode for detailed logging)",
+                                    response_data.len()
+                                );
                             }
                             if let Err(e) = file_socket.send_to(&response_data, src).await {
                                 eprintln!("Error sending file response: {:?}", e);
@@ -242,14 +247,10 @@ impl MockServer {
         // Wait for either task to complete (they should run forever)
         tokio::select! {
             result = robot_task => {
-                if let Err(e) = result {
-                    eprintln!("Robot task error: {:?}", e);
-                }
+                let _ = result; // Tasks should run forever, ignore result
             }
             result = file_task => {
-                if let Err(e) = result {
-                    eprintln!("File task error: {:?}", e);
-                }
+                let _ = result; // Tasks should run forever, ignore result
             }
         }
 
@@ -344,9 +345,7 @@ pub struct MockServerBuilder {
 
 impl MockServerBuilder {
     pub fn new() -> Self {
-        Self {
-            config: crate::MockConfig::default(),
-        }
+        Self { config: crate::MockConfig::default() }
     }
 
     pub fn host(mut self, host: impl Into<String>) -> Self {

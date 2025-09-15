@@ -7,11 +7,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Register operations example - 0x79 register command");
 
     // Create client
-    let client = HsesClient::new(&format!(
-        "127.0.0.1:{}",
-        moto_hses_proto::ROBOT_CONTROL_PORT
-    ))
-    .await?;
+    let client =
+        HsesClient::new(&format!("127.0.0.1:{}", moto_hses_proto::ROBOT_CONTROL_PORT)).await?;
     println!("Connected to mock server");
 
     // Test reading a register
@@ -41,10 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if read_value == test_value {
             println!("✓ Register {} test passed", i);
         } else {
-            println!(
-                "✗ Register {} test failed: expected {}, got {}",
-                i, test_value, read_value
-            );
+            println!("✗ Register {} test failed: expected {}, got {}", i, test_value, read_value);
         }
     }
 
@@ -54,10 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test invalid register number
     match client.read_register(65535).await {
         Ok(value) => {
-            println!(
-                "✗ Invalid register number succeeded unexpectedly: {}",
-                value
-            );
+            println!("✗ Invalid register number succeeded unexpectedly: {}", value);
         }
         Err(e) => {
             println!("✓ Invalid register number correctly failed: {}", e);

@@ -118,11 +118,7 @@ impl CommandHandler for DoubleVarHandler {
                 // Read
                 if let Some(value) = state.get_variable(var_index) {
                     // Protocol specification: 4 bytes for 32-bit integer (D variable)
-                    if value.len() >= 4 {
-                        Ok(value[0..4].to_vec())
-                    } else {
-                        Ok(vec![0, 0, 0, 0])
-                    }
+                    if value.len() >= 4 { Ok(value[0..4].to_vec()) } else { Ok(vec![0, 0, 0, 0]) }
                 } else {
                     // Return 4 bytes for 32-bit integer variable
                     Ok(vec![0, 0, 0, 0])
@@ -224,21 +220,15 @@ impl CommandHandler for StringVarHandler {
                 if message.payload.len() >= 16 {
                     // Store the full 16-byte S variable data, but trim trailing nulls for storage
                     let data = &message.payload[..16];
-                    let trimmed_len = data
-                        .iter()
-                        .rposition(|&b| b != 0)
-                        .map(|i| i + 1)
-                        .unwrap_or(0);
+                    let trimmed_len =
+                        data.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0);
                     state.set_variable(var_index, data[..trimmed_len].to_vec());
                 } else if !message.payload.is_empty() {
                     // Handle shorter payloads by padding with zeros
                     let mut data = message.payload.clone();
                     data.resize(16, 0); // Pad to 16 bytes
-                    let trimmed_len = data
-                        .iter()
-                        .rposition(|&b| b != 0)
-                        .map(|i| i + 1)
-                        .unwrap_or(0);
+                    let trimmed_len =
+                        data.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0);
                     state.set_variable(var_index, data[..trimmed_len].to_vec());
                 }
                 Ok(vec![])

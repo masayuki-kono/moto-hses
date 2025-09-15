@@ -47,10 +47,7 @@ pub fn init_test_logging() {
 /// Log test session start
 pub fn log_test_session_start() {
     info!("=== Integration Test Session Started ===");
-    info!(
-        "Timestamp: {}",
-        chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f")
-    );
+    info!("Timestamp: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"));
 }
 
 /// Log test start
@@ -74,10 +71,7 @@ pub fn log_mock_server_startup(host: &str, port: u16) {
 
 /// Log mock server startup failure
 pub fn log_mock_server_startup_failure(host: &str, port: u16, error: &str) {
-    error!(
-        "Failed to start mock server on {}:{} - {}",
-        host, port, error
-    );
+    error!("Failed to start mock server on {}:{} - {}", host, port, error);
 }
 
 /// Log client connection attempt

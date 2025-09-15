@@ -173,12 +173,7 @@ impl Default for MockState {
             registers,
             alarms,
             alarm_history,
-            executing_job: Some(proto::ExecutingJobInfo::new(
-                "TEST.JOB".to_string(),
-                2,
-                1,
-                100,
-            )),
+            executing_job: Some(proto::ExecutingJobInfo::new("TEST.JOB".to_string(), 2, 1, 100)),
             servo_on: true,
             hold_state: false,
             hlock_state: false,
@@ -266,11 +261,7 @@ impl MockState {
 
     /// Get file list
     pub fn get_file_list(&self, pattern: &str) -> Vec<String> {
-        self.files
-            .keys()
-            .filter(|name| name.contains(pattern.trim_matches('*')))
-            .cloned()
-            .collect()
+        self.files.keys().filter(|name| name.contains(pattern.trim_matches('*'))).cloned().collect()
     }
 
     /// Get file content
@@ -307,9 +298,7 @@ pub struct SharedState {
 
 impl SharedState {
     pub fn new(state: MockState) -> Self {
-        Self {
-            inner: Arc::new(RwLock::new(state)),
-        }
+        Self { inner: Arc::new(RwLock::new(state)) }
     }
 
     pub async fn read(&self) -> tokio::sync::RwLockReadGuard<'_, MockState> {
@@ -333,8 +322,6 @@ impl Default for SharedState {
 
 impl Clone for SharedState {
     fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-        }
+        Self { inner: Arc::clone(&self.inner) }
     }
 }

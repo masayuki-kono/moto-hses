@@ -10,9 +10,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, robot_port) = match args.as_slice() {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
-            let robot_port: u16 = robot_port
-                .parse()
-                .map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+            let robot_port: u16 =
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
 
             (host.to_string(), robot_port)
         }
@@ -176,14 +175,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n--- Multiple Variable Operations ---");
 
     // Read multiple variables of different types
-    let variables_to_read = vec![
-        (0, "I000"),
-        (1, "I001"),
-        (0, "D000"),
-        (2, "D002"),
-        (0, "R000"),
-        (3, "R003"),
-    ];
+    let variables_to_read =
+        vec![(0, "I000"), (1, "I001"), (0, "D000"), (2, "D002"), (0, "R000"), (3, "R003")];
 
     for (index, var_name) in variables_to_read {
         if var_name.starts_with("I") {
@@ -237,10 +230,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test another string variable
     let test_string2 = b"Test String 123";
     match client.write_string(1, test_string2.to_vec()).await {
-        Ok(()) => println!(
-            "✓ Wrote '{}' to S001",
-            String::from_utf8_lossy(test_string2)
-        ),
+        Ok(()) => println!("✓ Wrote '{}' to S001", String::from_utf8_lossy(test_string2)),
         Err(e) => eprintln!("✗ Failed to write to S001: {}", e),
     }
 

@@ -36,10 +36,10 @@ impl CommandHandler for PositionVarHandler {
             }
             0x02 => {
                 // SetAll
-                if message.payload.len() >= 52 {
-                    if let Ok(position) = proto::Position::deserialize(&message.payload) {
-                        state.update_position(position);
-                    }
+                if message.payload.len() >= 52
+                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                {
+                    state.update_position(position);
                 }
                 Ok(vec![])
             }
@@ -49,10 +49,10 @@ impl CommandHandler for PositionVarHandler {
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 52 {
-                    if let Ok(position) = proto::Position::deserialize(&message.payload) {
-                        state.update_position(position);
-                    }
+                if message.payload.len() >= 52
+                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                {
+                    state.update_position(position);
                 }
                 Ok(vec![])
             }
@@ -96,10 +96,10 @@ impl CommandHandler for BasePositionVarHandler {
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 52 {
-                    if let Ok(position) = proto::Position::deserialize(&message.payload) {
-                        state.update_position(position);
-                    }
+                if message.payload.len() >= 52
+                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                {
+                    state.update_position(position);
                 }
                 Ok(vec![])
             }
@@ -143,10 +143,10 @@ impl CommandHandler for ExternalAxisVarHandler {
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 52 {
-                    if let Ok(position) = proto::Position::deserialize(&message.payload) {
-                        state.update_position(position);
-                    }
+                if message.payload.len() >= 52
+                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                {
+                    state.update_position(position);
                 }
                 Ok(vec![])
             }

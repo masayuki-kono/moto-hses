@@ -6,7 +6,7 @@
 use moto_hses_mock::test_utils;
 use moto_hses_proto as proto;
 use tokio::net::UdpSocket;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_mock_server_startup() {
@@ -177,7 +177,7 @@ async fn test_unknown_command() {
             let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
             assert_eq!(response.header.ack, 1); // Should be ACK
             assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
-                                                           // Should have empty payload for unknown command
+            // Should have empty payload for unknown command
             assert_eq!(response.payload.len(), 0);
         }
         Err(_) => {
@@ -306,7 +306,7 @@ async fn test_alarm_history_read_command_invalid_instance() {
             assert!(n > 0, "Should receive a response");
             let response = proto::HsesResponseMessage::decode(&buf[..n]).unwrap();
             assert_eq!(response.header.ack, 1); // Should be ACK
-                                                // For invalid instance, should return error status (non-zero)
+            // For invalid instance, should return error status (non-zero)
             assert_ne!(
                 response.sub_header.status, 0,
                 "Invalid instance should return error status"

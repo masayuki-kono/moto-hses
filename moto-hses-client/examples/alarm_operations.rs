@@ -10,9 +10,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, robot_port) = match args.as_slice() {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
-            let robot_port: u16 = robot_port
-                .parse()
-                .map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+            let robot_port: u16 =
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
 
             (host.to_string(), robot_port)
         }
@@ -145,10 +144,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test major failure alarm history (instances 1-3)
     println!("\n--- Major Failure Alarm History ---");
     for instance in 1..=3 {
-        match client
-            .read_alarm_history(instance, AlarmAttribute::Code as u8)
-            .await
-        {
+        match client.read_alarm_history(instance, AlarmAttribute::Code as u8).await {
             Ok(alarm) => {
                 if alarm.code != 0 {
                     println!(
@@ -168,10 +164,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test monitor alarm history (instances 1001-1003)
     println!("\n--- Monitor Alarm History ---");
     for instance in 1001..=1003 {
-        match client
-            .read_alarm_history(instance, AlarmAttribute::Name as u8)
-            .await
-        {
+        match client.read_alarm_history(instance, AlarmAttribute::Name as u8).await {
             Ok(alarm) => {
                 if alarm.code != 0 {
                     println!(
@@ -190,10 +183,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test different attributes for alarm history
     println!("\n--- Alarm History Attributes Test ---");
-    match client
-        .read_alarm_history(1, AlarmAttribute::Code as u8)
-        .await
-    {
+    match client.read_alarm_history(1, AlarmAttribute::Code as u8).await {
         Ok(alarm) => {
             println!("✓ Major failure alarm #1 code: {}", alarm.code);
         }
@@ -202,10 +192,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    match client
-        .read_alarm_history(1, AlarmAttribute::Time as u8)
-        .await
-    {
+    match client.read_alarm_history(1, AlarmAttribute::Time as u8).await {
         Ok(alarm) => {
             println!("✓ Major failure alarm #1 time: {}", alarm.time);
         }
@@ -216,18 +203,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test invalid instance (should return empty data)
     println!("\n--- Invalid Instance Test ---");
-    match client
-        .read_alarm_history(5000, AlarmAttribute::Code as u8)
-        .await
-    {
+    match client.read_alarm_history(5000, AlarmAttribute::Code as u8).await {
         Ok(alarm) => {
             if alarm.code == 0 {
                 println!("✓ Invalid instance correctly returned empty data");
             } else {
-                println!(
-                    "⚠ Invalid instance returned unexpected data: {}",
-                    alarm.code
-                );
+                println!("⚠ Invalid instance returned unexpected data: {}", alarm.code);
             }
         }
         Err(e) => {
@@ -241,10 +222,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test invalid alarm instance (5000 is outside all valid ranges)
     match client.read_alarm_data(5000, 1).await {
         Ok(alarm) => {
-            println!(
-                "✗ Invalid alarm instance succeeded unexpectedly: code={}",
-                alarm.code
-            );
+            println!("✗ Invalid alarm instance succeeded unexpectedly: code={}", alarm.code);
         }
         Err(e) => {
             println!("✓ Invalid alarm instance correctly failed: {}", e);
@@ -254,10 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test invalid alarm attribute
     match client.read_alarm_data(1, 255).await {
         Ok(alarm) => {
-            println!(
-                "✗ Invalid alarm attribute succeeded unexpectedly: code={}",
-                alarm.code
-            );
+            println!("✗ Invalid alarm attribute succeeded unexpectedly: code={}", alarm.code);
         }
         Err(e) => {
             println!("✓ Invalid alarm attribute correctly failed: {}", e);

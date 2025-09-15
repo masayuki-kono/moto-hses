@@ -8,9 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, robot_port) = match args.as_slice() {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
-            let robot_port: u16 = robot_port
-                .parse()
-                .map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+            let robot_port: u16 =
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
 
             (host.to_string(), robot_port)
         }
@@ -46,15 +45,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "  Initial HOLD state: {} (running: {})",
         initial_hold_state, initial_status.data1.running
     );
-    println!(
-        "  Setting HOLD to opposite state: {}...",
-        opposite_hold_state
-    );
+    println!("  Setting HOLD to opposite state: {}...", opposite_hold_state);
     client.set_hold(opposite_hold_state).await?;
-    println!(
-        "  ✓ HOLD {} command sent",
-        if opposite_hold_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ HOLD {} command sent", if opposite_hold_state { "ON" } else { "OFF" });
 
     // Wait a moment and verify the change
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
@@ -67,15 +60,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Set HOLD back to initial state
-    println!(
-        "  Setting HOLD back to initial state: {}...",
-        initial_hold_state
-    );
+    println!("  Setting HOLD back to initial state: {}...", initial_hold_state);
     client.set_hold(initial_hold_state).await?;
-    println!(
-        "  ✓ HOLD {} command sent",
-        if initial_hold_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ HOLD {} command sent", if initial_hold_state { "ON" } else { "OFF" });
     println!();
 
     // 3. Servo control examples
@@ -85,15 +72,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_servo_state = initial_status.data2.servo_on;
     let opposite_servo_state = !initial_servo_state;
     println!("  Initial Servo state: {}", initial_servo_state);
-    println!(
-        "  Setting Servo to opposite state: {}...",
-        opposite_servo_state
-    );
+    println!("  Setting Servo to opposite state: {}...", opposite_servo_state);
     client.set_servo(opposite_servo_state).await?;
-    println!(
-        "  ✓ Servo {} command sent",
-        if opposite_servo_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ Servo {} command sent", if opposite_servo_state { "ON" } else { "OFF" });
 
     // Wait a moment and verify the change
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
@@ -105,15 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Set Servo back to initial state
-    println!(
-        "  Setting Servo back to initial state: {}...",
-        initial_servo_state
-    );
+    println!("  Setting Servo back to initial state: {}...", initial_servo_state);
     client.set_servo(initial_servo_state).await?;
-    println!(
-        "  ✓ Servo {} command sent",
-        if initial_servo_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ Servo {} command sent", if initial_servo_state { "ON" } else { "OFF" });
     println!();
 
     // 4. HLOCK control examples
@@ -123,15 +98,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let initial_hlock_state = false;
     let opposite_hlock_state = !initial_hlock_state;
     println!("  Initial HLOCK state: {}", initial_hlock_state);
-    println!(
-        "  Setting HLOCK to opposite state: {}...",
-        opposite_hlock_state
-    );
+    println!("  Setting HLOCK to opposite state: {}...", opposite_hlock_state);
     client.set_hlock(opposite_hlock_state).await?;
-    println!(
-        "  ✓ HLOCK {} command sent",
-        if opposite_hlock_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ HLOCK {} command sent", if opposite_hlock_state { "ON" } else { "OFF" });
 
     // Wait a moment and verify the change
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
@@ -142,15 +111,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Set HLOCK back to initial state
-    println!(
-        "  Setting HLOCK back to initial state: {}...",
-        initial_hlock_state
-    );
+    println!("  Setting HLOCK back to initial state: {}...", initial_hlock_state);
     client.set_hlock(initial_hlock_state).await?;
-    println!(
-        "  ✓ HLOCK {} command sent",
-        if initial_hlock_state { "ON" } else { "OFF" }
-    );
+    println!("  ✓ HLOCK {} command sent", if initial_hlock_state { "ON" } else { "OFF" });
 
     Ok(())
 }
