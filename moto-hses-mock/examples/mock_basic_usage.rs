@@ -35,12 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("  0x87 - Job select");
 
     // Add some test alarms
-    server
-        .add_test_alarm(proto::alarm::test_alarms::servo_error())
-        .await;
-    server
-        .add_test_alarm(proto::alarm::test_alarms::emergency_stop())
-        .await;
+    server.add_test_alarm(proto::alarm::test_alarms::servo_error()).await;
+    server.add_test_alarm(proto::alarm::test_alarms::emergency_stop()).await;
 
     // Set some test variables
     server.set_variable(10, vec![0x42, 0x00, 0x00, 0x00]).await; // D010 = 66

@@ -50,10 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     sleep(Duration::from_millis(100)).await;
     println!("Verifying I/O #1001 state...");
     match client.read_io(1001).await {
-        Ok(value) => println!(
-            "I/O #1001 state after write: {}",
-            if value { "ON" } else { "OFF" }
-        ),
+        Ok(value) => println!("I/O #1001 state after write: {}", if value { "ON" } else { "OFF" }),
         Err(e) => println!("Failed to read I/O #1001: {}", e),
     }
 

@@ -12,6 +12,19 @@ license = "Apache-2.0"
 authors = ["masayuki-kono@mamezou.com"]
 
 [workspace.dependencies]
-bytes = "1.6"
-thiserror = "1"
-tokio = { version = "1.39", features = ["net", "rt-multi-thread", "macros", "time", "sync"] }
+bytes = "1.10"
+thiserror = "1.0"
+tokio = { version = "1.47", features = ["net", "rt-multi-thread", "macros", "time", "sync"] }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+dbg_macro = "deny"
+print_stdout = "deny"

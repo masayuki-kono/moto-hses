@@ -36,68 +36,34 @@ impl CommandHandlerRegistry {
         let mut handlers = std::collections::HashMap::new();
 
         // File operations
-        handlers.insert(
-            0x00,
-            Arc::new(FileControlHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers
+            .insert(0x00, Arc::new(FileControlHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // Alarm handlers
-        handlers.insert(
-            0x70,
-            Arc::new(AlarmDataHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x71,
-            Arc::new(AlarmInfoHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x82,
-            Arc::new(AlarmResetHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x70, Arc::new(AlarmDataHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x71, Arc::new(AlarmInfoHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x82, Arc::new(AlarmResetHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // System information handlers
-        handlers.insert(
-            0x72,
-            Arc::new(StatusHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x72, Arc::new(StatusHandler) as Arc<dyn CommandHandler + Send + Sync>);
         handlers.insert(
             0x73,
             Arc::new(ExecutingJobInfoHandler) as Arc<dyn CommandHandler + Send + Sync>,
         );
-        handlers.insert(
-            0x74,
-            Arc::new(AxisNameHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x77,
-            Arc::new(TorqueHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x85,
-            Arc::new(TextDisplayHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x88,
-            Arc::new(ManagementTimeHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x89,
-            Arc::new(SystemInfoHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x74, Arc::new(AxisNameHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x77, Arc::new(TorqueHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers
+            .insert(0x85, Arc::new(TextDisplayHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers
+            .insert(0x88, Arc::new(ManagementTimeHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x89, Arc::new(SystemInfoHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // Position handlers
-        handlers.insert(
-            0x75,
-            Arc::new(PositionHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x76,
-            Arc::new(PositionErrorHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x7f,
-            Arc::new(PositionVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x75, Arc::new(PositionHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers
+            .insert(0x76, Arc::new(PositionErrorHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers
+            .insert(0x7f, Arc::new(PositionVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
         handlers.insert(
             0x80,
             Arc::new(BasePositionVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
@@ -108,62 +74,24 @@ impl CommandHandlerRegistry {
         );
 
         // I/O handlers
-        handlers.insert(
-            0x78,
-            Arc::new(IoHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x79,
-            Arc::new(RegisterHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x78, Arc::new(IoHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x79, Arc::new(RegisterHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // Variable handlers
-        handlers.insert(
-            0x7a,
-            Arc::new(ByteVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x7b,
-            Arc::new(IntegerVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x7c,
-            Arc::new(DoubleVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x7d,
-            Arc::new(RealVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x7e,
-            Arc::new(StringVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x7a, Arc::new(ByteVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x7b, Arc::new(IntegerVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x7c, Arc::new(DoubleVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x7d, Arc::new(RealVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x7e, Arc::new(StringVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // Job and movement handlers
-        handlers.insert(
-            0x83,
-            Arc::new(HoldServoHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x84,
-            Arc::new(SelectCycleHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x86,
-            Arc::new(JobStartHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x87,
-            Arc::new(JobSelectHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x8a,
-            Arc::new(MovHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
-        handlers.insert(
-            0x8b,
-            Arc::new(PmovHandler) as Arc<dyn CommandHandler + Send + Sync>,
-        );
+        handlers.insert(0x83, Arc::new(HoldServoHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers
+            .insert(0x84, Arc::new(SelectCycleHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x86, Arc::new(JobStartHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x87, Arc::new(JobSelectHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x8a, Arc::new(MovHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(0x8b, Arc::new(PmovHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         Self { handlers }
     }

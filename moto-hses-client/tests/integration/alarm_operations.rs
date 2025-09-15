@@ -1,7 +1,7 @@
 // Integration tests for alarm operations
 
 use crate::common::{
-    mock_server_setup::{create_alarm_test_server, MockServerManager},
+    mock_server_setup::{MockServerManager, create_alarm_test_server},
     test_utils::create_test_client,
 };
 use crate::test_with_logging;
@@ -9,9 +9,7 @@ use moto_hses_proto::AlarmAttribute;
 
 test_with_logging!(test_complete_alarm_data, {
     log::info!("Creating alarm test server...");
-    let _server = create_alarm_test_server()
-        .await
-        .expect("Failed to start mock server");
+    let _server = create_alarm_test_server().await.expect("Failed to start mock server");
 
     log::info!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
@@ -34,23 +32,11 @@ test_with_logging!(test_complete_alarm_data, {
     // Verify alarm data matches expected values from MockServer default state
     // Expected values from test_alarms::servo_error():
     // - code: 1001, data: 1, alarm_type: 1, time: "2024/01/01 12:00", name: "Servo Error"
-    assert_eq!(
-        alarm_data.code, 1001,
-        "Alarm code should match expected value"
-    );
+    assert_eq!(alarm_data.code, 1001, "Alarm code should match expected value");
     assert_eq!(alarm_data.data, 1, "Alarm data should match expected value");
-    assert_eq!(
-        alarm_data.alarm_type, 1,
-        "Alarm type should match expected value"
-    );
-    assert_eq!(
-        alarm_data.time, "2024/01/01 12:00",
-        "Alarm time should match expected value"
-    );
-    assert_eq!(
-        alarm_data.name, "Servo Error",
-        "Alarm name should match expected value"
-    );
+    assert_eq!(alarm_data.alarm_type, 1, "Alarm type should match expected value");
+    assert_eq!(alarm_data.time, "2024/01/01 12:00", "Alarm time should match expected value");
+    assert_eq!(alarm_data.name, "Servo Error", "Alarm name should match expected value");
 
     log::info!("All alarm data values match expected values from MockServer");
     log::info!("Test completed successfully");
@@ -69,10 +55,7 @@ test_with_logging!(test_specific_alarm_attributes, {
         .await
         .expect("Failed to read alarm code");
     log::info!("Alarm code: {}", alarm_code.code);
-    assert_eq!(
-        alarm_code.code, 1001,
-        "Alarm code should match expected value"
-    );
+    assert_eq!(alarm_code.code, 1001, "Alarm code should match expected value");
 
     // Test reading alarm data
     log::info!("Testing alarm data attribute...");
@@ -90,10 +73,7 @@ test_with_logging!(test_specific_alarm_attributes, {
         .await
         .expect("Failed to read alarm type");
     log::info!("Alarm type: {}", alarm_type.alarm_type);
-    assert_eq!(
-        alarm_type.alarm_type, 1,
-        "Alarm type should match expected value"
-    );
+    assert_eq!(alarm_type.alarm_type, 1, "Alarm type should match expected value");
 
     // Test reading alarm time
     log::info!("Testing alarm time attribute...");
@@ -102,10 +82,7 @@ test_with_logging!(test_specific_alarm_attributes, {
         .await
         .expect("Failed to read alarm time");
     log::info!("Alarm time: {}", alarm_time.time);
-    assert_eq!(
-        alarm_time.time, "2024/01/01 12:00",
-        "Alarm time should match expected value"
-    );
+    assert_eq!(alarm_time.time, "2024/01/01 12:00", "Alarm time should match expected value");
 
     // Test reading alarm name
     log::info!("Testing alarm name attribute...");
@@ -114,10 +91,7 @@ test_with_logging!(test_specific_alarm_attributes, {
         .await
         .expect("Failed to read alarm name");
     log::info!("Alarm name: {}", alarm_name.name);
-    assert_eq!(
-        alarm_name.name, "Servo Error",
-        "Alarm name should match expected value"
-    );
+    assert_eq!(alarm_name.name, "Servo Error", "Alarm name should match expected value");
 
     log::info!("All specific alarm attributes match expected values");
 });
@@ -187,11 +161,8 @@ test_with_logging!(test_alarm_history_major_failure, {
     // Instance 2: emergency_stop() - code: 2001, name: "Emergency Stop"
     // Instance 3: safety_error() - code: 3001, name: "Safety Error"
 
-    let expected_history = vec![
-        (1, 1001, "Servo Error"),
-        (2, 2001, "Emergency Stop"),
-        (3, 3001, "Safety Error"),
-    ];
+    let expected_history =
+        vec![(1, 1001, "Servo Error"), (2, 2001, "Emergency Stop"), (3, 3001, "Safety Error")];
 
     for (instance, expected_code, expected_name) in expected_history {
         // Test alarm history code
@@ -293,10 +264,7 @@ test_with_logging!(test_alarm_history_attributes, {
         .await
         .expect("Failed to read major failure alarm code");
     log::info!("Major failure alarm #1 code: {}", alarm_code.code);
-    assert_eq!(
-        alarm_code.code, 1001,
-        "Major failure alarm code should match expected value"
-    );
+    assert_eq!(alarm_code.code, 1001, "Major failure alarm code should match expected value");
 
     // Test alarm history time attribute
     log::info!("Testing alarm history time attribute...");
@@ -321,15 +289,10 @@ test_with_logging!(test_invalid_alarm_history_instance, {
 
     // Test invalid instance (should return error)
     log::info!("Testing invalid alarm history instance...");
-    let result = client
-        .read_alarm_history(5000, AlarmAttribute::Code as u8)
-        .await;
+    let result = client.read_alarm_history(5000, AlarmAttribute::Code as u8).await;
 
     // Assert that invalid instance returns error
-    assert!(
-        result.is_err(),
-        "Invalid alarm history instance should return error"
-    );
+    assert!(result.is_err(), "Invalid alarm history instance should return error");
 
     log::info!("Invalid instance correctly returned error");
 });
@@ -343,10 +306,7 @@ test_with_logging!(test_invalid_alarm_instance, {
     // Test invalid alarm instance (5000 is outside all valid ranges)
     log::info!("Testing invalid alarm instance...");
     let result = client.read_alarm_data(5000, 1).await;
-    assert!(
-        result.is_err(),
-        "Invalid alarm instance should return error"
-    );
+    assert!(result.is_err(), "Invalid alarm instance should return error");
 });
 
 test_with_logging!(test_invalid_alarm_attribute, {
@@ -358,10 +318,7 @@ test_with_logging!(test_invalid_alarm_attribute, {
     // Test invalid alarm attribute (255 is invalid)
     log::info!("Testing invalid alarm attribute...");
     let result = client.read_alarm_data(1, 255).await;
-    assert!(
-        result.is_err(),
-        "Invalid alarm attribute should return error"
-    );
+    assert!(result.is_err(), "Invalid alarm attribute should return error");
 });
 
 test_with_logging!(test_alarm_reset_command, {
@@ -462,14 +419,8 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         .expect("Failed to read alarm history time");
 
     // Test commands
-    assert!(
-        client.reset_alarm().await.is_ok(),
-        "Alarm reset should succeed"
-    );
-    assert!(
-        client.cancel_error().await.is_ok(),
-        "Error cancel should succeed"
-    );
+    assert!(client.reset_alarm().await.is_ok(), "Alarm reset should succeed");
+    assert!(client.cancel_error().await.is_ok(), "Error cancel should succeed");
 
     log::info!("Comprehensive alarm operations test completed successfully");
 });

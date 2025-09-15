@@ -10,9 +10,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, robot_port) = match args.as_slice() {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
-            let robot_port: u16 = robot_port
-                .parse()
-                .map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+            let robot_port: u16 =
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
 
             (host.to_string(), robot_port)
         }
@@ -51,10 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n--- Current Position Reading ---");
 
     // Read position in robot pulse coordinates
-    match client
-        .read_position(1, CoordinateSystemType::RobotPulse)
-        .await
-    {
+    match client.read_position(1, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
             println!("✓ Robot pulse position read successfully");
             println!("  Position: {:?}", position);
@@ -65,10 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in base pulse coordinates
-    match client
-        .read_position(1, CoordinateSystemType::BasePulse)
-        .await
-    {
+    match client.read_position(1, CoordinateSystemType::BasePulse).await {
         Ok(position) => {
             println!("✓ Base pulse position read successfully");
             println!("  Position: {:?}", position);
@@ -79,10 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in station pulse coordinates
-    match client
-        .read_position(1, CoordinateSystemType::StationPulse)
-        .await
-    {
+    match client.read_position(1, CoordinateSystemType::StationPulse).await {
         Ok(position) => {
             println!("✓ Station pulse position read successfully");
             println!("  Position: {:?}", position);
@@ -93,10 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in robot cartesian coordinates
-    match client
-        .read_position(1, CoordinateSystemType::RobotCartesian)
-        .await
-    {
+    match client.read_position(1, CoordinateSystemType::RobotCartesian).await {
         Ok(position) => {
             println!("✓ Robot cartesian position read successfully");
             println!("  Position: {:?}", position);
@@ -110,10 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n--- Different Control Groups ---");
 
     // Read position for control group 1 (R1)
-    match client
-        .read_position(1, CoordinateSystemType::RobotPulse)
-        .await
-    {
+    match client.read_position(1, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
             println!("✓ R1 position read successfully");
             println!("  Position: {:?}", position);
@@ -124,10 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for control group 2 (R2)
-    match client
-        .read_position(2, CoordinateSystemType::RobotPulse)
-        .await
-    {
+    match client.read_position(2, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
             println!("✓ R2 position read successfully");
             println!("  Position: {:?}", position);
@@ -138,10 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for base control group 1 (B1)
-    match client
-        .read_position(11, CoordinateSystemType::RobotPulse)
-        .await
-    {
+    match client.read_position(11, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
             println!("✓ B1 position read successfully");
             println!("  Position: {:?}", position);
@@ -152,10 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for base control group 2 (B2)
-    match client
-        .read_position(12, CoordinateSystemType::RobotPulse)
-        .await
-    {
+    match client.read_position(12, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
             println!("✓ B2 position read successfully");
             println!("  Position: {:?}", position);
@@ -170,10 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Monitoring position for 5 seconds...");
 
     for i in 1..=5 {
-        match client
-            .read_position(1, CoordinateSystemType::RobotPulse)
-            .await
-        {
+        match client.read_position(1, CoordinateSystemType::RobotPulse).await {
             Ok(position) => {
                 println!("  [{}s] Position: {:?}", i, position);
             }

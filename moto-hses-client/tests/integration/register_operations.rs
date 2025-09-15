@@ -7,79 +7,41 @@ use crate::common::{
 use crate::test_with_logging;
 
 test_with_logging!(test_register_read_operations, {
-    let _server = create_register_test_server()
-        .await
-        .expect("Failed to start register test server");
+    let _server =
+        create_register_test_server().await.expect("Failed to start register test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test reading registers with expected values from MockServer configuration
-    assert_eq!(
-        client
-            .read_register(0)
-            .await
-            .expect("Failed to read register 0"),
-        0
-    );
-    assert_eq!(
-        client
-            .read_register(1)
-            .await
-            .expect("Failed to read register 1"),
-        100
-    );
-    assert_eq!(
-        client
-            .read_register(2)
-            .await
-            .expect("Failed to read register 2"),
-        200
-    );
-    assert_eq!(
-        client
-            .read_register(3)
-            .await
-            .expect("Failed to read register 3"),
-        300
-    );
-    assert_eq!(
-        client
-            .read_register(4)
-            .await
-            .expect("Failed to read register 4"),
-        400
-    );
+    assert_eq!(client.read_register(0).await.expect("Failed to read register 0"), 0);
+    assert_eq!(client.read_register(1).await.expect("Failed to read register 1"), 100);
+    assert_eq!(client.read_register(2).await.expect("Failed to read register 2"), 200);
+    assert_eq!(client.read_register(3).await.expect("Failed to read register 3"), 300);
+    assert_eq!(client.read_register(4).await.expect("Failed to read register 4"), 400);
 });
 
 test_with_logging!(test_register_write_operations, {
-    let _server = create_register_test_server()
-        .await
-        .expect("Failed to start register test server");
+    let _server =
+        create_register_test_server().await.expect("Failed to start register test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test writing to register 0 (initial value is 0)
     let test_value = 42;
-    client
-        .write_register(0, test_value)
-        .await
-        .expect("Failed to write to register 0");
+    client.write_register(0, test_value).await.expect("Failed to write to register 0");
 
     wait_for_operation().await;
 
     // Verify the write operation
-    let register_value_after_write = client
-        .read_register(0)
-        .await
-        .expect("Failed to read register 0 after write");
+    let register_value_after_write =
+        client.read_register(0).await.expect("Failed to read register 0 after write");
 
     assert_eq!(register_value_after_write, test_value);
 });
 
 test_with_logging!(test_multiple_register_operations, {
-    let _server = create_register_test_server()
-        .await
-        .expect("Failed to start register test server");
+    let _server =
+        create_register_test_server().await.expect("Failed to start register test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -116,9 +78,8 @@ test_with_logging!(test_multiple_register_operations, {
 });
 
 test_with_logging!(test_register_boundary_values, {
-    let _server = create_register_test_server()
-        .await
-        .expect("Failed to start register test server");
+    let _server =
+        create_register_test_server().await.expect("Failed to start register test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
@@ -145,19 +106,15 @@ test_with_logging!(test_register_boundary_values, {
 });
 
 test_with_logging!(test_register_error_handling, {
-    let _server = create_register_test_server()
-        .await
-        .expect("Failed to start register test server");
+    let _server =
+        create_register_test_server().await.expect("Failed to start register test server");
 
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test invalid register number for read (65535)
     match client.read_register(65535).await {
         Ok(value) => {
-            panic!(
-                "Invalid register number read succeeded unexpectedly: {}",
-                value
-            );
+            panic!("Invalid register number read succeeded unexpectedly: {}", value);
         }
         Err(_) => {
             // Expected to fail

@@ -154,11 +154,8 @@ pub mod response {
     /// Parse file list response
     pub fn parse_file_list(data: &[u8]) -> Result<Vec<String>, ProtocolError> {
         let content = String::from_utf8_lossy(data);
-        let files: Vec<String> = content
-            .split('\0')
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .collect();
+        let files: Vec<String> =
+            content.split('\0').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
         Ok(files)
     }
 

@@ -171,9 +171,7 @@ impl Alarm {
     /// Deserialize alarm data from response
     pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 60 {
-            return Err(ProtocolError::Deserialization(
-                "Insufficient data length".to_string(),
-            ));
+            return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
         }
 
         let code = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
@@ -231,10 +229,7 @@ pub struct ReadAlarmHistory {
 
 impl ReadAlarmHistory {
     pub fn new(instance: u16, attribute: u8) -> Self {
-        Self {
-            instance,
-            attribute,
-        }
+        Self { instance, attribute }
     }
 
     /// Validate instance range for alarm history
@@ -283,10 +278,7 @@ pub enum AlarmCategory {
 
 impl ReadAlarmData {
     pub fn new(instance: u16, attribute: u8) -> Self {
-        Self {
-            instance,
-            attribute,
-        }
+        Self { instance, attribute }
     }
 
     /// Validate instance range for alarm data
@@ -422,16 +414,12 @@ impl AlarmReset {
 
     /// Create a reset command
     pub fn reset() -> Self {
-        Self {
-            reset_type: AlarmResetType::Reset,
-        }
+        Self { reset_type: AlarmResetType::Reset }
     }
 
     /// Create a cancel command
     pub fn cancel() -> Self {
-        Self {
-            reset_type: AlarmResetType::Cancel,
-        }
+        Self { reset_type: AlarmResetType::Cancel }
     }
 }
 
@@ -466,58 +454,34 @@ pub mod test_alarms {
     use super::*;
 
     pub fn servo_error() -> Alarm {
-        Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Servo Error".to_string(),
-        )
-        .with_sub_code(
-            "[SV#1]".to_string(),
-            "Servo amplifier error".to_string(),
-            "0".to_string(),
-        )
+        Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Servo Error".to_string())
+            .with_sub_code(
+                "[SV#1]".to_string(),
+                "Servo amplifier error".to_string(),
+                "0".to_string(),
+            )
     }
 
     pub fn emergency_stop() -> Alarm {
-        Alarm::new(
-            2001,
-            0,
-            0,
-            "2024/01/01 12:01".to_string(),
-            "Emergency Stop".to_string(),
-        )
+        Alarm::new(2001, 0, 0, "2024/01/01 12:01".to_string(), "Emergency Stop".to_string())
     }
 
     pub fn safety_error() -> Alarm {
-        Alarm::new(
-            3001,
-            2,
-            2,
-            "2024/01/01 12:02".to_string(),
-            "Safety Error".to_string(),
-        )
-        .with_sub_code(
-            "[SV#2]".to_string(),
-            "Safety circuit error".to_string(),
-            "1".to_string(),
-        )
+        Alarm::new(3001, 2, 2, "2024/01/01 12:02".to_string(), "Safety Error".to_string())
+            .with_sub_code(
+                "[SV#2]".to_string(),
+                "Safety circuit error".to_string(),
+                "1".to_string(),
+            )
     }
 
     pub fn communication_error() -> Alarm {
-        Alarm::new(
-            4001,
-            3,
-            3,
-            "2024/01/01 12:03".to_string(),
-            "Communication Error".to_string(),
-        )
-        .with_sub_code(
-            "[COM#1]".to_string(),
-            "Network communication error".to_string(),
-            "2".to_string(),
-        )
+        Alarm::new(4001, 3, 3, "2024/01/01 12:03".to_string(), "Communication Error".to_string())
+            .with_sub_code(
+                "[COM#1]".to_string(),
+                "Network communication error".to_string(),
+                "2".to_string(),
+            )
     }
 }
 
@@ -527,13 +491,8 @@ mod tests {
 
     #[test]
     fn test_alarm_new() {
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         assert_eq!(alarm.code, 1001);
         assert_eq!(alarm.data, 1);
@@ -547,18 +506,13 @@ mod tests {
 
     #[test]
     fn test_alarm_with_sub_code() {
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        )
-        .with_sub_code(
-            "[SV#1]".to_string(),
-            "Sub code data".to_string(),
-            "Reverse".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string())
+                .with_sub_code(
+                    "[SV#1]".to_string(),
+                    "Sub code data".to_string(),
+                    "Reverse".to_string(),
+                );
 
         assert_eq!(alarm.sub_code_info, "[SV#1]");
         assert_eq!(alarm.sub_code_data, "Sub code data");
@@ -581,50 +535,31 @@ mod tests {
 
     #[test]
     fn test_alarm_serialize_complete() {
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         let data = alarm.serialize_complete().unwrap();
         assert_eq!(data.len(), 268); // 4+4+4+16+32+16+96+96
 
         // Check alarm code (first 4 bytes)
-        assert_eq!(
-            u32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            1001
-        );
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1001);
 
         // Check alarm data (next 4 bytes)
         assert_eq!(u32::from_le_bytes([data[4], data[5], data[6], data[7]]), 1);
 
         // Check alarm type (next 4 bytes)
-        assert_eq!(
-            u32::from_le_bytes([data[8], data[9], data[10], data[11]]),
-            1
-        );
+        assert_eq!(u32::from_le_bytes([data[8], data[9], data[10], data[11]]), 1);
     }
 
     #[test]
     fn test_alarm_serialize_attribute() {
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         // Test alarm code serialization
         let data = alarm.serialize(1).unwrap();
         assert_eq!(data.len(), 4);
-        assert_eq!(
-            u32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            1001
-        );
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1001);
 
         // Test alarm data serialization
         let data = alarm.serialize(2).unwrap();
@@ -653,31 +588,18 @@ mod tests {
 
     #[test]
     fn test_alarm_serialize_invalid_attribute() {
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         let result = alarm.serialize(99);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::InvalidAttribute
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::InvalidAttribute));
     }
 
     #[test]
     fn test_alarm_deserialize() {
-        let original_alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let original_alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         let serialized = original_alarm.serialize_complete().unwrap();
         let deserialized = Alarm::deserialize(&serialized).unwrap();
@@ -694,10 +616,7 @@ mod tests {
         let short_data = vec![0u8; 10]; // Less than 60 bytes
         let result = Alarm::deserialize(&short_data);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::Deserialization(_)
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }
 
     #[test]
@@ -723,13 +642,8 @@ mod tests {
     fn test_alarm_variable_type_trait() {
         assert_eq!(Alarm::command_id(), 0x70);
 
-        let alarm = Alarm::new(
-            1001,
-            1,
-            1,
-            "2024/01/01 12:00".to_string(),
-            "Test Alarm".to_string(),
-        );
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         let serialized = alarm.serialize_complete().unwrap();
         assert_eq!(serialized.len(), 268);
@@ -835,18 +749,9 @@ mod tests {
     #[test]
     fn test_read_alarm_history_category_detection() {
         // Major failure alarms (1-100)
-        assert_eq!(
-            ReadAlarmHistory::new(1, 1).get_alarm_category(),
-            AlarmCategory::MajorFailure
-        );
-        assert_eq!(
-            ReadAlarmHistory::new(50, 1).get_alarm_category(),
-            AlarmCategory::MajorFailure
-        );
-        assert_eq!(
-            ReadAlarmHistory::new(100, 1).get_alarm_category(),
-            AlarmCategory::MajorFailure
-        );
+        assert_eq!(ReadAlarmHistory::new(1, 1).get_alarm_category(), AlarmCategory::MajorFailure);
+        assert_eq!(ReadAlarmHistory::new(50, 1).get_alarm_category(), AlarmCategory::MajorFailure);
+        assert_eq!(ReadAlarmHistory::new(100, 1).get_alarm_category(), AlarmCategory::MajorFailure);
 
         // Monitor alarms (1001-1100)
         assert_eq!(
@@ -905,14 +810,8 @@ mod tests {
         );
 
         // Invalid instances
-        assert_eq!(
-            ReadAlarmHistory::new(0, 1).get_alarm_category(),
-            AlarmCategory::Invalid
-        );
-        assert_eq!(
-            ReadAlarmHistory::new(5000, 1).get_alarm_category(),
-            AlarmCategory::Invalid
-        );
+        assert_eq!(ReadAlarmHistory::new(0, 1).get_alarm_category(), AlarmCategory::Invalid);
+        assert_eq!(ReadAlarmHistory::new(5000, 1).get_alarm_category(), AlarmCategory::Invalid);
     }
 
     #[test]

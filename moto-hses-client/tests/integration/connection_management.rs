@@ -1,7 +1,7 @@
 // Integration tests for connection management
 
 use crate::common::{
-    mock_server_setup::{create_test_server, MockServerManager},
+    mock_server_setup::{MockServerManager, create_test_server},
     test_utils::{create_test_client, create_test_client_with_host_and_port},
 };
 use crate::test_with_logging;
@@ -53,10 +53,7 @@ test_with_logging!(test_connection_timeout_handling, {
 
     // Test actual communication - this should timeout
     let status_result = client.read_status().await;
-    assert!(
-        status_result.is_err(),
-        "Communication with non-existent server should fail"
-    );
+    assert!(status_result.is_err(), "Communication with non-existent server should fail");
 });
 
 test_with_logging!(test_multiple_connections, {
@@ -65,9 +62,7 @@ test_with_logging!(test_multiple_connections, {
     server.start().await.expect("Failed to start mock server");
 
     // Create multiple clients to the same server
-    let clients: Vec<_> = (0..5)
-        .map(|_| async { create_test_client().await })
-        .collect();
+    let clients: Vec<_> = (0..5).map(|_| async { create_test_client().await }).collect();
 
     let results: Vec<Result<moto_hses_client::HsesClient, Box<dyn std::error::Error>>> =
         futures::future::join_all(clients).await;

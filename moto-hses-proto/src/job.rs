@@ -19,12 +19,7 @@ impl ExecutingJobInfo {
         step_number: u32,
         speed_override_value: u32,
     ) -> Self {
-        Self {
-            job_name,
-            line_number,
-            step_number,
-            speed_override_value,
-        }
+        Self { job_name, line_number, step_number, speed_override_value }
     }
 
     /// Serialize job info data for response
@@ -99,9 +94,7 @@ impl ExecutingJobInfo {
     /// Deserialize job info data from response
     pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 44 {
-            return Err(ProtocolError::Deserialization(
-                "Insufficient data length".to_string(),
-            ));
+            return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
         }
 
         // Extract job name (32 bytes, null-terminated)
@@ -117,12 +110,7 @@ impl ExecutingJobInfo {
         // Extract speed override value (4 bytes)
         let speed_override_value = u32::from_le_bytes([data[40], data[41], data[42], data[43]]);
 
-        Ok(ExecutingJobInfo {
-            job_name,
-            line_number,
-            step_number,
-            speed_override_value,
-        })
+        Ok(ExecutingJobInfo { job_name, line_number, step_number, speed_override_value })
     }
 
     /// Deserialize job info data from response for specific attribute
@@ -220,10 +208,7 @@ pub struct ReadExecutingJobInfo {
 
 impl ReadExecutingJobInfo {
     pub fn new(instance: u16, attribute: u8) -> Self {
-        Self {
-            instance,
-            attribute,
-        }
+        Self { instance, attribute }
     }
 
     /// Validate instance range for job info reading
@@ -368,22 +353,13 @@ mod tests {
         assert!(name_str.starts_with("TEST.JOB"));
 
         // Check line number (next 4 bytes)
-        assert_eq!(
-            u32::from_le_bytes([data[32], data[33], data[34], data[35]]),
-            1000
-        );
+        assert_eq!(u32::from_le_bytes([data[32], data[33], data[34], data[35]]), 1000);
 
         // Check step number (next 4 bytes)
-        assert_eq!(
-            u32::from_le_bytes([data[36], data[37], data[38], data[39]]),
-            1
-        );
+        assert_eq!(u32::from_le_bytes([data[36], data[37], data[38], data[39]]), 1);
 
         // Check speed override value (next 4 bytes)
-        assert_eq!(
-            u32::from_le_bytes([data[40], data[41], data[42], data[43]]),
-            100
-        );
+        assert_eq!(u32::from_le_bytes([data[40], data[41], data[42], data[43]]), 100);
     }
 
     #[test]
@@ -399,10 +375,7 @@ mod tests {
         // Test line number serialization
         let data = job_info.serialize(2).unwrap();
         assert_eq!(data.len(), 4);
-        assert_eq!(
-            u32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            1000
-        );
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1000);
 
         // Test step number serialization
         let data = job_info.serialize(3).unwrap();
@@ -412,10 +385,7 @@ mod tests {
         // Test speed override value serialization
         let data = job_info.serialize(4).unwrap();
         assert_eq!(data.len(), 4);
-        assert_eq!(
-            u32::from_le_bytes([data[0], data[1], data[2], data[3]]),
-            100
-        );
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 100);
     }
 
     #[test]
@@ -424,10 +394,7 @@ mod tests {
 
         let result = job_info.serialize(99);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::InvalidAttribute
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::InvalidAttribute));
     }
 
     #[test]
@@ -440,10 +407,7 @@ mod tests {
         assert_eq!(deserialized.job_name, original_job_info.job_name);
         assert_eq!(deserialized.line_number, original_job_info.line_number);
         assert_eq!(deserialized.step_number, original_job_info.step_number);
-        assert_eq!(
-            deserialized.speed_override_value,
-            original_job_info.speed_override_value
-        );
+        assert_eq!(deserialized.speed_override_value, original_job_info.speed_override_value);
     }
 
     #[test]
@@ -451,10 +415,7 @@ mod tests {
         let short_data = vec![0u8; 10]; // Less than 44 bytes
         let result = ExecutingJobInfo::deserialize(&short_data);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::Deserialization(_)
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }
 
     #[test]
@@ -522,42 +483,18 @@ mod tests {
     #[test]
     fn test_read_executing_job_info_task_type_detection() {
         // Master task
-        assert_eq!(
-            ReadExecutingJobInfo::new(1, 1).get_task_type(),
-            TaskType::MasterTask
-        );
+        assert_eq!(ReadExecutingJobInfo::new(1, 1).get_task_type(), TaskType::MasterTask);
 
         // Sub tasks
-        assert_eq!(
-            ReadExecutingJobInfo::new(2, 1).get_task_type(),
-            TaskType::SubTask1
-        );
-        assert_eq!(
-            ReadExecutingJobInfo::new(3, 1).get_task_type(),
-            TaskType::SubTask2
-        );
-        assert_eq!(
-            ReadExecutingJobInfo::new(4, 1).get_task_type(),
-            TaskType::SubTask3
-        );
-        assert_eq!(
-            ReadExecutingJobInfo::new(5, 1).get_task_type(),
-            TaskType::SubTask4
-        );
-        assert_eq!(
-            ReadExecutingJobInfo::new(6, 1).get_task_type(),
-            TaskType::SubTask5
-        );
+        assert_eq!(ReadExecutingJobInfo::new(2, 1).get_task_type(), TaskType::SubTask1);
+        assert_eq!(ReadExecutingJobInfo::new(3, 1).get_task_type(), TaskType::SubTask2);
+        assert_eq!(ReadExecutingJobInfo::new(4, 1).get_task_type(), TaskType::SubTask3);
+        assert_eq!(ReadExecutingJobInfo::new(5, 1).get_task_type(), TaskType::SubTask4);
+        assert_eq!(ReadExecutingJobInfo::new(6, 1).get_task_type(), TaskType::SubTask5);
 
         // Invalid instances
-        assert_eq!(
-            ReadExecutingJobInfo::new(0, 1).get_task_type(),
-            TaskType::Invalid
-        );
-        assert_eq!(
-            ReadExecutingJobInfo::new(7, 1).get_task_type(),
-            TaskType::Invalid
-        );
+        assert_eq!(ReadExecutingJobInfo::new(0, 1).get_task_type(), TaskType::Invalid);
+        assert_eq!(ReadExecutingJobInfo::new(7, 1).get_task_type(), TaskType::Invalid);
     }
 
     #[test]
@@ -566,10 +503,7 @@ mod tests {
         assert_eq!(JobInfoAttribute::from(1), JobInfoAttribute::JobName);
         assert_eq!(JobInfoAttribute::from(2), JobInfoAttribute::LineNumber);
         assert_eq!(JobInfoAttribute::from(3), JobInfoAttribute::StepNumber);
-        assert_eq!(
-            JobInfoAttribute::from(4),
-            JobInfoAttribute::SpeedOverrideValue
-        );
+        assert_eq!(JobInfoAttribute::from(4), JobInfoAttribute::SpeedOverrideValue);
         assert_eq!(JobInfoAttribute::from(99), JobInfoAttribute::All); // Default
     }
 
@@ -649,18 +583,12 @@ mod tests {
         let short_data = vec![0u8; 10];
         let result = ExecutingJobInfo::deserialize_attribute(&short_data, 1);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::Deserialization(_)
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
 
         // Test insufficient data for line number
         let short_data = vec![0u8; 2];
         let result = ExecutingJobInfo::deserialize_attribute(&short_data, 2);
         assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ProtocolError::Deserialization(_)
-        ));
+        assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }
 }

@@ -80,20 +80,13 @@ impl MockConfig {
             io_states,
             alarms: Vec::new(),
             alarm_history: Vec::new(),
-            executing_job: Some(proto::ExecutingJobInfo::new(
-                "TEST.JOB".to_string(),
-                2,
-                1,
-                100,
-            )),
+            executing_job: Some(proto::ExecutingJobInfo::new("TEST.JOB".to_string(), 2, 1, 100)),
         }
     }
 
     /// Get robot control socket address
     pub fn robot_addr(&self) -> SocketAddr {
-        format!("{}:{}", self.host, self.robot_port)
-            .parse()
-            .unwrap()
+        format!("{}:{}", self.host, self.robot_port).parse().unwrap()
     }
 
     /// Get file control socket address
@@ -125,11 +118,11 @@ impl Default for MockConfig {
 /// Test utilities for mock server
 pub mod test_utils {
     use super::*;
-    use tokio::time::{sleep, Duration};
+    use tokio::time::{Duration, sleep};
 
     /// Start a mock server for testing
-    pub async fn start_test_server(
-    ) -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
+    pub async fn start_test_server()
+    -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
     {
         // Try to bind to a specific high port first
         let mut port = 49152; // Start from dynamic port range

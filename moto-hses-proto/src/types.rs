@@ -327,10 +327,7 @@ mod tests {
 
     #[test]
     fn test_read_var_command() {
-        let read_cmd = ReadVar::<u8> {
-            index: 1,
-            _phantom: PhantomData,
-        };
+        let read_cmd = ReadVar::<u8> { index: 1, _phantom: PhantomData };
         assert_eq!(ReadVar::<u8>::command_id(), 0x7a); // ByteVar command ID
         let serialized = read_cmd.serialize().unwrap();
         assert_eq!(serialized, Vec::<u8>::new());
@@ -338,10 +335,7 @@ mod tests {
 
     #[test]
     fn test_write_var_command() {
-        let write_cmd = WriteVar::<u8> {
-            index: 1,
-            value: 42,
-        };
+        let write_cmd = WriteVar::<u8> { index: 1, value: 42 };
         assert_eq!(WriteVar::<u8>::command_id(), 0x7a); // ByteVar command ID
         let serialized = write_cmd.serialize().unwrap();
         assert_eq!(serialized, vec![42, 0, 0, 0]); // u8 is serialized as 4 bytes in HSES protocol
@@ -436,10 +430,7 @@ pub enum HoldServoValue {
 impl HoldServoControl {
     /// Create a new Hold/Servo control command
     pub fn new(control_type: HoldServoType, value: HoldServoValue) -> Self {
-        Self {
-            control_type,
-            value,
-        }
+        Self { control_type, value }
     }
 
     /// Create HOLD ON command

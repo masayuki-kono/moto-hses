@@ -109,10 +109,7 @@ impl CommandHandler for FileControlHandler {
                     let filename =
                         String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
                     let deleted = state.delete_file(&filename);
-                    eprintln!(
-                        "File deletion requested: {} (deleted: {})",
-                        filename, deleted
-                    );
+                    eprintln!("File deletion requested: {} (deleted: {})", filename, deleted);
                 }
                 Ok(vec![])
             }

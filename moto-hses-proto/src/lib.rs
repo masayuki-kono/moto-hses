@@ -23,7 +23,7 @@ pub use message::{
 pub use position::{CartesianPosition, Position, PulsePosition};
 pub use status::{Status, StatusData1, StatusData2};
 pub use types::{
-    Command, CoordinateSystem, CoordinateSystemType, Division, HoldServoControl, HoldServoType,
-    HoldServoValue, ReadCurrentPosition, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
-    ReadVar, Service, VariableType, WriteIo, WriteVar, FILE_CONTROL_PORT, ROBOT_CONTROL_PORT,
+    Command, CoordinateSystem, CoordinateSystemType, Division, FILE_CONTROL_PORT, HoldServoControl,
+    HoldServoType, HoldServoValue, ROBOT_CONTROL_PORT, ReadCurrentPosition, ReadIo, ReadStatus,
+    ReadStatusData1, ReadStatusData2, ReadVar, Service, VariableType, WriteIo, WriteVar,
 };

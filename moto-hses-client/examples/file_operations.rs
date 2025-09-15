@@ -11,9 +11,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, file_port) = match args.as_slice() {
         [_, host, file_port] => {
             // Format: [host] [file_port]
-            let file_port: u16 = file_port
-                .parse()
-                .map_err(|_| format!("Invalid file port: {}", file_port))?;
+            let file_port: u16 =
+                file_port.parse().map_err(|_| format!("Invalid file port: {}", file_port))?;
 
             (host.to_string(), file_port)
         }
@@ -116,10 +115,7 @@ async fn process_existing_file(
     println!("\n3. Creating modified file: {}", new_filename);
     println!("  Modified content: {}", modified_content);
 
-    if let Err(e) = client
-        .send_file(&new_filename, modified_content.as_bytes())
-        .await
-    {
+    if let Err(e) = client.send_file(&new_filename, modified_content.as_bytes()).await {
         eprintln!("✗ Failed to send modified file: {}", e);
         return Ok(());
     }
@@ -210,10 +206,7 @@ async fn create_and_cleanup_test_file(
     println!("  Creating file: {}", test_filename);
     println!("  Content: {}", test_content);
 
-    if let Err(e) = client
-        .send_file(test_filename, test_content.as_bytes())
-        .await
-    {
+    if let Err(e) = client.send_file(test_filename, test_content.as_bytes()).await {
         eprintln!("✗ Failed to create test file: {}", e);
         return Ok(());
     }
@@ -252,10 +245,7 @@ async fn cleanup_file(
     filename: &str,
     file_type: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!(
-        "\n6. Cleaning up - Deleting {} file: {}",
-        file_type, filename
-    );
+    println!("\n6. Cleaning up - Deleting {} file: {}", file_type, filename);
 
     if let Err(e) = client.delete_file(filename).await {
         eprintln!("✗ Failed to delete {} file: {}", file_type, e);
@@ -280,10 +270,7 @@ async fn cleanup_file(
     };
 
     if !final_files.contains(&filename.to_string()) {
-        println!(
-            "✓ {} file '{}' successfully removed from list",
-            file_type, filename
-        );
+        println!("✓ {} file '{}' successfully removed from list", file_type, filename);
     } else {
         eprintln!("✗ {} file '{}' still exists in list", file_type, filename);
     }
