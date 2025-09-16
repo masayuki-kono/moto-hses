@@ -149,12 +149,11 @@ async fn main() -> Result<(), ClientError> {
 
 ```bash
 # Terminal 1: Start mock server
-cargo run -p moto-hses-mock --example mock_basic_usage
+RUST_LOG=info cargo run -p moto-hses-mock --example mock_basic_usage
 
 # Terminal 2: Run client examples against mock
-cargo run -p moto-hses-client --example basic_usage -- 127.0.0.1 10040
-cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
-cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
+RUST_LOG=info cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
+RUST_LOG=info cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
 ```
 
 #### Automated Integration Testing
