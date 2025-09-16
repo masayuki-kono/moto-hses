@@ -9,6 +9,7 @@ tokio = { workspace = true }
 thiserror = { workspace = true }
 moto-hses-proto = { path = "../moto-hses-proto" }
 futures = "0.3"
+log = "0.4"
 
 [dev-dependencies]
 tokio-test = "0.4"
@@ -16,6 +17,9 @@ moto-hses-mock = { path = "../moto-hses-mock" }
 env_logger = "0.11"
 log = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
+
+[lints]
+workspace = true
 
 [[example]]
 name = "read_status"

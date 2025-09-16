@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for read status operations
 
 use crate::common::{

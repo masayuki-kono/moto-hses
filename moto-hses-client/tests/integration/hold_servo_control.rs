@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::expect_used)]
 // Integration tests for hold/servo control operations
 
 use crate::common::{
@@ -30,7 +32,7 @@ test_with_logging!(test_hold_control_commands, {
         initial_hold_state,
         initial_status.data1.running
     );
-    log::info!("  Setting HOLD to opposite state: {}...", opposite_hold_state);
+    log::info!("  Setting HOLD to opposite state: {opposite_hold_state}...");
 
     client.set_hold(opposite_hold_state).await.expect("Failed to set HOLD");
 
@@ -55,7 +57,7 @@ test_with_logging!(test_hold_control_commands, {
     );
 
     // Set HOLD back to initial state
-    log::info!("  Setting HOLD back to initial state: {}...", initial_hold_state);
+    log::info!("  Setting HOLD back to initial state: {initial_hold_state}...");
     client.set_hold(initial_hold_state).await.expect("Failed to set HOLD back");
 
     log::info!("  ✓ HOLD {} command sent", if initial_hold_state { "ON" } else { "OFF" });
@@ -79,8 +81,8 @@ test_with_logging!(test_servo_control_commands, {
     let opposite_servo_state = !initial_servo_state;
 
     log::info!("Testing Servo control...");
-    log::info!("  Initial Servo state: {}", initial_servo_state);
-    log::info!("  Setting Servo to opposite state: {}...", opposite_servo_state);
+    log::info!("  Initial Servo state: {initial_servo_state}");
+    log::info!("  Setting Servo to opposite state: {opposite_servo_state}...");
 
     client.set_servo(opposite_servo_state).await.expect("Failed to set Servo");
 
@@ -104,7 +106,7 @@ test_with_logging!(test_servo_control_commands, {
     );
 
     // Set Servo back to initial state
-    log::info!("  Setting Servo back to initial state: {}...", initial_servo_state);
+    log::info!("  Setting Servo back to initial state: {initial_servo_state}...");
     client.set_servo(initial_servo_state).await.expect("Failed to set Servo back");
 
     log::info!("  ✓ Servo {} command sent", if initial_servo_state { "ON" } else { "OFF" });
@@ -121,8 +123,8 @@ test_with_logging!(test_hlock_control_commands, {
     let opposite_hlock_state = !initial_hlock_state;
 
     log::info!("Testing HLOCK control...");
-    log::info!("  Initial HLOCK state: {}", initial_hlock_state);
-    log::info!("  Setting HLOCK to opposite state: {}...", opposite_hlock_state);
+    log::info!("  Initial HLOCK state: {initial_hlock_state}");
+    log::info!("  Setting HLOCK to opposite state: {opposite_hlock_state}...");
 
     client.set_hlock(opposite_hlock_state).await.expect("Failed to set HLOCK");
 
@@ -133,12 +135,11 @@ test_with_logging!(test_hlock_control_commands, {
     let _hlock_test_status = client.read_status().await.expect("Failed to read HLOCK test status");
 
     log::info!(
-        "  ✓ HLOCK state verification: HLOCK set to {} (command executed)",
-        opposite_hlock_state
+        "  ✓ HLOCK state verification: HLOCK set to {opposite_hlock_state} (command executed)"
     );
 
     // Set HLOCK back to initial state
-    log::info!("  Setting HLOCK back to initial state: {}...", initial_hlock_state);
+    log::info!("  Setting HLOCK back to initial state: {initial_hlock_state}...");
     client.set_hlock(initial_hlock_state).await.expect("Failed to set HLOCK back");
 
     log::info!("  ✓ HLOCK {} command sent", if initial_hlock_state { "ON" } else { "OFF" });

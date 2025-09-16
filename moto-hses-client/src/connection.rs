@@ -4,6 +4,10 @@ use crate::types::{ClientConfig, ClientError, HsesClient, InnerClient};
 
 impl HsesClient {
     /// Create a new client with default configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if address parsing or connection fails
     pub async fn new(addr: &str) -> Result<Self, ClientError> {
         let mut config = ClientConfig::default();
         // Parse address and update config
@@ -12,7 +16,7 @@ impl HsesClient {
             config.host = addr_parts[0].to_string();
             config.port = addr_parts[1]
                 .parse()
-                .map_err(|e| ClientError::SystemError(format!("Invalid port: {}", e)))?;
+                .map_err(|e| ClientError::SystemError(format!("Invalid port: {e}")))?;
         } else {
             return Err(ClientError::SystemError(
                 "Invalid address format. Use 'host:port'".to_string(),
@@ -22,6 +26,10 @@ impl HsesClient {
     }
 
     /// Create a new client with custom configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if connection fails
     pub async fn new_with_config(config: ClientConfig) -> Result<Self, ClientError> {
         let addr = format!("{}:{}", config.host, config.port);
         let client = Self {
@@ -29,7 +37,7 @@ impl HsesClient {
                 socket: tokio::net::UdpSocket::bind("0.0.0.0:0").await?,
                 remote_addr: addr
                     .parse()
-                    .map_err(|e| ClientError::SystemError(format!("Invalid address: {}", e)))?,
+                    .map_err(|e| ClientError::SystemError(format!("Invalid address: {e}")))?,
                 request_id: std::sync::atomic::AtomicU8::new(1),
                 _pending_requests: std::sync::Arc::new(std::sync::Mutex::new(
                     std::collections::HashMap::new(),

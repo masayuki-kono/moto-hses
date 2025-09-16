@@ -12,6 +12,11 @@ pub struct Status {
 }
 
 impl Status {
+    /// Create Status from byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError::Underflow` if data is insufficient
+    /// Returns `ProtocolError::Deserialization` if data format is invalid
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 8 {
             return Err(ProtocolError::Underflow);
@@ -24,29 +29,37 @@ impl Status {
     }
 
     /// Create Status from Data 1 and Data 2 instances
-    pub fn new(data1: StatusData1, data2: StatusData2) -> Self {
+    #[must_use]
+    pub const fn new(data1: StatusData1, data2: StatusData2) -> Self {
         Self { data1, data2 }
     }
 
-    pub fn is_running(&self) -> bool {
+    #[must_use]
+    pub const fn is_running(&self) -> bool {
         self.data1.running
     }
-    pub fn is_servo_on(&self) -> bool {
+    #[must_use]
+    pub const fn is_servo_on(&self) -> bool {
         self.data2.servo_on
     }
-    pub fn has_alarm(&self) -> bool {
+    #[must_use]
+    pub const fn has_alarm(&self) -> bool {
         self.data2.alarm
     }
-    pub fn is_teach_mode(&self) -> bool {
+    #[must_use]
+    pub const fn is_teach_mode(&self) -> bool {
         self.data1.teach
     }
-    pub fn is_play_mode(&self) -> bool {
+    #[must_use]
+    pub const fn is_play_mode(&self) -> bool {
         self.data1.play
     }
-    pub fn is_remote_mode(&self) -> bool {
+    #[must_use]
+    pub const fn is_remote_mode(&self) -> bool {
         self.data1.remote
     }
-    pub fn has_error(&self) -> bool {
+    #[must_use]
+    pub const fn has_error(&self) -> bool {
         self.data2.error
     }
 }
@@ -62,12 +75,13 @@ impl VariableType for Status {
         Ok(data)
     }
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Status::from_bytes(data)
+        Self::from_bytes(data)
     }
 }
 
 // Attribute-specific status structures
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct StatusData1 {
     pub step: bool,
     pub one_cycle: bool,
@@ -80,6 +94,7 @@ pub struct StatusData1 {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct StatusData2 {
     pub teach_pendant_hold: bool,
     pub external_hold: bool,
@@ -90,13 +105,19 @@ pub struct StatusData2 {
 }
 
 impl StatusData1 {
+    /// Create `StatusData1` from byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError::Underflow` if data is insufficient
+    /// Returns `ProtocolError::Deserialization` if status word is invalid
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
 
         let mut buf = data;
-        let status_word = buf.get_u32_le() as u16;
+        let status_word = u16::try_from(buf.get_u32_le())
+            .map_err(|_| ProtocolError::Deserialization("Invalid status word value".to_string()))?;
 
         Ok(Self {
             step: (status_word & 0x0001) != 0,
@@ -112,13 +133,19 @@ impl StatusData1 {
 }
 
 impl StatusData2 {
+    /// Create `StatusData2` from byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError::Underflow` if data is insufficient
+    /// Returns `ProtocolError::Deserialization` if status word is invalid
     pub fn from_bytes(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
 
         let mut buf = data;
-        let status_word = buf.get_u32_le() as u16;
+        let status_word = u16::try_from(buf.get_u32_le())
+            .map_err(|_| ProtocolError::Deserialization("Invalid status word value".to_string()))?;
 
         Ok(Self {
             teach_pendant_hold: (status_word & 0x0002) != 0,
@@ -168,7 +195,7 @@ impl VariableType for StatusData1 {
         Ok(data)
     }
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        StatusData1::from_bytes(data)
+        Self::from_bytes(data)
     }
 }
 
@@ -203,7 +230,7 @@ impl VariableType for StatusData2 {
         Ok(data)
     }
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        StatusData2::from_bytes(data)
+        Self::from_bytes(data)
     }
 }
 
@@ -212,6 +239,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_status_from_bytes() {
         let data = vec![0x01, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00];
         let status = Status::from_bytes(&data).unwrap();
@@ -222,6 +250,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_status_serialization() {
         let data1 = StatusData1 {
             step: true,
@@ -281,6 +310,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_status_variable_type_trait() {
         assert_eq!(Status::command_id(), 0x72);
 
@@ -310,6 +340,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_status_data1() {
         let data = vec![0x01, 0x00, 0x00, 0x00]; // step bit set
         let status_data1 = StatusData1::from_bytes(&data).unwrap();
@@ -323,6 +354,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_status_data2() {
         let data = vec![0x40, 0x00, 0x00, 0x00]; // servo_on bit set
         let status_data2 = StatusData2::from_bytes(&data).unwrap();

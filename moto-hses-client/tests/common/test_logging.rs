@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Test logging utilities for integration tests
 
 use log::{debug, error, info};
@@ -12,7 +13,7 @@ pub fn init_test_logging() {
     INIT.call_once(|| {
         // Create logs directory if it doesn't exist
         std::fs::create_dir_all("logs").unwrap_or_else(|e| {
-            eprintln!("Failed to create logs directory: {}", e);
+            error!("Failed to create logs directory: {e}");
         });
 
         // Configure env_logger to write to file with detailed logging
@@ -36,7 +37,7 @@ pub fn init_test_logging() {
                     .truncate(true) // Truncate the file to clear previous content
                     .open("logs/integration_tests.log")
                     .unwrap_or_else(|e| {
-                        eprintln!("Failed to open log file: {}", e);
+                        error!("Failed to open log file: {e}");
                         std::process::exit(1);
                     }),
             )))
@@ -52,39 +53,39 @@ pub fn log_test_session_start() {
 
 /// Log test start
 pub fn log_test_start(test_name: &str) {
-    info!("=== Starting test: {} ===", test_name);
+    info!("=== Starting test: {test_name} ===");
 }
 
 /// Log test completion
 pub fn log_test_completion(test_name: &str, success: bool) {
     if success {
-        info!("=== Test completed successfully: {} ===", test_name);
+        info!("=== Test completed successfully: {test_name} ===");
     } else {
-        error!("=== Test failed: {} ===", test_name);
+        error!("=== Test failed: {test_name} ===");
     }
 }
 
 /// Log mock server startup
 pub fn log_mock_server_startup(host: &str, port: u16) {
-    debug!("Starting mock server on {}:{}", host, port);
+    debug!("Starting mock server on {host}:{port}");
 }
 
 /// Log mock server startup failure
 pub fn log_mock_server_startup_failure(host: &str, port: u16, error: &str) {
-    error!("Failed to start mock server on {}:{} - {}", host, port, error);
+    error!("Failed to start mock server on {host}:{port} - {error}");
 }
 
 /// Log client connection attempt
 pub fn log_client_connection_attempt(host: &str, port: u16) {
-    info!("Attempting to connect client to {}:{}", host, port);
+    info!("Attempting to connect client to {host}:{port}");
 }
 
 /// Log client connection result
 pub fn log_client_connection_result(host: &str, port: u16, success: bool) {
     if success {
-        info!("Client connected successfully to {}:{}", host, port);
+        info!("Client connected successfully to {host}:{port}");
     } else {
-        error!("Client failed to connect to {}:{}", host, port);
+        error!("Client failed to connect to {host}:{port}");
     }
 }
 

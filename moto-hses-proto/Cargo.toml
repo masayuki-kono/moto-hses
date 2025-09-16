@@ -7,3 +7,6 @@ license = "Apache-2.0"
 [dependencies]
 bytes = { workspace = true }
 thiserror = { workspace = true }
+
+[lints]
+workspace = true

@@ -13,7 +13,8 @@ pub struct ExecutingJobInfo {
 }
 
 impl ExecutingJobInfo {
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         job_name: String,
         line_number: u32,
         step_number: u32,
@@ -23,6 +24,10 @@ impl ExecutingJobInfo {
     }
 
     /// Serialize job info data for response
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if serialization fails
     pub fn serialize(&self, attribute: u8) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
@@ -56,6 +61,9 @@ impl ExecutingJobInfo {
     }
 
     /// Serialize complete job info data (all attributes)
+    /// # Errors
+    ///
+    /// Returns an error if serialization fails
     pub fn serialize_complete(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
@@ -92,6 +100,10 @@ impl Default for ExecutingJobInfo {
 
 impl ExecutingJobInfo {
     /// Deserialize job info data from response
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if deserialization fails
     pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 44 {
             return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
@@ -110,10 +122,14 @@ impl ExecutingJobInfo {
         // Extract speed override value (4 bytes)
         let speed_override_value = u32::from_le_bytes([data[40], data[41], data[42], data[43]]);
 
-        Ok(ExecutingJobInfo { job_name, line_number, step_number, speed_override_value })
+        Ok(Self { job_name, line_number, step_number, speed_override_value })
     }
 
     /// Deserialize job info data from response for specific attribute
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if deserialization fails
     pub fn deserialize_attribute(data: &[u8], attribute: u8) -> Result<Self, ProtocolError> {
         match attribute {
             1 => {
@@ -125,12 +141,7 @@ impl ExecutingJobInfo {
                 }
                 let name_end = data[0..32].iter().position(|&b| b == 0).unwrap_or(32);
                 let job_name = String::from_utf8_lossy(&data[0..name_end]).to_string();
-                Ok(ExecutingJobInfo {
-                    job_name,
-                    line_number: 0,
-                    step_number: 0,
-                    speed_override_value: 0,
-                })
+                Ok(Self { job_name, line_number: 0, step_number: 0, speed_override_value: 0 })
             }
             2 => {
                 // Line number (4 bytes)
@@ -140,7 +151,7 @@ impl ExecutingJobInfo {
                     ));
                 }
                 let line_number = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-                Ok(ExecutingJobInfo {
+                Ok(Self {
                     job_name: String::new(),
                     line_number,
                     step_number: 0,
@@ -155,7 +166,7 @@ impl ExecutingJobInfo {
                     ));
                 }
                 let step_number = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-                Ok(ExecutingJobInfo {
+                Ok(Self {
                     job_name: String::new(),
                     line_number: 0,
                     step_number,
@@ -170,7 +181,7 @@ impl ExecutingJobInfo {
                     ));
                 }
                 let speed_override_value = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-                Ok(ExecutingJobInfo {
+                Ok(Self {
                     job_name: String::new(),
                     line_number: 0,
                     step_number: 0,
@@ -195,7 +206,7 @@ impl VariableType for ExecutingJobInfo {
     }
 
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        ExecutingJobInfo::deserialize(data)
+        Self::deserialize(data)
     }
 }
 
@@ -207,17 +218,20 @@ pub struct ReadExecutingJobInfo {
 }
 
 impl ReadExecutingJobInfo {
-    pub fn new(instance: u16, attribute: u8) -> Self {
+    #[must_use]
+    pub const fn new(instance: u16, attribute: u8) -> Self {
         Self { instance, attribute }
     }
 
     /// Validate instance range for job info reading
-    pub fn is_valid_instance(&self) -> bool {
+    #[must_use]
+    pub const fn is_valid_instance(&self) -> bool {
         matches!(self.instance, 1..=6)
     }
 
     /// Get task type from instance
-    pub fn get_task_type(&self) -> TaskType {
+    #[must_use]
+    pub const fn get_task_type(&self) -> TaskType {
         match self.instance {
             1 => TaskType::MasterTask,
             2 => TaskType::SubTask1,
@@ -230,13 +244,14 @@ impl ReadExecutingJobInfo {
     }
 
     /// Validate attribute range for job info reading
-    pub fn is_valid_attribute(&self) -> bool {
+    #[must_use]
+    pub const fn is_valid_attribute(&self) -> bool {
         matches!(self.attribute, 0..=4)
     }
 }
 
 /// Task types for job info reading
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskType {
     MasterTask, // 1
     SubTask1,   // 2
@@ -278,7 +293,7 @@ impl Command for ReadExecutingJobInfo {
 }
 
 /// Job information attribute types
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobInfoAttribute {
     All = 0,
     JobName = 1,
@@ -290,28 +305,30 @@ pub enum JobInfoAttribute {
 impl From<u8> for JobInfoAttribute {
     fn from(value: u8) -> Self {
         match value {
-            0 => JobInfoAttribute::All,
-            1 => JobInfoAttribute::JobName,
-            2 => JobInfoAttribute::LineNumber,
-            3 => JobInfoAttribute::StepNumber,
-            4 => JobInfoAttribute::SpeedOverrideValue,
-            _ => JobInfoAttribute::All,
+            1 => Self::JobName,
+            2 => Self::LineNumber,
+            3 => Self::StepNumber,
+            4 => Self::SpeedOverrideValue,
+            _ => Self::All,
         }
     }
 }
 
 /// Predefined job info for testing
 pub mod test_job_info {
-    use super::*;
+    use super::ExecutingJobInfo;
 
+    #[must_use]
     pub fn default_job() -> ExecutingJobInfo {
         ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100)
     }
 
+    #[must_use]
     pub fn running_job() -> ExecutingJobInfo {
         ExecutingJobInfo::new("PRODUCTION.JOB".to_string(), 2500, 15, 80)
     }
 
+    #[must_use]
     pub fn paused_job() -> ExecutingJobInfo {
         ExecutingJobInfo::new("MAINTENANCE.JOB".to_string(), 500, 3, 50)
     }
@@ -342,6 +359,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_serialize_complete() {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
@@ -363,6 +381,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_serialize_attribute() {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
@@ -389,6 +408,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_serialize_invalid_attribute() {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
@@ -398,6 +418,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_deserialize() {
         let original_job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
@@ -411,6 +432,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_deserialize_insufficient_data() {
         let short_data = vec![0u8; 10]; // Less than 44 bytes
         let result = ExecutingJobInfo::deserialize(&short_data);
@@ -426,6 +448,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_executing_job_info_command_trait() {
         let command = ReadExecutingJobInfo::new(1, 1);
 
@@ -438,6 +461,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_variable_type_trait() {
         assert_eq!(ExecutingJobInfo::command_id(), 0x73);
 
@@ -529,6 +553,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_serialize_long_job_name() {
         let long_job_name = "This is a very long job name that exceeds 32 bytes limit"; // Longer than 32 bytes
 
@@ -543,6 +568,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_deserialize_attribute() {
         // Test job name deserialization
         let job_name_data = b"TEST.JOB\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
@@ -578,6 +604,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_deserialize_attribute_insufficient_data() {
         // Test insufficient data for job name
         let short_data = vec![0u8; 10];

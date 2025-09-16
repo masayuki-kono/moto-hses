@@ -34,6 +34,7 @@ pub struct AlarmHistory {
 
 impl AlarmHistory {
     /// Get alarm by category and index
+    #[must_use]
     pub fn get_alarm(
         &self,
         category: proto::alarm::AlarmCategory,
@@ -184,6 +185,7 @@ impl Default for MockState {
 
 impl MockState {
     /// Get variable value
+    #[must_use]
     pub fn get_variable(&self, index: u8) -> Option<&Vec<u8>> {
         self.variables.get(&index)
     }
@@ -194,6 +196,7 @@ impl MockState {
     }
 
     /// Get I/O state
+    #[must_use]
     pub fn get_io_state(&self, io_number: u16) -> bool {
         self.io_states.get(&io_number).copied().unwrap_or(false)
     }
@@ -204,6 +207,7 @@ impl MockState {
     }
 
     /// Get register value
+    #[must_use]
     pub fn get_register(&self, reg_number: u16) -> i16 {
         self.registers.get(&reg_number).copied().unwrap_or(0)
     }
@@ -226,13 +230,13 @@ impl MockState {
     }
 
     /// Set servo state
-    pub fn set_servo(&mut self, on: bool) {
+    pub const fn set_servo(&mut self, on: bool) {
         self.servo_on = on;
         self.status.data2.servo_on = on;
     }
 
     /// Set hold state
-    pub fn set_hold(&mut self, hold: bool) {
+    pub const fn set_hold(&mut self, hold: bool) {
         self.hold_state = hold;
         self.status.data2.command_hold = hold;
         // If HOLD is ON, running should be false
@@ -245,7 +249,7 @@ impl MockState {
     }
 
     /// Set running state
-    pub fn set_running(&mut self, running: bool) {
+    pub const fn set_running(&mut self, running: bool) {
         self.status.data1.running = running;
     }
 
@@ -255,16 +259,18 @@ impl MockState {
     }
 
     /// Update position
-    pub fn update_position(&mut self, position: proto::Position) {
+    pub const fn update_position(&mut self, position: proto::Position) {
         self.position = position;
     }
 
     /// Get file list
+    #[must_use]
     pub fn get_file_list(&self, pattern: &str) -> Vec<String> {
         self.files.keys().filter(|name| name.contains(pattern.trim_matches('*'))).cloned().collect()
     }
 
     /// Get file content
+    #[must_use]
     pub fn get_file(&self, filename: &str) -> Option<&Vec<u8>> {
         self.files.get(filename)
     }
@@ -280,12 +286,13 @@ impl MockState {
     }
 
     /// Set HLOCK state
-    pub fn set_hlock(&mut self, enabled: bool) {
+    pub const fn set_hlock(&mut self, enabled: bool) {
         self.hlock_state = enabled;
     }
 
     /// Get HLOCK state
-    pub fn is_hlock_enabled(&self) -> bool {
+    #[must_use]
+    pub const fn is_hlock_enabled(&self) -> bool {
         self.hlock_state
     }
 }
@@ -297,6 +304,7 @@ pub struct SharedState {
 }
 
 impl SharedState {
+    #[must_use]
     pub fn new(state: MockState) -> Self {
         Self { inner: Arc::new(RwLock::new(state)) }
     }
@@ -309,6 +317,7 @@ impl SharedState {
         self.inner.write().await
     }
 
+    #[must_use]
     pub fn clone_inner(&self) -> Arc<RwLock<MockState>> {
         Arc::clone(&self.inner)
     }

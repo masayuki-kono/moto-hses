@@ -10,6 +10,10 @@ pub const FILE_CONTROL_PORT: u16 = 10041;
 pub trait Command {
     type Response;
     fn command_id() -> u16;
+    /// Serialize the command to byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError` if serialization fails
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
     fn instance(&self) -> u16;
     fn attribute(&self) -> u8;
@@ -18,20 +22,28 @@ pub trait Command {
 
 pub trait VariableType: Send + Sync + 'static {
     fn command_id() -> u16;
+    /// Serialize the variable to byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError` if serialization fails
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
+    /// Deserialize the variable from byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError` if deserialization fails
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>
     where
         Self: Sized;
 }
 
 // Basic enums
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Division {
     Robot = 1,
     File = 2,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Service {
     GetSingle = 0x0e,
     SetSingle = 0x10,
@@ -41,7 +53,7 @@ pub enum Service {
     WriteMultiple = 0x34,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CoordinateSystem {
     Base,
     Robot,
@@ -49,7 +61,7 @@ pub enum CoordinateSystem {
     User(u8),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CoordinateSystemType {
     RobotPulse = 0,
     BasePulse = 1,
@@ -96,7 +108,7 @@ impl<T: VariableType> Command for ReadVar<T> {
         Ok(Vec::new())
     }
     fn instance(&self) -> u16 {
-        self.index as u16 // Variable number (0-99 for byte, 0-999 for int/real)
+        u16::from(self.index) // Variable number (0-99 for byte, 0-999 for int/real)
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
@@ -115,7 +127,7 @@ impl<T: VariableType> Command for WriteVar<T> {
         self.value.serialize()
     }
     fn instance(&self) -> u16 {
-        self.index as u16 // Variable number (0-99 for byte, 0-999 for int/real)
+        u16::from(self.index) // Variable number (0-99 for byte, 0-999 for int/real)
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
@@ -150,7 +162,7 @@ impl Command for WriteIo {
         0x78
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let value = if self.value { 1 } else { 0 };
+        let value = u8::from(self.value);
         Ok(vec![value, 0, 0, 0])
     }
     fn instance(&self) -> u16 {
@@ -281,7 +293,7 @@ impl Command for ReadCurrentPosition {
         Ok(Vec::new())
     }
     fn instance(&self) -> u16 {
-        self.control_group as u16 // Control group (1-2 for R1-R2, 11-12 for B1-B2, etc.)
+        u16::from(self.control_group) // Control group (1-2 for R1-R2, 11-12 for B1-B2, etc.)
     }
     fn attribute(&self) -> u8 {
         1 // Data type (default)
@@ -326,6 +338,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_var_command() {
         let read_cmd = ReadVar::<u8> { index: 1, _phantom: PhantomData };
         assert_eq!(ReadVar::<u8>::command_id(), 0x7a); // ByteVar command ID
@@ -334,6 +347,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_write_var_command() {
         let write_cmd = WriteVar::<u8> { index: 1, value: 42 };
         assert_eq!(WriteVar::<u8>::command_id(), 0x7a); // ByteVar command ID
@@ -342,6 +356,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_status_command() {
         let read_status = ReadStatus;
         assert_eq!(ReadStatus::command_id(), 0x72);
@@ -350,6 +365,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_current_position_command() {
         let read_pos = ReadCurrentPosition {
             control_group: 1,
@@ -361,6 +377,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization() {
         let value: u8 = 42;
         let serialized = value.serialize().unwrap();
@@ -369,6 +386,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization_i32() {
         let value: i32 = 12345;
         let serialized = value.serialize().unwrap();
@@ -377,6 +395,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization_f32() {
         let value: f32 = std::f32::consts::PI;
         let serialized = value.serialize().unwrap();
@@ -385,6 +404,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_status_data1_command() {
         let read_status_data1 = ReadStatusData1;
         assert_eq!(ReadStatusData1::command_id(), 0x72);
@@ -395,6 +415,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_status_data2_command() {
         let read_status_data2 = ReadStatusData2;
         assert_eq!(ReadStatusData2::command_id(), 0x72);
@@ -406,14 +427,14 @@ mod tests {
 }
 
 /// Hold/Servo On/off Command (0x83)
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HoldServoControl {
     pub control_type: HoldServoType,
     pub value: HoldServoValue,
 }
 
 /// Type of Hold/Servo control
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HoldServoType {
     Hold = 1,
     ServoOn = 2,
@@ -421,7 +442,7 @@ pub enum HoldServoType {
 }
 
 /// ON/OFF value for Hold/Servo control
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HoldServoValue {
     On = 1,
     Off = 2,
@@ -429,37 +450,44 @@ pub enum HoldServoValue {
 
 impl HoldServoControl {
     /// Create a new Hold/Servo control command
-    pub fn new(control_type: HoldServoType, value: HoldServoValue) -> Self {
+    #[must_use]
+    pub const fn new(control_type: HoldServoType, value: HoldServoValue) -> Self {
         Self { control_type, value }
     }
 
     /// Create HOLD ON command
-    pub fn hold_on() -> Self {
+    #[must_use]
+    pub const fn hold_on() -> Self {
         Self::new(HoldServoType::Hold, HoldServoValue::On)
     }
 
     /// Create HOLD OFF command
-    pub fn hold_off() -> Self {
+    #[must_use]
+    pub const fn hold_off() -> Self {
         Self::new(HoldServoType::Hold, HoldServoValue::Off)
     }
 
     /// Create Servo ON command
-    pub fn servo_on() -> Self {
+    #[must_use]
+    pub const fn servo_on() -> Self {
         Self::new(HoldServoType::ServoOn, HoldServoValue::On)
     }
 
     /// Create Servo OFF command
-    pub fn servo_off() -> Self {
+    #[must_use]
+    pub const fn servo_off() -> Self {
         Self::new(HoldServoType::ServoOn, HoldServoValue::Off)
     }
 
     /// Create HLOCK ON command
-    pub fn hlock_on() -> Self {
+    #[must_use]
+    pub const fn hlock_on() -> Self {
         Self::new(HoldServoType::HLock, HoldServoValue::On)
     }
 
     /// Create HLOCK OFF command
-    pub fn hlock_off() -> Self {
+    #[must_use]
+    pub const fn hlock_off() -> Self {
         Self::new(HoldServoType::HLock, HoldServoValue::Off)
     }
 }
@@ -495,6 +523,7 @@ mod hold_servo_tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hold_servo_control_serialization() {
         let hold_on = HoldServoControl::hold_on();
         assert_eq!(hold_on.instance(), 1);

@@ -96,7 +96,7 @@ impl VariableType for Vec<u8> {
         padded_data[..copy_len].copy_from_slice(&data[..copy_len]);
 
         // Remove trailing null bytes for cleaner API
-        let trimmed_len = padded_data.iter().rposition(|&b| b != 0).map(|i| i + 1).unwrap_or(0);
+        let trimmed_len = padded_data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
 
         // If all bytes are null, return empty vector
         if trimmed_len == 0 { Ok(vec![]) } else { Ok(padded_data[..trimmed_len].to_vec()) }

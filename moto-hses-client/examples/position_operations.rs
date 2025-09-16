@@ -1,9 +1,12 @@
+use log::info;
 use moto_hses_client::{ClientConfig, HsesClient};
 use moto_hses_proto::{CoordinateSystemType, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
 
@@ -11,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
             let robot_port: u16 =
-                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {robot_port}"))?;
 
             (host.to_string(), robot_port)
         }
@@ -21,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    println!("HSES Client Position Operations Example");
-    println!("Connecting to controller at: {}:{}", host, robot_port);
+    info!("HSES Client Position Operations Example");
+    info!("Connecting to controller at: {host}:{robot_port}");
 
     // Create custom configuration
     let config = ClientConfig {
@@ -37,120 +40,120 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Connect to the controller
     let client = match HsesClient::new_with_config(config).await {
         Ok(client) => {
-            println!("✓ Successfully connected to controller");
+            info!("✓ Successfully connected to controller");
             client
         }
         Err(e) => {
-            eprintln!("✗ Failed to connect: {}", e);
+            info!("✗ Failed to connect: {e}");
             return Ok(());
         }
     };
 
     // Read current position in different coordinate systems
-    println!("\n--- Current Position Reading ---");
+    info!("\n--- Current Position Reading ---");
 
     // Read position in robot pulse coordinates
     match client.read_position(1, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
-            println!("✓ Robot pulse position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ Robot pulse position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read robot pulse position: {}", e);
+            info!("✗ Failed to read robot pulse position: {e}");
         }
     }
 
     // Read position in base pulse coordinates
     match client.read_position(1, CoordinateSystemType::BasePulse).await {
         Ok(position) => {
-            println!("✓ Base pulse position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ Base pulse position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read base pulse position: {}", e);
+            info!("✗ Failed to read base pulse position: {e}");
         }
     }
 
     // Read position in station pulse coordinates
     match client.read_position(1, CoordinateSystemType::StationPulse).await {
         Ok(position) => {
-            println!("✓ Station pulse position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ Station pulse position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read station pulse position: {}", e);
+            info!("✗ Failed to read station pulse position: {e}");
         }
     }
 
     // Read position in robot cartesian coordinates
     match client.read_position(1, CoordinateSystemType::RobotCartesian).await {
         Ok(position) => {
-            println!("✓ Robot cartesian position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ Robot cartesian position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read robot cartesian position: {}", e);
+            info!("✗ Failed to read robot cartesian position: {e}");
         }
     }
 
     // Read position for different control groups
-    println!("\n--- Different Control Groups ---");
+    info!("\n--- Different Control Groups ---");
 
     // Read position for control group 1 (R1)
     match client.read_position(1, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
-            println!("✓ R1 position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ R1 position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read R1 position: {}", e);
+            info!("✗ Failed to read R1 position: {e}");
         }
     }
 
     // Read position for control group 2 (R2)
     match client.read_position(2, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
-            println!("✓ R2 position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ R2 position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read R2 position: {}", e);
+            info!("✗ Failed to read R2 position: {e}");
         }
     }
 
     // Read position for base control group 1 (B1)
     match client.read_position(11, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
-            println!("✓ B1 position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ B1 position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read B1 position: {}", e);
+            info!("✗ Failed to read B1 position: {e}");
         }
     }
 
     // Read position for base control group 2 (B2)
     match client.read_position(12, CoordinateSystemType::RobotPulse).await {
         Ok(position) => {
-            println!("✓ B2 position read successfully");
-            println!("  Position: {:?}", position);
+            info!("✓ B2 position read successfully");
+            info!("  Position: {position:?}");
         }
         Err(e) => {
-            eprintln!("✗ Failed to read B2 position: {}", e);
+            info!("✗ Failed to read B2 position: {e}");
         }
     }
 
     // Continuous position monitoring example
-    println!("\n--- Continuous Position Monitoring ---");
-    println!("Monitoring position for 5 seconds...");
+    info!("\n--- Continuous Position Monitoring ---");
+    info!("Monitoring position for 5 seconds...");
 
     for i in 1..=5 {
         match client.read_position(1, CoordinateSystemType::RobotPulse).await {
             Ok(position) => {
-                println!("  [{}s] Position: {:?}", i, position);
+                info!("  [{i}s] Position: {position:?}");
             }
             Err(e) => {
-                eprintln!("  [{}s] Failed to read position: {}", i, e);
+                info!("  [{i}s] Failed to read position: {e}");
             }
         }
 
@@ -159,6 +162,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("\n--- Position Operations Example completed successfully ---");
+    info!("\n--- Position Operations Example completed successfully ---");
     Ok(())
 }

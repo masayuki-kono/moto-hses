@@ -5,7 +5,7 @@ use crate::state::MockState;
 use moto_hses_proto as proto;
 
 /// Validate I/O number range according to HSES protocol specification
-fn is_valid_io_number(io_number: u16) -> bool {
+const fn is_valid_io_number(io_number: u16) -> bool {
     matches!(
         io_number,
         1..=128 |           // Robot user input
@@ -43,7 +43,7 @@ impl CommandHandler for IoHandler {
         match service {
             0x0e => {
                 // Read
-                let value = if state.get_io_state(io_number) { 1 } else { 0 };
+                let value = u8::from(state.get_io_state(io_number));
                 Ok(vec![value, 0, 0, 0])
             }
             0x10 => {

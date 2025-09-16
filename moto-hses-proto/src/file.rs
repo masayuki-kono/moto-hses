@@ -39,7 +39,8 @@ pub struct SendFile {
 }
 
 impl SendFile {
-    pub fn new(filename: String, content: Vec<u8>) -> Self {
+    #[must_use]
+    pub const fn new(filename: String, content: Vec<u8>) -> Self {
         Self { filename, content }
     }
 }
@@ -78,7 +79,8 @@ pub struct ReceiveFile {
 }
 
 impl ReceiveFile {
-    pub fn new(filename: String) -> Self {
+    #[must_use]
+    pub const fn new(filename: String) -> Self {
         Self { filename }
     }
 }
@@ -116,7 +118,8 @@ pub struct DeleteFile {
 }
 
 impl DeleteFile {
-    pub fn new(filename: String) -> Self {
+    #[must_use]
+    pub const fn new(filename: String) -> Self {
         Self { filename }
     }
 }
@@ -149,26 +152,38 @@ impl Command for DeleteFile {
 
 /// File operation response parsers
 pub mod response {
-    use super::*;
+    use super::ProtocolError;
 
     /// Parse file list response
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parsing fails
     pub fn parse_file_list(data: &[u8]) -> Result<Vec<String>, ProtocolError> {
         let content = String::from_utf8_lossy(data);
-        let files: Vec<String> =
-            content.split('\0').filter(|s| !s.is_empty()).map(|s| s.to_string()).collect();
+        let files: Vec<String> = content
+            .split('\0')
+            .filter(|s| !s.is_empty())
+            .map(std::string::ToString::to_string)
+            .collect();
         Ok(files)
     }
 
     /// Parse file content response
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parsing fails
     pub fn parse_file_content(data: &[u8]) -> Result<Vec<u8>, ProtocolError> {
         // Extract file content from response
         // Response format: filename\0content
-        if let Some(null_pos) = data.iter().position(|&b| b == 0) {
-            let content = data[null_pos + 1..].to_vec();
-            Ok(content)
-        } else {
-            Ok(data.to_vec())
-        }
+        data.iter().position(|&b| b == 0).map_or_else(
+            || Ok(data.to_vec()),
+            |null_pos| {
+                let content = data[null_pos + 1..].to_vec();
+                Ok(content)
+            },
+        )
     }
 }
 
@@ -177,6 +192,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_file_list_serialization() {
         let cmd = ReadFileList;
         let data = cmd.serialize().unwrap();
@@ -184,6 +200,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_file_list_deserialization() {
         let data = b"file1.job\0file2.job\0";
         let files = response::parse_file_list(data).unwrap();
@@ -191,6 +208,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_send_file_serialization() {
         let cmd = SendFile::new("test.job".to_string(), b"content".to_vec());
         let data = cmd.serialize().unwrap();
@@ -199,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_receive_file_serialization() {
         let cmd = ReceiveFile::new("test.job".to_string());
         let data = cmd.serialize().unwrap();
@@ -207,6 +226,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_receive_file_deserialization() {
         let data = b"test.job\0file content";
         let content = response::parse_file_content(data).unwrap();
@@ -214,6 +234,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_delete_file_serialization() {
         let cmd = DeleteFile::new("test.job".to_string());
         let data = cmd.serialize().unwrap();

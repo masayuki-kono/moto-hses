@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for read executing job info operations
 
 use crate::common::{
@@ -78,16 +79,13 @@ test_with_logging!(test_read_task_types, {
 
     // Test different task types (1-6)
     for task_type in 1..=6 {
-        let job_info = client
-            .read_executing_job_info(task_type, 1)
-            .await
-            .unwrap_or_else(|_| panic!("Failed to read task type {}", task_type));
+        let job_info =
+            client.read_executing_job_info(task_type, 1).await.expect("Failed to read task type");
 
         // Verify job name matches expected value for all task types
         assert_eq!(
             job_info.job_name, "TEST_JOB",
-            "Job name should match expected value for task type {}",
-            task_type
+            "Job name should match expected value for task type {task_type}"
         );
     }
 });

@@ -18,7 +18,7 @@ fn handle_alarm_service_request(
         }
         0x0E => {
             // Service = 0x0E (Get_Attribute_Single) - Return specific attribute data
-            get_alarm_attribute_data(alarm, attribute)
+            Ok(get_alarm_attribute_data(alarm, attribute))
         }
         _ => {
             // Invalid service - return empty data
@@ -28,19 +28,19 @@ fn handle_alarm_service_request(
 }
 
 /// Common helper function to get specific alarm attribute data
-fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Result<Vec<u8>, proto::ProtocolError> {
+fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Vec<u8> {
     match attribute {
         1 => {
             // Alarm code (4 bytes)
-            Ok(alarm.code.to_le_bytes().to_vec())
+            alarm.code.to_le_bytes().to_vec()
         }
         2 => {
             // Alarm data (4 bytes)
-            Ok(alarm.data.to_le_bytes().to_vec())
+            alarm.data.to_le_bytes().to_vec()
         }
         3 => {
             // Alarm type (4 bytes)
-            Ok(alarm.alarm_type.to_le_bytes().to_vec())
+            alarm.alarm_type.to_le_bytes().to_vec()
         }
         4 => {
             // Alarm time (16 bytes)
@@ -48,7 +48,7 @@ fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Result<Vec<u8>, pro
             let mut padded_time = vec![0u8; 16];
             padded_time[..time_bytes.len().min(16)]
                 .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
-            Ok(padded_time)
+            padded_time
         }
         5 => {
             // Alarm name (32 bytes)
@@ -56,11 +56,11 @@ fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Result<Vec<u8>, pro
             let mut padded_name = vec![0u8; 32];
             padded_name[..name_bytes.len().min(32)]
                 .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
-            Ok(padded_name)
+            padded_name
         }
         _ => {
             // Invalid attribute - return empty data
-            Ok(vec![0u8; 4])
+            vec![0u8; 4]
         }
     }
 }
@@ -127,12 +127,13 @@ impl CommandHandler for AlarmInfoHandler {
         let index = alarm_history_cmd.get_alarm_index();
 
         // Get alarm from history
-        if let Some(alarm) = state.alarm_history.get_alarm(category, index) {
-            handle_alarm_service_request(alarm, service, attribute)
-        } else {
-            // No alarm found at this index - return empty data
-            Ok(vec![0u8; 4])
-        }
+        state.alarm_history.get_alarm(category, index).map_or_else(
+            || {
+                // No alarm found at this index - return empty data
+                Ok(vec![0u8; 4])
+            },
+            |alarm| handle_alarm_service_request(alarm, service, attribute),
+        )
     }
 }
 

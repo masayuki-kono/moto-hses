@@ -1,5 +1,8 @@
 //! moto-hses-client - HSES (High Speed Ethernet Server) client implementation
 
+#[macro_use]
+extern crate log;
+
 pub mod connection;
 pub mod convenience;
 pub mod protocol;

@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for position operations
 
 use crate::common::{
@@ -7,14 +8,14 @@ use crate::common::{
 use crate::test_with_logging;
 
 test_with_logging!(test_read_robot_pulse_position, {
-    log::info!("Creating position test server...");
+    log::debug!("Creating position test server...");
     let _server =
         create_position_test_server().await.expect("Failed to start position test server");
-    log::info!("Position test server started successfully");
+    log::debug!("Position test server started successfully");
 
-    log::info!("Creating test client...");
+    log::debug!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
-    log::info!("Client created successfully");
+    log::debug!("Client created successfully");
 
     let position = client
         .read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse)
@@ -31,14 +32,15 @@ test_with_logging!(test_read_robot_pulse_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "Position value at axis {} should be {}",
-                    i, expected
+                    "Position value at axis {i} should be {expected}"
                 );
             }
 
             assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -62,14 +64,15 @@ test_with_logging!(test_read_base_pulse_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "Base pulse position value at axis {} should be {}",
-                    i, expected
+                    "Base pulse position value at axis {i} should be {expected}"
                 );
             }
 
             assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -93,14 +96,15 @@ test_with_logging!(test_read_station_pulse_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "Station pulse position value at axis {} should be {}",
-                    i, expected
+                    "Station pulse position value at axis {i} should be {expected}"
                 );
             }
 
             assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -134,8 +138,7 @@ test_with_logging!(test_read_robot_cartesian_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "Pulse position value at axis {} should be {}",
-                    i, expected
+                    "Pulse position value at axis {i} should be {expected}"
                 );
             }
         }
@@ -159,13 +162,14 @@ test_with_logging!(test_read_r1_position, {
 
             for (i, &value) in pulse_pos.joints.iter().enumerate() {
                 assert!(
-                    value >= -2147483648,
-                    "R1 position value at index {} should be within i32 range",
-                    i
+                    value >= -2_147_483_648,
+                    "R1 position value at index {i} should be within i32 range"
                 );
             }
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -186,13 +190,14 @@ test_with_logging!(test_read_r2_position, {
 
             for (i, &value) in pulse_pos.joints.iter().enumerate() {
                 assert!(
-                    value >= -2147483648,
-                    "R2 position value at index {} should be within i32 range",
-                    i
+                    value >= -2_147_483_648,
+                    "R2 position value at index {i} should be within i32 range"
                 );
             }
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -216,14 +221,15 @@ test_with_logging!(test_read_b1_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "B1 position value at axis {} should be {}",
-                    i, expected
+                    "B1 position value at axis {i} should be {expected}"
                 );
             }
 
             assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -247,14 +253,15 @@ test_with_logging!(test_read_b2_position, {
             for (i, &expected) in expected_values.iter().enumerate() {
                 assert_eq!(
                     pulse_pos.joints[i], expected,
-                    "B2 position value at axis {} should be {}",
-                    i, expected
+                    "B2 position value at axis {i} should be {expected}"
                 );
             }
 
             assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
-        _ => panic!("Expected pulse position type"),
+        moto_hses_proto::Position::Cartesian(_) => {
+            unreachable!("Expected pulse position type");
+        }
     }
 });
 
@@ -265,11 +272,11 @@ test_with_logging!(test_continuous_position_monitoring, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test position monitoring for 5 seconds (as per legacy example)
-    log::info!("Monitoring position for 5 seconds...");
+    log::debug!("Monitoring position for 5 seconds...");
     for i in 1..=5 {
         match client.read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse).await {
             Ok(position) => {
-                log::info!("  [{}s] Position: {:?}", i, position);
+                log::debug!("  [{i}s] Position: {position:?}");
 
                 // Verify position data matches expected values
                 match position {
@@ -281,19 +288,20 @@ test_with_logging!(test_continuous_position_monitoring, {
                         for (i, &expected) in expected_values.iter().enumerate() {
                             assert_eq!(
                                 pulse_pos.joints[i], expected,
-                                "Position value at axis {} should be {}",
-                                i, expected
+                                "Position value at axis {i} should be {expected}"
                             );
                         }
 
                         assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
                     }
-                    _ => panic!("Expected pulse position type"),
+                    moto_hses_proto::Position::Cartesian(_) => {
+                        unreachable!("Expected pulse position type");
+                    }
                 }
             }
             Err(e) => {
-                log::error!("  [{}s] Failed to read position: {}", i, e);
-                panic!("Position reading should succeed during monitoring");
+                log::error!("  [{i}s] Failed to read position: {e}");
+                unreachable!("Position reading should succeed during monitoring");
             }
         }
 
@@ -301,5 +309,5 @@ test_with_logging!(test_continuous_position_monitoring, {
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     }
-    log::info!("Position monitoring completed successfully");
+    log::debug!("Position monitoring completed successfully");
 });
