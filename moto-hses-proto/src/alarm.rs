@@ -17,7 +17,8 @@ pub struct Alarm {
 }
 
 impl Alarm {
-    pub fn new(code: u32, data: u32, alarm_type: u32, time: String, name: String) -> Self {
+    #[must_use]
+    pub const fn new(code: u32, data: u32, alarm_type: u32, time: String, name: String) -> Self {
         Self {
             code,
             data,
@@ -30,6 +31,7 @@ impl Alarm {
         }
     }
 
+    #[must_use]
     pub fn with_sub_code(mut self, info: String, data: String, reverse: String) -> Self {
         self.sub_code_info = info;
         self.sub_code_data = data;
@@ -38,6 +40,9 @@ impl Alarm {
     }
 
     /// Serialize alarm data for response
+    /// # Errors
+    ///
+    /// Returns an error if serialization fails
     pub fn serialize(&self, attribute: u8) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
@@ -103,6 +108,9 @@ impl Alarm {
     }
 
     /// Serialize complete alarm data (all attributes)
+    /// # Errors
+    ///
+    /// Returns an error if serialization fails
     pub fn serialize_complete(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
@@ -169,6 +177,9 @@ impl Default for Alarm {
 
 impl Alarm {
     /// Deserialize alarm data from response
+    /// # Errors
+    ///
+    /// Returns an error if deserialization fails
     pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 60 {
             return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
@@ -186,7 +197,7 @@ impl Alarm {
         let name_end = data[28..60].iter().position(|&b| b == 0).unwrap_or(32);
         let name = String::from_utf8_lossy(&data[28..28 + name_end]).to_string();
 
-        Ok(Alarm {
+        Ok(Self {
             code,
             data: alarm_data,
             alarm_type,
@@ -209,7 +220,7 @@ impl VariableType for Alarm {
     }
 
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Alarm::deserialize(data)
+        Self::deserialize(data)
     }
 }
 
@@ -228,12 +239,14 @@ pub struct ReadAlarmHistory {
 }
 
 impl ReadAlarmHistory {
-    pub fn new(instance: u16, attribute: u8) -> Self {
+    #[must_use]
+    pub const fn new(instance: u16, attribute: u8) -> Self {
         Self { instance, attribute }
     }
 
     /// Validate instance range for alarm history
-    pub fn is_valid_instance(&self) -> bool {
+    #[must_use]
+    pub const fn is_valid_instance(&self) -> bool {
         matches!(
             self.instance,
             1..=100 | 1001..=1100 | 2001..=2100 | 3001..=3100 | 4001..=4100
@@ -241,7 +254,8 @@ impl ReadAlarmHistory {
     }
 
     /// Get alarm category from instance
-    pub fn get_alarm_category(&self) -> AlarmCategory {
+    #[must_use]
+    pub const fn get_alarm_category(&self) -> AlarmCategory {
         match self.instance {
             1..=100 => AlarmCategory::MajorFailure,
             1001..=1100 => AlarmCategory::MonitorAlarm,
@@ -253,7 +267,8 @@ impl ReadAlarmHistory {
     }
 
     /// Get alarm index within category
-    pub fn get_alarm_index(&self) -> usize {
+    #[must_use]
+    pub const fn get_alarm_index(&self) -> usize {
         match self.get_alarm_category() {
             AlarmCategory::MajorFailure => (self.instance - 1) as usize,
             AlarmCategory::MonitorAlarm => (self.instance - 1001) as usize,
@@ -266,7 +281,7 @@ impl ReadAlarmHistory {
 }
 
 /// Alarm categories for history reading
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlarmCategory {
     MajorFailure,    // 1-100
     MonitorAlarm,    // 1001-1100
@@ -277,12 +292,14 @@ pub enum AlarmCategory {
 }
 
 impl ReadAlarmData {
-    pub fn new(instance: u16, attribute: u8) -> Self {
+    #[must_use]
+    pub const fn new(instance: u16, attribute: u8) -> Self {
         Self { instance, attribute }
     }
 
     /// Validate instance range for alarm data
-    pub fn is_valid_instance(&self) -> bool {
+    #[must_use]
+    pub const fn is_valid_instance(&self) -> bool {
         matches!(
             self.instance,
             1..=100 | 1001..=1100 | 2001..=2100 | 3001..=3100 | 4001..=4100
@@ -290,7 +307,8 @@ impl ReadAlarmData {
     }
 
     /// Validate attribute range for alarm data
-    pub fn is_valid_attribute(&self) -> bool {
+    #[must_use]
+    pub const fn is_valid_attribute(&self) -> bool {
         matches!(self.attribute, 0..=8)
     }
 }
@@ -356,7 +374,7 @@ impl Command for ReadAlarmHistory {
 }
 
 /// Alarm attribute types
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlarmAttribute {
     Code = 1,
     Data = 2,
@@ -371,21 +389,20 @@ pub enum AlarmAttribute {
 impl From<u8> for AlarmAttribute {
     fn from(value: u8) -> Self {
         match value {
-            1 => AlarmAttribute::Code,
-            2 => AlarmAttribute::Data,
-            3 => AlarmAttribute::Type,
-            4 => AlarmAttribute::Time,
-            5 => AlarmAttribute::Name,
-            6 => AlarmAttribute::SubCodeInfo,
-            7 => AlarmAttribute::SubCodeData,
-            8 => AlarmAttribute::SubCodeReverse,
-            _ => AlarmAttribute::Code,
+            2 => Self::Data,
+            3 => Self::Type,
+            4 => Self::Time,
+            5 => Self::Name,
+            6 => Self::SubCodeInfo,
+            7 => Self::SubCodeData,
+            8 => Self::SubCodeReverse,
+            _ => Self::Code,
         }
     }
 }
 
 /// Alarm Reset / Error Cancel Command (0x82)
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlarmResetType {
     Reset = 1,  // RESET (Alarm reset)
     Cancel = 2, // CANCEL (Error cancel)
@@ -394,9 +411,8 @@ pub enum AlarmResetType {
 impl From<u16> for AlarmResetType {
     fn from(value: u16) -> Self {
         match value {
-            1 => AlarmResetType::Reset,
-            2 => AlarmResetType::Cancel,
-            _ => AlarmResetType::Reset, // Default to Reset
+            2 => Self::Cancel,
+            _ => Self::Reset, // Default to Reset
         }
     }
 }
@@ -408,17 +424,20 @@ pub struct AlarmReset {
 }
 
 impl AlarmReset {
-    pub fn new(reset_type: AlarmResetType) -> Self {
+    #[must_use]
+    pub const fn new(reset_type: AlarmResetType) -> Self {
         Self { reset_type }
     }
 
     /// Create a reset command
-    pub fn reset() -> Self {
+    #[must_use]
+    pub const fn reset() -> Self {
         Self { reset_type: AlarmResetType::Reset }
     }
 
     /// Create a cancel command
-    pub fn cancel() -> Self {
+    #[must_use]
+    pub const fn cancel() -> Self {
         Self { reset_type: AlarmResetType::Cancel }
     }
 }
@@ -451,8 +470,9 @@ impl Command for AlarmReset {
 
 /// Predefined alarms for testing
 pub mod test_alarms {
-    use super::*;
+    use super::Alarm;
 
+    #[must_use]
     pub fn servo_error() -> Alarm {
         Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Servo Error".to_string())
             .with_sub_code(
@@ -462,10 +482,12 @@ pub mod test_alarms {
             )
     }
 
+    #[must_use]
     pub fn emergency_stop() -> Alarm {
         Alarm::new(2001, 0, 0, "2024/01/01 12:01".to_string(), "Emergency Stop".to_string())
     }
 
+    #[must_use]
     pub fn safety_error() -> Alarm {
         Alarm::new(3001, 2, 2, "2024/01/01 12:02".to_string(), "Safety Error".to_string())
             .with_sub_code(
@@ -475,6 +497,7 @@ pub mod test_alarms {
             )
     }
 
+    #[must_use]
     pub fn communication_error() -> Alarm {
         Alarm::new(4001, 3, 3, "2024/01/01 12:03".to_string(), "Communication Error".to_string())
             .with_sub_code(
@@ -490,6 +513,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_new() {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
@@ -505,6 +529,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_with_sub_code() {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string())
@@ -520,6 +545,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_default() {
         let alarm = Alarm::default();
 
@@ -534,6 +560,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_serialize_complete() {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
@@ -552,6 +579,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_serialize_attribute() {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
@@ -587,6 +615,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_serialize_invalid_attribute() {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
@@ -597,6 +626,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_deserialize() {
         let original_alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
@@ -612,6 +642,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_deserialize_insufficient_data() {
         let short_data = vec![0u8; 10]; // Less than 60 bytes
         let result = Alarm::deserialize(&short_data);
@@ -627,6 +658,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_alarm_data_command_trait() {
         let command = ReadAlarmData::new(2, 5);
 
@@ -639,6 +671,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_variable_type_trait() {
         assert_eq!(Alarm::command_id(), 0x70);
 
@@ -684,6 +717,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_serialize_long_strings() {
         let long_time = "2024/01/01 12:00:00.123456789"; // Longer than 16 bytes
         let long_name = "This is a very long alarm name that exceeds 32 bytes limit"; // Longer than 32 bytes
@@ -704,6 +738,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_read_alarm_history_command_trait() {
         let cmd = ReadAlarmHistory::new(1, 1);
         assert_eq!(ReadAlarmHistory::command_id(), 0x71);
@@ -713,6 +748,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used, clippy::cognitive_complexity)]
     fn test_read_alarm_history_instance_validation() {
         // Valid instances
         assert!(ReadAlarmHistory::new(1, 1).is_valid_instance());
@@ -878,6 +914,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_reset_command_trait() {
         let reset_cmd = AlarmReset::reset();
         let cancel_cmd = AlarmReset::cancel();
@@ -907,6 +944,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_alarm_reset_serialization() {
         let reset_cmd = AlarmReset::reset();
         let payload = reset_cmd.serialize().unwrap();
@@ -926,7 +964,7 @@ mod tests {
         assert_eq!(reset_cmd.reset_type, cloned_cmd.reset_type);
 
         // Test Debug trait
-        let debug_str = format!("{:?}", reset_cmd);
+        let debug_str = format!("{reset_cmd:?}");
         assert!(debug_str.contains("AlarmReset"));
         assert!(debug_str.contains("Reset"));
     }

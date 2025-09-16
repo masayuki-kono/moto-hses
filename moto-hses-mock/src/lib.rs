@@ -1,5 +1,8 @@
 //! moto-hses-mock - Local mock HSES UDP server for testing
 
+#[macro_use]
+extern crate log;
+
 use moto_hses_proto as proto;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -29,7 +32,7 @@ pub struct MockConfig {
 }
 
 impl MockConfig {
-    /// Create a new MockConfig with specified host and ports
+    /// Create a new `MockConfig` with specified host and ports
     pub fn new(host: impl Into<String>, robot_port: u16, file_port: u16) -> Self {
         let mut registers = HashMap::new();
         registers.insert(0, 0);
@@ -85,23 +88,33 @@ impl MockConfig {
     }
 
     /// Get robot control socket address
-    pub fn robot_addr(&self) -> SocketAddr {
-        format!("{}:{}", self.host, self.robot_port).parse().unwrap()
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the address format is invalid
+    pub fn robot_addr(&self) -> Result<SocketAddr, std::net::AddrParseError> {
+        format!("{host}:{port}", host = self.host, port = self.robot_port).parse()
     }
 
     /// Get file control socket address
-    pub fn file_addr(&self) -> SocketAddr {
-        format!("{}:{}", self.host, self.file_port).parse().unwrap()
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the address format is invalid
+    pub fn file_addr(&self) -> Result<SocketAddr, std::net::AddrParseError> {
+        format!("{host}:{port}", host = self.host, port = self.file_port).parse()
     }
 
     /// Get robot control socket address as string
+    #[must_use]
     pub fn robot_addr_string(&self) -> String {
-        format!("{}:{}", self.host, self.robot_port)
+        format!("{host}:{port}", host = self.host, port = self.robot_port)
     }
 
     /// Get file control socket address as string
+    #[must_use]
     pub fn file_addr_string(&self) -> String {
-        format!("{}:{}", self.host, self.file_port)
+        format!("{host}:{port}", host = self.host, port = self.file_port)
     }
 }
 
@@ -117,10 +130,13 @@ impl Default for MockConfig {
 
 /// Test utilities for mock server
 pub mod test_utils {
-    use super::*;
+    use super::{MockConfig, MockServer, SocketAddr};
     use tokio::time::{Duration, sleep};
 
     /// Start a mock server for testing
+    /// # Errors
+    ///
+    /// Returns an error if server creation fails
     pub async fn start_test_server()
     -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
     {
@@ -142,7 +158,7 @@ pub mod test_utils {
 
         let handle = tokio::spawn(async move {
             if let Err(e) = server.run().await {
-                eprintln!("Mock server error: {}", e);
+                error!("Mock server error: {e}");
             }
         });
 
@@ -153,12 +169,15 @@ pub mod test_utils {
     }
 
     /// Create a test client connected to mock server
-    pub async fn create_test_client(
+    /// # Errors
+    ///
+    /// Returns an error if client creation fails
+    pub fn create_test_client(
         addr: SocketAddr,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Note: This would require the client to be available
         // For now, just return a placeholder
-        eprintln!("Test client would connect to {}", addr);
+        info!("Test client would connect to {addr}");
         Ok(())
     }
 }

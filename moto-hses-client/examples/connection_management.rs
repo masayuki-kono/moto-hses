@@ -1,10 +1,12 @@
+use log::info;
 use moto_hses_client::{ClientConfig, ClientError, HsesClient};
 use moto_hses_proto::ROBOT_CONTROL_PORT;
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("HSES Client Connection Management Example");
+    env_logger::init();
+    info!("HSES Client Connection Management Example");
 
     // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
@@ -13,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
             let robot_port: u16 =
-                robot_port.parse().map_err(|_| format!("Invalid robot port: {}", robot_port))?;
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {robot_port}"))?;
 
             (host.to_string(), robot_port)
         }
@@ -23,8 +25,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let controller_addr = format!("{}:{}", host, robot_port);
-    println!("Target controller: {}", controller_addr);
+    let controller_addr = format!("{host}:{robot_port}");
+    info!("Target controller: {controller_addr}");
 
     // Create configuration with aggressive retry settings
     let config = ClientConfig {
@@ -37,61 +39,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Attempt to connect with error handling
-    println!("\n--- Connection Attempt ---");
+    info!("\n--- Connection Attempt ---");
     let client = match HsesClient::new_with_config(config).await {
         Ok(client) => {
-            println!("✓ Successfully connected to controller");
+            info!("✓ Successfully connected to controller");
             client
         }
         Err(ClientError::ConnectionFailed(retries)) => {
-            eprintln!("✗ Connection failed after {} retries", retries);
-            eprintln!("  Please check:");
-            eprintln!("    - Controller is powered on");
-            eprintln!("    - Network connectivity");
-            eprintln!("    - HSES is enabled on controller");
-            eprintln!("    - Firewall settings");
+            info!("✗ Connection failed after {retries} retries");
+            info!("  Please check:");
+            info!("    - Controller is powered on");
+            info!("    - Network connectivity");
+            info!("    - HSES is enabled on controller");
+            info!("    - Firewall settings");
             return Ok(());
         }
         Err(ClientError::SystemError(msg)) => {
-            eprintln!("✗ System error: {}", msg);
+            info!("✗ System error: {msg}");
             return Ok(());
         }
         Err(e) => {
-            eprintln!("✗ Unexpected error: {}", e);
+            info!("✗ Unexpected error: {e}");
             return Ok(());
         }
     };
 
     // Verify connection status
-    println!("\n--- Connection Status ---");
-    println!("✓ Client created successfully");
+    info!("\n--- Connection Status ---");
+    info!("✓ Client created successfully");
 
     // Test basic communication
-    println!("\n--- Communication Test ---");
+    info!("\n--- Communication Test ---");
     match client.read_status().await {
         Ok(status) => {
-            println!("✓ Communication successful");
-            println!("  Robot running: {}", status.is_running());
-            println!("  Servo on: {}", status.is_servo_on());
+            info!("✓ Communication successful");
+            info!("  Robot running: {}", status.is_running());
+            info!("  Servo on: {}", status.is_servo_on());
         }
         Err(ClientError::TimeoutError(_)) => {
-            eprintln!("✗ Communication timeout - robot may be busy or network slow");
+            info!("✗ Communication timeout - robot may be busy or network slow");
         }
         Err(ClientError::ProtocolError(e)) => {
-            eprintln!("✗ Protocol error: {}", e);
+            info!("✗ Protocol error: {e}");
         }
         Err(e) => {
-            eprintln!("✗ Communication failed: {}", e);
+            info!("✗ Communication failed: {e}");
         }
     }
 
     // Demonstrate reconnection
-    println!("\n--- Reconnection Test ---");
-    println!("UDP is connectionless, so reconnection is not applicable");
-    println!("✓ Client is ready for communication");
+    info!("\n--- Reconnection Test ---");
+    info!("UDP is connectionless, so reconnection is not applicable");
+    info!("✓ Client is ready for communication");
 
     // Test connection with invalid address
-    println!("\n--- Invalid Address Test ---");
+    info!("\n--- Invalid Address Test ---");
     let invalid_config = ClientConfig {
         host: "192.168.999.999".to_string(), // Invalid IP address
         port: ROBOT_CONTROL_PORT,
@@ -103,19 +105,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match HsesClient::new_with_config(invalid_config).await {
         Ok(_) => {
-            println!("✓ Unexpectedly connected to invalid address");
+            info!("✓ Unexpectedly connected to invalid address");
         }
         Err(ClientError::ConnectionFailed(_)) => {
-            println!("✓ Correctly failed to connect to invalid address");
+            info!("✓ Correctly failed to connect to invalid address");
         }
         Err(ClientError::SystemError(_)) => {
-            println!("✓ Correctly failed to parse invalid address");
+            info!("✓ Correctly failed to parse invalid address");
         }
         Err(e) => {
-            println!("✓ Failed as expected: {}", e);
+            info!("✓ Failed as expected: {e}");
         }
     }
 
-    println!("\n--- Connection management example completed ---");
+    info!("\n--- Connection management example completed ---");
     Ok(())
 }

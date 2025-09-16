@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::float_cmp)]
 // Integration tests for variable operations
 
 use crate::common::{

@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for alarm operations
 
 use crate::common::{
@@ -11,7 +12,7 @@ test_with_logging!(test_complete_alarm_data, {
     log::info!("Creating alarm test server...");
     let _server = create_alarm_test_server().await.expect("Failed to start mock server");
 
-    log::info!("Creating test client...");
+    log::debug!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
 
     log::info!("Reading complete alarm data for instance 1, attribute 0...");
@@ -122,7 +123,7 @@ test_with_logging!(test_alarm_instances, {
         let alarm_instance = client
             .read_alarm_data(instance, 0) // Read complete alarm data
             .await
-            .unwrap_or_else(|_| panic!("Failed to read alarm instance {}", instance));
+            .expect("Failed to read alarm instance");
 
         log::info!(
             "Alarm instance {}: Code={}, Name={}",
@@ -134,13 +135,11 @@ test_with_logging!(test_alarm_instances, {
         // Verify expected values
         assert_eq!(
             alarm_instance.code, expected_code,
-            "Alarm instance {} code should match expected value {}",
-            instance, expected_code
+            "Alarm instance {instance} code should match expected value {expected_code}"
         );
         assert_eq!(
             alarm_instance.name, expected_name,
-            "Alarm instance {} name should match expected value '{}'",
-            instance, expected_name
+            "Alarm instance {instance} name should match expected value '{expected_name}'"
         );
     }
 
@@ -169,13 +168,13 @@ test_with_logging!(test_alarm_history_major_failure, {
         let alarm_history_code = client
             .read_alarm_history(instance, AlarmAttribute::Code as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read major failure alarm code {}", instance));
+            .expect("Failed to read major failure alarm code");
 
         // Test alarm history name
         let alarm_history_name = client
             .read_alarm_history(instance, AlarmAttribute::Name as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read major failure alarm name {}", instance));
+            .expect("Failed to read major failure alarm name");
 
         log::info!(
             "Major failure alarm {}: Code={}, Name={}",
@@ -187,13 +186,11 @@ test_with_logging!(test_alarm_history_major_failure, {
         // Verify expected values
         assert_eq!(
             alarm_history_code.code, expected_code,
-            "Major failure alarm {} code should match expected value {}",
-            instance, expected_code
+            "Major failure alarm {instance} code should match expected value {expected_code}"
         );
         assert_eq!(
             alarm_history_name.name, expected_name,
-            "Major failure alarm {} name should match expected value '{}'",
-            instance, expected_name
+            "Major failure alarm {instance} name should match expected value '{expected_name}'"
         );
     }
 
@@ -217,7 +214,7 @@ test_with_logging!(test_alarm_history_monitor, {
         let alarm_history = client
             .read_alarm_history(instance, AlarmAttribute::Name as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read monitor alarm {}", instance));
+            .expect("Failed to read monitor alarm");
 
         if alarm_history.code != 0 {
             log::info!(
@@ -229,21 +226,18 @@ test_with_logging!(test_alarm_history_monitor, {
             // If there's an alarm, verify it has valid data
             assert!(
                 alarm_history.code > 0,
-                "Monitor alarm {} should have positive code if not 'No alarm'",
-                instance
+                "Monitor alarm {instance} should have positive code if not 'No alarm'"
             );
             assert!(
                 !alarm_history.name.is_empty(),
-                "Monitor alarm {} should have non-empty name if not 'No alarm'",
-                instance
+                "Monitor alarm {instance} should have non-empty name if not 'No alarm'"
             );
         } else {
-            log::info!("Monitor alarm {}: No alarm", instance);
+            log::info!("Monitor alarm {instance}: No alarm");
             // If no alarm, verify it's properly handled
             assert_eq!(
                 alarm_history.code, 0,
-                "Monitor alarm {} should have code 0 when 'No alarm'",
-                instance
+                "Monitor alarm {instance} should have code 0 when 'No alarm'"
             );
         }
     }
@@ -388,7 +382,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _instance = client
             .read_alarm_data(i, 0) // Read complete alarm data
             .await
-            .unwrap_or_else(|_| panic!("Failed to read alarm instance {}", i));
+            .expect("Failed to read alarm instance");
     }
 
     // Test alarm history - major failure alarms
@@ -396,7 +390,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _major_failure = client
             .read_alarm_history(i, AlarmAttribute::Code as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read major failure alarm {}", i));
+            .expect("Failed to read major failure alarm");
     }
 
     // Test alarm history - monitor alarms
@@ -404,7 +398,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
         let _monitor_alarm = client
             .read_alarm_history(i, AlarmAttribute::Name as u8)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read monitor alarm {}", i));
+            .expect("Failed to read monitor alarm");
     }
 
     // Test alarm history attributes

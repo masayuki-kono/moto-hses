@@ -70,7 +70,10 @@ impl CommandHandler for TorqueHandler {
 
         // Set some default torque values
         for i in 0..7 {
-            data[i * 4..(i + 1) * 4].copy_from_slice(&(i as i32 * 100).to_le_bytes());
+            let value = i32::try_from(i).map_err(|_| {
+                proto::ProtocolError::InvalidMessage("Invalid axis value".to_string())
+            })?;
+            data[i * 4..(i + 1) * 4].copy_from_slice(&(value * 100).to_le_bytes());
         }
 
         Ok(data)

@@ -1,17 +1,21 @@
+#![allow(clippy::expect_used)]
 // Mock server setup utilities for integration tests
 
 use crate::common::test_logging;
+use log::error;
 use moto_hses_mock::{MockConfig, MockServer, server::MockServerBuilder};
 use moto_hses_proto::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// Create a new MockServerManager with default settings
+/// Create a new `MockServerManager` with default settings
+#[must_use]
 pub fn create_test_server() -> MockServerManager {
     MockServerManager::new()
 }
 
-/// Create a new MockServerManager with custom host
+/// Create a new `MockServerManager` with custom host
+#[must_use]
 pub fn create_test_server_with_host(host: &str) -> MockServerManager {
     MockServerManager::new_with_host(host.to_string())
 }
@@ -30,7 +34,8 @@ impl Default for MockServerManager {
 }
 
 impl MockServerManager {
-    /// Create a new MockServerManager with default host and ports
+    /// Create a new `MockServerManager` with default host and ports
+    #[must_use]
     pub fn new() -> Self {
         Self::new_with_host_and_ports(
             "127.0.0.1".to_string(),
@@ -39,16 +44,21 @@ impl MockServerManager {
         )
     }
 
-    /// Create a new MockServerManager with custom host and default ports
-    pub fn new_with_host(host: String) -> Self {
+    /// Create a new `MockServerManager` with custom host and default ports
+    #[must_use]
+    pub const fn new_with_host(host: String) -> Self {
         Self::new_with_host_and_ports(host, ROBOT_CONTROL_PORT, FILE_CONTROL_PORT)
     }
 
-    /// Create a new MockServerManager with custom host and ports
-    pub fn new_with_host_and_ports(host: String, robot_port: u16, file_port: u16) -> Self {
+    /// Create a new `MockServerManager` with custom host and ports
+    #[must_use]
+    pub const fn new_with_host_and_ports(host: String, robot_port: u16, file_port: u16) -> Self {
         Self { handle: None, host, robot_port, file_port }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the server fails to start
     pub async fn start(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Create mock server with default configuration
         let config = MockConfig::new(&self.host, self.robot_port, self.file_port);
@@ -67,7 +77,7 @@ impl MockServerManager {
         // Start server in background task
         let handle = tokio::spawn(async move {
             if let Err(e) = server.run().await {
-                eprintln!("Mock server error: {}", e);
+                error!("Mock server error: {e}");
             }
         });
 
@@ -75,7 +85,7 @@ impl MockServerManager {
 
         // Wait for server to be ready
         match self.wait_for_server().await {
-            Ok(_) => {
+            Ok(()) => {
                 test_logging::log_mock_server_startup(&self.host, self.robot_port);
                 Ok(())
             }
@@ -90,6 +100,9 @@ impl MockServerManager {
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the server fails to start
     pub async fn start_with_builder<F>(
         &mut self,
         builder_fn: F,
@@ -108,7 +121,7 @@ impl MockServerManager {
         // Start server in background task
         let handle = tokio::spawn(async move {
             if let Err(e) = server.run().await {
-                eprintln!("Mock server error: {}", e);
+                error!("Mock server error: {e}");
             }
         });
 
@@ -119,7 +132,8 @@ impl MockServerManager {
         Ok(())
     }
 
-    pub fn is_running(&self) -> bool {
+    #[must_use]
+    pub const fn is_running(&self) -> bool {
         self.handle.is_some()
     }
 
@@ -148,12 +162,14 @@ impl MockServerManager {
     }
 
     /// Get the robot port number
-    pub fn robot_port(&self) -> u16 {
+    #[must_use]
+    pub const fn robot_port(&self) -> u16 {
         self.robot_port
     }
 
     /// Get the file port number
-    pub fn file_port(&self) -> u16 {
+    #[must_use]
+    pub const fn file_port(&self) -> u16 {
         self.file_port
     }
 }
@@ -170,6 +186,11 @@ impl Drop for MockServerManager {
 
 // Helper functions for common test configurations
 
+/// Create a test server for I/O operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_io_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -187,6 +208,11 @@ pub async fn create_io_test_server()
     Ok(manager)
 }
 
+/// Create a test server for alarm operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_alarm_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -210,6 +236,11 @@ pub async fn create_alarm_test_server()
     Ok(manager)
 }
 
+/// Create a test server for position operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_position_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -229,6 +260,11 @@ pub async fn create_position_test_server()
     Ok(manager)
 }
 
+/// Create a test server for job info operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_job_info_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -248,6 +284,11 @@ pub async fn create_job_info_test_server()
     Ok(manager)
 }
 
+/// Create a test server for status operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_status_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -282,6 +323,11 @@ pub async fn create_status_test_server()
     Ok(manager)
 }
 
+/// Create a test server with all status flags set to true
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_status_all_true_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -316,6 +362,11 @@ pub async fn create_status_all_true_server()
     Ok(manager)
 }
 
+/// Create a test server with all status flags set to false
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_status_all_false_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -350,6 +401,11 @@ pub async fn create_status_all_false_server()
     Ok(manager)
 }
 
+/// Create a test server for register operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_register_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();
@@ -376,6 +432,11 @@ pub async fn create_register_test_server()
     Ok(manager)
 }
 
+/// Create a test server for variable operations
+///
+/// # Errors
+///
+/// Returns an error if the server fails to start
 pub async fn create_variable_test_server()
 -> Result<MockServerManager, Box<dyn std::error::Error + Send + Sync>> {
     let mut manager = MockServerManager::new();

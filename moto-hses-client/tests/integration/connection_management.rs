@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for connection management
 
 use crate::common::{
@@ -7,14 +8,14 @@ use crate::common::{
 use crate::test_with_logging;
 
 test_with_logging!(test_basic_connection, {
-    log::info!("Creating test server...");
+    log::debug!("Creating test server...");
     let mut server = create_test_server();
     server.start().await.expect("Failed to start mock server");
     log::info!("Mock server started successfully");
 
-    log::info!("Creating test client...");
+    log::debug!("Creating test client...");
     let _client = create_test_client().await.expect("Failed to create client");
-    log::info!("Client created successfully");
+    log::debug!("Client created successfully");
 
     log::info!("Testing connection...");
     // Connection test passed (client creation is sufficient for UDP)
@@ -24,24 +25,24 @@ test_with_logging!(test_basic_connection, {
 test_with_logging!(test_connection_with_different_ports, {
     // Use a single port test to avoid port conflicts
     let port = 30091;
-    log::info!("Testing connection with port {}", port);
+    log::info!("Testing connection with port {port}");
 
     let mut server =
         MockServerManager::new_with_host_and_ports("127.0.0.1".to_string(), port, port + 1);
 
-    log::info!("Starting mock server on port {}...", port);
+    log::info!("Starting mock server on port {port}...");
     server.start().await.expect("Failed to start mock server");
-    log::info!("Mock server started successfully on port {}", port);
+    log::info!("Mock server started successfully on port {port}");
 
-    log::info!("Creating client for port {}...", port);
+    log::info!("Creating client for port {port}...");
     let _client = create_test_client_with_host_and_port("127.0.0.1", port)
         .await
         .expect("Failed to create client");
-    log::info!("Client created successfully for port {}", port);
+    log::debug!("Client created successfully for port {port}");
 
     log::info!("Testing connection...");
     // Connection test passed (client creation is sufficient for UDP)
-    log::info!("Connection test passed for port {}", port);
+    log::info!("Connection test passed for port {port}");
 });
 
 test_with_logging!(test_connection_timeout_handling, {
@@ -68,7 +69,7 @@ test_with_logging!(test_multiple_connections, {
         futures::future::join_all(clients).await;
 
     for (i, result) in results.iter().enumerate() {
-        assert!(result.is_ok(), "Client {} should connect successfully", i);
+        assert!(result.is_ok(), "Client {i} should connect successfully");
     }
 });
 
@@ -95,12 +96,12 @@ test_with_logging!(test_actual_communication, {
             // This is acceptable for this test
         }
         Err(moto_hses_client::ClientError::ProtocolError(e)) => {
-            log::error!("✗ Protocol error: {}", e);
-            panic!("Unexpected protocol error: {}", e);
+            log::error!("✗ Protocol error: {e}");
+            unreachable!("Unexpected protocol error: {e}");
         }
         Err(e) => {
-            log::error!("✗ Communication failed: {}", e);
-            panic!("Unexpected communication error: {}", e);
+            log::error!("✗ Communication failed: {e}");
+            unreachable!("Unexpected communication error: {e}");
         }
     }
 });
@@ -131,16 +132,16 @@ test_with_logging!(test_retry_mechanism_actual, {
     match client.read_status().await {
         Ok(status) => {
             let elapsed = start_time.elapsed();
-            log::info!("✓ Communication successful after {:?}", elapsed);
+            log::info!("✓ Communication successful after {elapsed:?}");
             log::info!("  Robot running: {}", status.is_running());
             log::info!("  Servo on: {}", status.is_servo_on());
 
             // Verify that retry mechanism was used (should take some time)
             // Note: UDP communication might be very fast, so we just verify it completed
-            log::info!("Communication completed in {:?}", elapsed);
+            log::info!("Communication completed in {elapsed:?}");
         }
         Err(e) => {
-            log::warn!("Communication failed despite retries: {}", e);
+            log::warn!("Communication failed despite retries: {e}");
             // This is acceptable for this test
         }
     }

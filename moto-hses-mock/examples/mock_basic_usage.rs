@@ -1,11 +1,13 @@
 //! Basic usage example for mock server
 
+use log::info;
 use moto_hses_mock::{MockConfig, MockServer};
 use moto_hses_proto as proto;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("Starting mock HSES server...");
+    env_logger::init();
+    info!("Starting mock HSES server...");
 
     // Create server configuration
     let config = MockConfig::new(
@@ -18,21 +20,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let server = MockServer::new(config).await?;
     let addr = server.local_addr()?;
 
-    println!("Mock server listening on {}", addr);
-    println!("Supported commands:");
-    println!("  0x70 - Alarm data reading");
-    println!("  0x72 - Status information reading");
-    println!("  0x75 - Robot position data reading");
-    println!("  0x78 - I/O data reading/writing");
-    println!("  0x79 - Register data reading/writing");
-    println!("  0x7a - Byte variable reading/writing");
-    println!("  0x7b - Integer variable reading/writing");
-    println!("  0x7d - Real variable reading/writing");
-    println!("  0x7f - Position variable reading/writing");
-    println!("  0x82 - Alarm reset/error cancel");
-    println!("  0x83 - HOLD/servo ON/OFF");
-    println!("  0x86 - Job start");
-    println!("  0x87 - Job select");
+    info!("Mock server listening on {addr}");
+    info!("Supported commands:");
+    info!("  0x70 - Alarm data reading");
+    info!("  0x72 - Status information reading");
+    info!("  0x75 - Robot position data reading");
+    info!("  0x78 - I/O data reading/writing");
+    info!("  0x79 - Register data reading/writing");
+    info!("  0x7a - Byte variable reading/writing");
+    info!("  0x7b - Integer variable reading/writing");
+    info!("  0x7d - Real variable reading/writing");
+    info!("  0x7f - Position variable reading/writing");
+    info!("  0x82 - Alarm reset/error cancel");
+    info!("  0x83 - HOLD/servo ON/OFF");
+    info!("  0x86 - Job start");
+    info!("  0x87 - Job select");
 
     // Add some test alarms
     server.add_test_alarm(proto::alarm::test_alarms::servo_error()).await;
@@ -46,13 +48,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     server.set_io_state(1, true).await; // Input 1 = ON
     server.set_io_state(1001, false).await; // Output 1 = OFF
 
-    println!("Test data configured:");
-    println!("  - 4 test alarms added (Instance 1-4)");
-    println!("  - D010 = 66, D020 = 50.0");
-    println!("  - Input 1 = ON, Output 1 = OFF");
+    info!("Test data configured:");
+    info!("  - 4 test alarms added (Instance 1-4)");
+    info!("  - D010 = 66, D020 = 50.0");
+    info!("  - Input 1 = ON, Output 1 = OFF");
 
     // Run the server
-    println!("Server running. Press Ctrl+C to stop.");
+    info!("Server running. Press Ctrl+C to stop.");
     server.run().await?;
 
     Ok(())

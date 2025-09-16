@@ -7,6 +7,11 @@ use moto_hses_proto as proto;
 
 /// Command handler trait
 pub trait CommandHandler {
+    /// Handle a command message
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if command processing fails
     fn handle(
         &self,
         message: &proto::HsesRequestMessage,

@@ -5,14 +5,15 @@ use crate::types::{CoordinateSystem, VariableType};
 use bytes::Buf;
 
 // Position data structures
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PulsePosition {
     pub joints: [i32; 8],
     pub control_group: u8,
 }
 
 impl PulsePosition {
-    pub fn new(joints: [i32; 8], control_group: u8) -> Self {
+    #[must_use]
+    pub const fn new(joints: [i32; 8], control_group: u8) -> Self {
         Self { joints, control_group }
     }
 }
@@ -32,7 +33,8 @@ pub struct CartesianPosition {
 
 impl CartesianPosition {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         x: f32,
         y: f32,
         z: f32,
@@ -54,25 +56,29 @@ pub enum Position {
 }
 
 impl Position {
+    /// Serialize position to byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError::PositionError` if serialization fails
     pub fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
         match self {
-            Position::Pulse(pulse) => {
+            Self::Pulse(pulse) => {
                 data.extend_from_slice(&0u32.to_le_bytes());
                 data.extend_from_slice(&0u32.to_le_bytes());
-                data.extend_from_slice(&(pulse.control_group as u32).to_le_bytes());
+                data.extend_from_slice(&u32::from(pulse.control_group).to_le_bytes());
                 data.extend_from_slice(&0u32.to_le_bytes());
                 data.extend_from_slice(&0u32.to_le_bytes());
                 for joint in &pulse.joints {
                     data.extend_from_slice(&joint.to_le_bytes());
                 }
             }
-            Position::Cartesian(cart) => {
+            Self::Cartesian(cart) => {
                 data.extend_from_slice(&16u32.to_le_bytes());
                 data.extend_from_slice(&0u32.to_le_bytes());
-                data.extend_from_slice(&(cart.tool_no as u32).to_le_bytes());
-                data.extend_from_slice(&(cart.user_coord_no as u32).to_le_bytes());
+                data.extend_from_slice(&u32::from(cart.tool_no).to_le_bytes());
+                data.extend_from_slice(&u32::from(cart.user_coord_no).to_le_bytes());
                 data.extend_from_slice(&0u32.to_le_bytes());
                 data.extend_from_slice(&(cart.x * 1000.0).to_le_bytes());
                 data.extend_from_slice(&(cart.y * 1000.0).to_le_bytes());
@@ -88,6 +94,11 @@ impl Position {
         Ok(data)
     }
 
+    /// Deserialize position from byte data
+    ///
+    /// # Errors
+    /// Returns `ProtocolError::Underflow` if data is insufficient
+    /// Returns `ProtocolError::PositionError` if data format is invalid
     pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
         if data.len() < 52 {
             return Err(ProtocolError::Underflow);
@@ -99,7 +110,9 @@ impl Position {
         match position_type {
             0 => {
                 let _form = buf.get_u32_le();
-                let control_group = buf.get_u32_le() as u8;
+                let control_group = u8::try_from(buf.get_u32_le()).map_err(|_| {
+                    ProtocolError::PositionError("Invalid control group value".to_string())
+                })?;
                 let _user_coord = buf.get_u32_le();
                 let _extended_form = buf.get_u32_le();
 
@@ -108,12 +121,16 @@ impl Position {
                     *joint = buf.get_i32_le();
                 }
 
-                Ok(Position::Pulse(PulsePosition::new(joints, control_group)))
+                Ok(Self::Pulse(PulsePosition::new(joints, control_group)))
             }
             16 => {
                 let _form = buf.get_u32_le();
-                let tool_no = buf.get_u32_le() as u8;
-                let user_coord_no = buf.get_u32_le() as u8;
+                let tool_no = u8::try_from(buf.get_u32_le()).map_err(|_| {
+                    ProtocolError::PositionError("Invalid tool number value".to_string())
+                })?;
+                let user_coord_no = u8::try_from(buf.get_u32_le()).map_err(|_| {
+                    ProtocolError::PositionError("Invalid user coordinate number value".to_string())
+                })?;
                 let _extended_form = buf.get_u32_le();
 
                 let x = buf.get_f32_le() / 1000.0;
@@ -123,7 +140,7 @@ impl Position {
                 let ry = buf.get_f32_le() / 1000.0;
                 let rz = buf.get_f32_le() / 1000.0;
 
-                Ok(Position::Cartesian(CartesianPosition::new(
+                Ok(Self::Cartesian(CartesianPosition::new(
                     x,
                     y,
                     z,
@@ -135,10 +152,9 @@ impl Position {
                     CoordinateSystem::Base,
                 )))
             }
-            _ => Err(ProtocolError::PositionError(format!(
-                "Unknown position type: {}",
-                position_type
-            ))),
+            _ => {
+                Err(ProtocolError::PositionError(format!("Unknown position type: {position_type}")))
+            }
         }
     }
 }
@@ -151,7 +167,7 @@ impl VariableType for Position {
         self.serialize()
     }
     fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Position::deserialize(data)
+        Self::deserialize(data)
     }
 }
 
@@ -169,6 +185,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_cartesian_position_creation() {
         let position = CartesianPosition::new(
             100.0,
@@ -190,6 +207,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_position_serialization() {
         let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
         let serialized = position.serialize().unwrap();
@@ -198,6 +216,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_cartesian_position_serialization() {
         let position = Position::Cartesian(CartesianPosition::new(
             100.0,
@@ -216,6 +235,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_position_variable_type_trait() {
         let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
         assert_eq!(Position::command_id(), 0x7f);

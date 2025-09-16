@@ -17,11 +17,15 @@ pub struct MockServer {
 
 impl MockServer {
     /// Create a new mock server
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if socket binding fails
     pub async fn new(
         config: crate::MockConfig,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        let robot_addr = config.robot_addr();
-        let file_addr = config.file_addr();
+        let robot_addr = config.robot_addr()?;
+        let file_addr = config.file_addr()?;
 
         let robot_socket = Arc::new(UdpSocket::bind(robot_addr).await?);
         let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
@@ -41,7 +45,7 @@ impl MockServer {
 
         // Apply configured alarms if any
         if !config.alarms.is_empty() {
-            mock_state.alarms = config.alarms.clone();
+            mock_state.alarms.clone_from(&config.alarms);
         }
 
         // Apply configured alarm history if any
@@ -59,18 +63,25 @@ impl MockServer {
         let state = SharedState::new(mock_state);
         let handlers = CommandHandlerRegistry::default();
 
-        eprintln!("Mock server listening on {}", robot_addr);
-        eprintln!("Mock server listening on {}", file_addr);
+        info!("Mock server listening on {robot_addr}");
+        info!("Mock server listening on {file_addr}");
 
         Ok(Self { robot_socket, file_socket, state, handlers })
     }
 
     /// Get the local address of the server
+    /// # Errors
+    ///
+    /// Returns an error if local address cannot be obtained
     pub fn local_addr(&self) -> Result<SocketAddr, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.robot_socket.local_addr()?)
     }
 
     /// Run the server
+    /// # Errors
+    ///
+    /// Returns an error if server operation fails
+    #[allow(clippy::too_many_lines)]
     pub async fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Create a task for each socket
         let robot_socket = Arc::clone(&self.robot_socket);
@@ -85,13 +96,13 @@ impl MockServer {
                     let (n, src) = match robot_socket.recv_from(&mut buf).await {
                         Ok(result) => result,
                         Err(e) => {
-                            eprintln!("Error receiving from robot socket: {:?}", e);
+                            error!("Error receiving from robot socket: {e:?}");
                             continue;
                         }
                     };
 
                     if n < 32 {
-                        eprintln!("Received message too short: {} bytes", n);
+                        debug!("Received message too short: {n} bytes");
                         continue;
                     }
 
@@ -99,12 +110,12 @@ impl MockServer {
                     let message = match proto::HsesRequestMessage::decode(&buf[..n]) {
                         Ok(msg) => msg,
                         Err(e) => {
-                            eprintln!("Failed to decode message: {:?}", e);
+                            error!("Failed to decode message: {e:?}");
                             continue;
                         }
                     };
 
-                    eprintln!(
+                    debug!(
                         "Received packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]",
                         src,
                         message.header.division,
@@ -129,7 +140,7 @@ impl MockServer {
                             if let Ok(response_message) =
                                 proto::HsesResponseMessage::decode(&response_data)
                             {
-                                eprintln!(
+                                debug!(
                                     "Sending response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]",
                                     src,
                                     response_message.header.division,
@@ -144,17 +155,17 @@ impl MockServer {
                                     response_message.payload
                                 );
                             } else {
-                                eprintln!(
+                                debug!(
                                     "Sending response: {} bytes (failed to decode for detailed logging)",
                                     response_data.len()
                                 );
                             }
                             if let Err(e) = robot_socket.send_to(&response_data, src).await {
-                                eprintln!("Error sending response: {:?}", e);
+                                debug!("Error sending response: {e:?}");
                             }
                         }
                     } else {
-                        eprintln!("Error handling message: {:?}", response.err());
+                        debug!("Error handling message: {:?}", response.err());
                     }
                 }
             })
@@ -169,13 +180,13 @@ impl MockServer {
                     let (n, src) = match file_socket.recv_from(&mut buf).await {
                         Ok(result) => result,
                         Err(e) => {
-                            eprintln!("Error receiving from file socket: {:?}", e);
+                            debug!("Error receiving from file socket: {e:?}");
                             continue;
                         }
                     };
 
                     if n < 32 {
-                        eprintln!("Received file message too short: {} bytes", n);
+                        debug!("Received file message too short: {n} bytes");
                         continue;
                     }
 
@@ -183,12 +194,12 @@ impl MockServer {
                     let message = match proto::HsesRequestMessage::decode(&buf[..n]) {
                         Ok(msg) => msg,
                         Err(e) => {
-                            eprintln!("Failed to decode file message: {:?}", e);
+                            debug!("Failed to decode file message: {e:?}");
                             continue;
                         }
                     };
 
-                    eprintln!(
+                    debug!(
                         "Received file packet from {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[command=0x{:04x}, instance={}, attribute={}, service={}], Payload[{} bytes: {:02x?}]",
                         src,
                         message.header.division,
@@ -213,7 +224,7 @@ impl MockServer {
                             if let Ok(response_message) =
                                 proto::HsesResponseMessage::decode(&response_data)
                             {
-                                eprintln!(
+                                debug!(
                                     "Sending file response to {}: Header[division={}, ack={}, request_id={}, payload_size={}], SubHeader[service={}, status={}, added_status_size={}, added_status={}], Payload[{} bytes: {:02x?}]",
                                     src,
                                     response_message.header.division,
@@ -228,17 +239,17 @@ impl MockServer {
                                     response_message.payload
                                 );
                             } else {
-                                eprintln!(
+                                debug!(
                                     "Sending file response: {} bytes (failed to decode for detailed logging)",
                                     response_data.len()
                                 );
                             }
                             if let Err(e) = file_socket.send_to(&response_data, src).await {
-                                eprintln!("Error sending file response: {:?}", e);
+                                debug!("Error sending file response: {e:?}");
                             }
                         }
                     } else {
-                        eprintln!("Error handling file message: {:?}", response.err());
+                        debug!("Error handling file message: {:?}", response.err());
                     }
                 }
             })
@@ -295,7 +306,11 @@ impl MockServer {
             status,       // status: success (0x00) or error (non-zero)
             added_status, // added_status: error code if status is non-zero
             payload,
-        );
+        )
+        .map_err(|e| {
+            error!("Failed to create response message: {e}");
+            e
+        })?;
 
         // Encode the response
         let response_data = response_message.encode();
@@ -303,7 +318,8 @@ impl MockServer {
     }
 
     /// Get a reference to the shared state
-    pub fn state(&self) -> &SharedState {
+    #[must_use]
+    pub const fn state(&self) -> &SharedState {
         &self.state
     }
 
@@ -344,65 +360,80 @@ pub struct MockServerBuilder {
 }
 
 impl MockServerBuilder {
+    #[must_use]
     pub fn new() -> Self {
         Self { config: crate::MockConfig::default() }
     }
 
+    #[must_use]
     pub fn host(mut self, host: impl Into<String>) -> Self {
         self.config.host = host.into();
         self
     }
 
-    pub fn robot_port(mut self, port: u16) -> Self {
+    #[must_use]
+    pub const fn robot_port(mut self, port: u16) -> Self {
         self.config.robot_port = port;
         self
     }
 
-    pub fn file_port(mut self, port: u16) -> Self {
+    #[must_use]
+    pub const fn file_port(mut self, port: u16) -> Self {
         self.config.file_port = port;
         self
     }
 
+    #[must_use]
     pub fn with_alarm(mut self, alarm: proto::Alarm) -> Self {
         self.config.alarms.push(alarm);
         self
     }
 
+    #[must_use]
     pub fn with_alarm_history(mut self, alarm: proto::Alarm) -> Self {
         self.config.alarm_history.push(alarm);
         self
     }
 
+    #[must_use]
     pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
         self.config.io_states.insert(io_number, state);
         self
     }
 
-    pub fn with_position(mut self, position: proto::Position) -> Self {
+    #[must_use]
+    pub const fn with_position(mut self, position: proto::Position) -> Self {
         self.config.default_position = position;
         self
     }
 
-    pub fn with_status(mut self, status: proto::Status) -> Self {
+    #[must_use]
+    pub const fn with_status(mut self, status: proto::Status) -> Self {
         self.config.default_status = status;
         self
     }
 
+    #[must_use]
     pub fn with_executing_job(mut self, job: proto::ExecutingJobInfo) -> Self {
         self.config.executing_job = Some(job);
         self
     }
 
+    #[must_use]
     pub fn with_registers(mut self, registers: std::collections::HashMap<u16, i16>) -> Self {
         self.config.registers = registers;
         self
     }
 
+    #[must_use]
     pub fn with_variables(mut self, variables: std::collections::HashMap<u8, Vec<u8>>) -> Self {
         self.config.variables = variables;
         self
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if server creation fails
     pub async fn build(self) -> Result<MockServer, Box<dyn std::error::Error + Send + Sync>> {
         MockServer::new(self.config).await
     }

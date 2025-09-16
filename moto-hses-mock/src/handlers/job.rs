@@ -143,7 +143,7 @@ impl CommandHandler for PmovHandler {
     }
 }
 
-/// Handler for SelectCycle command (0x84)
+/// Handler for `SelectCycle` command (0x84)
 pub struct SelectCycleHandler;
 
 impl CommandHandler for SelectCycleHandler {

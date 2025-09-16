@@ -27,15 +27,21 @@ struct MessageParams {
 
 impl HsesClient {
     // High-level API methods
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
     where
         T: VariableType,
     {
         let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        self.deserialize_response(&response)
+        Self::deserialize_response(&response)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
     where
         T: VariableType,
@@ -46,24 +52,39 @@ impl HsesClient {
     }
 
     /// Read complete status information (both Data 1 and Data 2) efficiently
-    /// Uses service=0x01 (Get_Attribute_All) with attribute=0 to get both data in one request
+    /// Uses service=0x01 (`Get_Attribute_All`) with attribute=0 to get both data in one request
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_status(&self) -> Result<Status, ClientError> {
         let response = self.send_command_with_retry(ReadStatus, Division::Robot).await?;
-        self.deserialize_response(&response)
+        Self::deserialize_response(&response)
     }
 
     /// Read status data 1 (basic status information)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_status_data1(&self) -> Result<StatusData1, ClientError> {
         let response = self.send_command_with_retry(ReadStatusData1, Division::Robot).await?;
-        self.deserialize_response(&response)
+        Self::deserialize_response(&response)
     }
 
     /// Read status data 2 (additional status information)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_status_data2(&self) -> Result<StatusData2, ClientError> {
         let response = self.send_command_with_retry(ReadStatusData2, Division::Robot).await?;
-        self.deserialize_response(&response)
+        Self::deserialize_response(&response)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_position(
         &self,
         control_group: u8,
@@ -71,9 +92,12 @@ impl HsesClient {
     ) -> Result<Position, ClientError> {
         let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        self.deserialize_response(&response)
+        Self::deserialize_response(&response)
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_alarm_data(
         &self,
         instance: u16,
@@ -83,6 +107,9 @@ impl HsesClient {
         self.read_alarm_attribute(command, attribute).await
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_alarm_history(
         &self,
         instance: u16,
@@ -95,6 +122,9 @@ impl HsesClient {
     /// Reset alarm (0x82 command with instance 1)
     ///
     /// This command resets the current alarm state.
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn reset_alarm(&self) -> Result<(), ClientError> {
         let command = AlarmReset::reset();
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -104,6 +134,9 @@ impl HsesClient {
     /// Cancel error (0x82 command with instance 2)
     ///
     /// This command cancels the current error state.
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn cancel_error(&self) -> Result<(), ClientError> {
         let command = AlarmReset::cancel();
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -114,6 +147,9 @@ impl HsesClient {
     ///
     /// # Arguments
     /// * `enabled` - true for HOLD ON, false for HOLD OFF
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn set_hold(&self, enabled: bool) -> Result<(), ClientError> {
         let command =
             if enabled { HoldServoControl::hold_on() } else { HoldServoControl::hold_off() };
@@ -125,6 +161,9 @@ impl HsesClient {
     ///
     /// # Arguments
     /// * `enabled` - true for Servo ON, false for Servo OFF
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn set_servo(&self, enabled: bool) -> Result<(), ClientError> {
         let command =
             if enabled { HoldServoControl::servo_on() } else { HoldServoControl::servo_off() };
@@ -139,6 +178,9 @@ impl HsesClient {
     ///
     /// # Arguments
     /// * `enabled` - true for HLOCK ON, false for HLOCK OFF
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn set_hlock(&self, enabled: bool) -> Result<(), ClientError> {
         let command =
             if enabled { HoldServoControl::hlock_on() } else { HoldServoControl::hlock_off() };
@@ -151,6 +193,10 @@ impl HsesClient {
     /// # Arguments
     /// * `task_type` - Task type (1: Master task, 2-6: Sub tasks)
     /// * `attribute` - Information to read (0: All, 1: Job name, 2: Line number, 3: Step number, 4: Speed override value)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_executing_job_info(
         &self,
         task_type: u16,
@@ -164,7 +210,7 @@ impl HsesClient {
             ExecutingJobInfo::deserialize_attribute(&response, attribute).map_err(ClientError::from)
         } else {
             // Use standard deserialization for complete data
-            self.deserialize_response(&response)
+            Self::deserialize_response(&response)
         }
     }
 
@@ -172,6 +218,10 @@ impl HsesClient {
     ///
     /// # Arguments
     /// * `task_type` - Task type (1: Master task, 2-6: Sub tasks)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_executing_job_info_complete(
         &self,
         task_type: u16,
@@ -180,7 +230,7 @@ impl HsesClient {
     }
 
     // Common helper method for alarm attribute reading
-    async fn read_alarm_attribute<C: Command>(
+    async fn read_alarm_attribute<C: Command + Send + Sync>(
         &self,
         command: C,
         attribute: u8,
@@ -188,14 +238,14 @@ impl HsesClient {
     where
         C::Response: VariableType + Into<Alarm>,
     {
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+
         if attribute == 0 {
             // Service = 0x01 (Get_Attribute_All) - Return all data
-            let response = self.send_command_with_retry(command, Division::Robot).await?;
-            let deserialized: C::Response = self.deserialize_response(&response)?;
+            let deserialized: C::Response = Self::deserialize_response(&response)?;
             Ok(deserialized.into())
         } else {
             // Service = 0x0E (Get_Attribute_Single) - Return only specified attribute
-            let response = self.send_command_with_retry(command, Division::Robot).await?;
 
             // Attribute-specific deserialization
             match attribute {
@@ -269,6 +319,9 @@ impl HsesClient {
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_io(&self, io_number: u16) -> Result<bool, ClientError> {
         let command = ReadIo { io_number };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -283,12 +336,18 @@ impl HsesClient {
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn write_io(&self, io_number: u16, value: bool) -> Result<(), ClientError> {
         let command = WriteIo { io_number, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn read_register(&self, register_number: u16) -> Result<i16, ClientError> {
         use moto_hses_proto::types::ReadRegister;
         let command = ReadRegister { register_number };
@@ -306,6 +365,9 @@ impl HsesClient {
         }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
     pub async fn write_register(
         &self,
         register_number: u16,
@@ -317,13 +379,19 @@ impl HsesClient {
         Ok(())
     }
 
-    pub async fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub fn execute_job(&self, _job_number: u8) -> Result<(), ClientError> {
         // TODO: Implement I/O reading command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("Job execution not yet implemented".to_string()))
     }
 
-    pub async fn stop_job(&self) -> Result<(), ClientError> {
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub fn stop_job(&self) -> Result<(), ClientError> {
         // TODO: Implement job stop command
         // For now, return a placeholder implementation
         Err(ClientError::SystemError("Job stop not yet implemented".to_string()))
@@ -334,6 +402,10 @@ impl HsesClient {
     /// Get file list from controller
     ///
     /// Returns a list of filenames available on the controller.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file list request fails
     pub async fn read_file_list(&self) -> Result<Vec<String>, ClientError> {
         let command = ReadFileList;
         let response = self.send_command_with_retry(command, Division::File).await?;
@@ -345,6 +417,10 @@ impl HsesClient {
     /// # Arguments
     /// * `filename` - Name of the file to send
     /// * `content` - File content as bytes
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file send request fails
     pub async fn send_file(&self, filename: &str, content: &[u8]) -> Result<(), ClientError> {
         let command = SendFile::new(filename.to_string(), content.to_vec());
         let _response = self.send_command_with_retry(command, Division::File).await?;
@@ -357,6 +433,10 @@ impl HsesClient {
     /// * `filename` - Name of the file to receive
     ///
     /// Returns the file content as bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file receive request fails
     pub async fn receive_file(&self, filename: &str) -> Result<Vec<u8>, ClientError> {
         let command = ReceiveFile::new(filename.to_string());
         let response = self.send_command_with_retry(command, Division::File).await?;
@@ -367,6 +447,10 @@ impl HsesClient {
     ///
     /// # Arguments
     /// * `filename` - Name of the file to delete
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file delete request fails
     pub async fn delete_file(&self, filename: &str) -> Result<(), ClientError> {
         let command = DeleteFile::new(filename.to_string());
         let _response = self.send_command_with_retry(command, Division::File).await?;
@@ -374,7 +458,7 @@ impl HsesClient {
     }
 
     // Command sending with retry logic (returns raw bytes)
-    async fn send_command_with_retry<C: Command>(
+    async fn send_command_with_retry<C: Command + Send + Sync>(
         &self,
         command: C,
         division: Division,
@@ -400,7 +484,7 @@ impl HsesClient {
     }
 
     // Single command sending (no retry, returns raw bytes)
-    async fn send_command_once<C: Command>(
+    async fn send_command_once<C: Command + Send + Sync>(
         &self,
         command: &C,
         division: Division,
@@ -418,8 +502,8 @@ impl HsesClient {
             service: command.service(),
             division,
         };
-        let message = self.create_message(params)?;
-        eprintln!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
+        let message = Self::create_message(params)?;
+        debug!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
         self.inner.socket.send_to(&message, self.inner.remote_addr).await?;
 
         // Wait for response
@@ -429,7 +513,7 @@ impl HsesClient {
         Ok(response)
     }
 
-    fn create_message(&self, params: MessageParams) -> Result<Vec<u8>, ClientError> {
+    fn create_message(params: MessageParams) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
         // Magic bytes "YERC"
@@ -439,7 +523,12 @@ impl HsesClient {
         message.extend_from_slice(&0x20u16.to_le_bytes());
 
         // Payload size
-        message.extend_from_slice(&(params.payload.len() as u16).to_le_bytes());
+        let payload_len = u16::try_from(params.payload.len()).map_err(|_| {
+            ClientError::ProtocolError(moto_hses_proto::ProtocolError::InvalidMessage(
+                "Payload too large for protocol".to_string(),
+            ))
+        })?;
+        message.extend_from_slice(&payload_len.to_le_bytes());
 
         // Reserved magic constant
         message.push(0x03);
@@ -492,15 +581,15 @@ impl HsesClient {
             let response_data = &buffer[..len];
 
             // Debug: Log received data
-            eprintln!("Received response: {} bytes", len);
+            debug!("Received response: {len} bytes");
             if len >= 4 {
-                eprintln!("Magic bytes: {:?}", &response_data[0..4]);
+                debug!("Magic bytes: {:?}", &response_data[0..4]);
             }
             if len >= 11 {
-                eprintln!("Request ID: 0x{:02x}", response_data[11]);
+                debug!("Request ID: 0x{:02x}", response_data[11]);
             }
             if len >= 10 {
-                eprintln!("ACK: 0x{:02x}", response_data[10]);
+                debug!("ACK: 0x{:02x}", response_data[10]);
             }
 
             // Parse response header
@@ -532,8 +621,7 @@ impl HsesClient {
                     // Non-zero status indicates an error
                     return Err(ClientError::ProtocolError(
                         moto_hses_proto::ProtocolError::InvalidMessage(format!(
-                            "Server returned error status: 0x{:02x}",
-                            status
+                            "Server returned error status: 0x{status:02x}"
                         )),
                     ));
                 }
@@ -554,7 +642,7 @@ impl HsesClient {
         }
     }
 
-    fn deserialize_response<T>(&self, data: &[u8]) -> Result<T, ClientError>
+    fn deserialize_response<T>(data: &[u8]) -> Result<T, ClientError>
     where
         T: VariableType,
     {

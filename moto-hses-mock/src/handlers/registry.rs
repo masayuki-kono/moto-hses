@@ -32,6 +32,7 @@ pub struct CommandHandlerRegistry {
 }
 
 impl CommandHandlerRegistry {
+    #[must_use]
     pub fn new() -> Self {
         let mut handlers = std::collections::HashMap::new();
 
@@ -96,6 +97,9 @@ impl CommandHandlerRegistry {
         Self { handlers }
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if command handling fails
     pub fn handle(
         &self,
         message: &proto::HsesRequestMessage,
@@ -103,12 +107,13 @@ impl CommandHandlerRegistry {
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let command = message.sub_header.command;
 
-        if let Some(handler) = self.handlers.get(&command) {
-            handler.handle(message, state)
-        } else {
-            eprintln!("Unknown command: 0x{:04x}", command);
-            Err(proto::ProtocolError::InvalidCommand)
-        }
+        self.handlers.get(&command).map_or_else(
+            || {
+                debug!("Unknown command: 0x{command:04x}");
+                Err(proto::ProtocolError::InvalidCommand)
+            },
+            |handler| handler.handle(message, state),
+        )
     }
 }
 

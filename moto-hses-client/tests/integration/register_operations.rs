@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for register operations
 
 use crate::common::{
@@ -55,23 +56,17 @@ test_with_logging!(test_multiple_register_operations, {
         let initial_value = client
             .read_register(*register)
             .await
-            .unwrap_or_else(|_| panic!("Failed to read initial value from register {}", register));
+            .expect("Failed to read initial value from register");
         assert_eq!(initial_value, *expected_value);
     }
 
     // Then test write operations
     for (register, value) in test_registers.iter().zip(test_values.iter()) {
-        client
-            .write_register(*register, *value)
-            .await
-            .unwrap_or_else(|_| panic!("Failed to write to register {}", register));
+        client.write_register(*register, *value).await.expect("Failed to write to register");
 
         wait_for_operation().await;
 
-        let read_value = client
-            .read_register(*register)
-            .await
-            .unwrap_or_else(|_| panic!("Failed to read register {}", register));
+        let read_value = client.read_register(*register).await.expect("Failed to read register");
 
         assert_eq!(read_value, *value);
     }
@@ -112,22 +107,11 @@ test_with_logging!(test_register_error_handling, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test invalid register number for read (65535)
-    match client.read_register(65535).await {
-        Ok(value) => {
-            panic!("Invalid register number read succeeded unexpectedly: {}", value);
-        }
-        Err(_) => {
-            // Expected to fail
-        }
-    }
+    assert!(client.read_register(65535).await.is_err(), "Invalid register number read should fail");
 
     // Test invalid register number for write (65535)
-    match client.write_register(65535, 42).await {
-        Ok(()) => {
-            panic!("Invalid register number write succeeded unexpectedly");
-        }
-        Err(_) => {
-            // Expected to fail
-        }
-    }
+    assert!(
+        client.write_register(65535, 42).await.is_err(),
+        "Invalid register number write should fail"
+    );
 });

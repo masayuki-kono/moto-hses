@@ -26,7 +26,6 @@ impl CommandHandler for PositionVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let _var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
         match service {
@@ -70,7 +69,6 @@ impl CommandHandler for BasePositionVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let _var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
         match service {
@@ -117,7 +115,6 @@ impl CommandHandler for ExternalAxisVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let _var_index = message.sub_header.instance as u8;
         let service = message.sub_header.service;
 
         match service {
@@ -168,7 +165,10 @@ impl CommandHandler for PositionErrorHandler {
 
         // Set some default position errors
         for i in 0..7 {
-            data[i * 4..(i + 1) * 4].copy_from_slice(&(i as u32 * 10).to_le_bytes());
+            let value = u32::try_from(i).map_err(|_| {
+                proto::ProtocolError::InvalidMessage("Invalid axis value".to_string())
+            })?;
+            data[i * 4..(i + 1) * 4].copy_from_slice(&(value * 10).to_le_bytes());
         }
 
         Ok(data)

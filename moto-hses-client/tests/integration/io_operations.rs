@@ -1,3 +1,4 @@
+#![allow(clippy::expect_used)]
 // Integration tests for I/O operations
 
 use crate::common::{
@@ -7,30 +8,30 @@ use crate::common::{
 use crate::test_with_logging;
 
 test_with_logging!(test_read_io, {
-    log::info!("Creating I/O test server...");
+    log::debug!("Creating I/O test server...");
     let _server = create_io_test_server().await.expect("Failed to start mock server");
-    log::info!("I/O test server started successfully");
+    log::debug!("I/O test server started successfully");
 
-    log::info!("Creating test client...");
+    log::debug!("Creating test client...");
     let client = create_test_client().await.expect("Failed to create client");
-    log::info!("Client created successfully");
+    log::debug!("Client created successfully");
 
     // Test reading robot user input I/O
     log::info!("Reading robot user input I/O #1...");
     let io1_state = client.read_io(1).await.expect("Failed to read I/O #1");
-    log::info!("I/O #1 state: {}", io1_state);
+    log::info!("I/O #1 state: {io1_state}");
     assert!(io1_state, "I/O #1 should be ON (initial state)");
 
     // Test reading robot user output I/O
     log::info!("Reading robot user output I/O #1001...");
     let io1001_state = client.read_io(1001).await.expect("Failed to read I/O #1001");
-    log::info!("I/O #1001 state: {}", io1001_state);
+    log::info!("I/O #1001 state: {io1001_state}");
     assert!(!io1001_state, "I/O #1001 should be OFF (initial state)");
 
     // Test reading additional I/O as per legacy example
     log::info!("Reading robot user input I/O #2...");
     let io2_state = client.read_io(2).await.expect("Failed to read I/O #2");
-    log::info!("I/O #2 state: {}", io2_state);
+    log::info!("I/O #2 state: {io2_state}");
     assert!(!io2_state, "I/O #2 should be OFF (initial state)");
 
     log::info!("I/O state verification passed");
@@ -52,7 +53,7 @@ test_with_logging!(test_write_io, {
     let io_state_after_write =
         client.read_io(1001).await.expect("Failed to read I/O #1001 after write");
 
-    log::info!("I/O #1001 state after write: {}", io_state_after_write);
+    log::info!("I/O #1001 state after write: {io_state_after_write}");
     assert!(io_state_after_write, "I/O #1001 should be ON after write");
 
     // Additional I/O operations (as per legacy example)
@@ -66,7 +67,7 @@ test_with_logging!(test_write_io, {
     let io1002_state_after_write =
         client.read_io(1002).await.expect("Failed to read I/O #1002 after write");
 
-    log::info!("I/O #1002 state after write: {}", io1002_state_after_write);
+    log::info!("I/O #1002 state after write: {io1002_state_after_write}");
     assert!(!io1002_state_after_write, "I/O #1002 should be OFF after write");
 });
 
@@ -80,11 +81,11 @@ test_with_logging!(test_read_and_write_io_with_invalid_number, {
     log::info!("Testing invalid I/O number read...");
     match client.read_io(65535).await {
         Ok(value) => {
-            log::error!("✗ Invalid I/O number succeeded unexpectedly: {}", value);
-            panic!("Invalid I/O number should return error");
+            log::error!("✗ Invalid I/O number succeeded unexpectedly: {value}");
+            unreachable!("Invalid I/O number should return error");
         }
         Err(e) => {
-            log::info!("✓ Invalid I/O number correctly failed: {}", e);
+            log::debug!("✓ Invalid I/O number correctly failed: {e}");
         }
     }
 
@@ -93,10 +94,10 @@ test_with_logging!(test_read_and_write_io_with_invalid_number, {
     match client.write_io(65535, true).await {
         Ok(()) => {
             log::error!("✗ Invalid I/O number write succeeded unexpectedly");
-            panic!("Writing to invalid I/O number should return error");
+            unreachable!("Writing to invalid I/O number should return error");
         }
         Err(e) => {
-            log::info!("✓ Invalid I/O number write correctly failed: {}", e);
+            log::debug!("✓ Invalid I/O number write correctly failed: {e}");
         }
     }
 });

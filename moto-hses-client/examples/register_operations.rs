@@ -1,70 +1,72 @@
 //! Register operations example for 0x79 register command
 
+use log::info;
 use moto_hses_client::HsesClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Register operations example - 0x79 register command");
+    env_logger::init();
+    info!("Register operations example - 0x79 register command");
 
     // Create client
     let client =
         HsesClient::new(&format!("127.0.0.1:{}", moto_hses_proto::ROBOT_CONTROL_PORT)).await?;
-    println!("Connected to mock server");
+    info!("Connected to mock server");
 
     // Test reading a register
-    println!("Reading register 0...");
+    info!("Reading register 0...");
     let value = client.read_register(0).await?;
-    println!("Register 0 value: {}", value);
+    info!("Register 0 value: {value}");
 
     // Test writing to a register
-    println!("Writing value 42 to register 0...");
+    info!("Writing value 42 to register 0...");
     client.write_register(0, 42).await?;
-    println!("Write successful");
+    info!("Write successful");
 
     // Test reading the register again to verify the write
-    println!("Reading register 0 again...");
+    info!("Reading register 0 again...");
     let new_value = client.read_register(0).await?;
-    println!("Register 0 value after write: {}", new_value);
+    info!("Register 0 value after write: {new_value}");
 
     // Test with different register numbers
     for i in 1..5 {
-        let test_value = (i * 10) as i16;
-        println!("Writing {} to register {}...", test_value, i);
+        let test_value = i16::try_from(i * 10).map_err(|_| "Invalid value for i16")?;
+        info!("Writing {test_value} to register {i}...");
         client.write_register(i, test_value).await?;
 
         let read_value = client.read_register(i).await?;
-        println!("Register {} value: {}", i, read_value);
+        info!("Register {i} value: {read_value}");
 
         if read_value == test_value {
-            println!("✓ Register {} test passed", i);
+            info!("✓ Register {i} test passed");
         } else {
-            println!("✗ Register {} test failed: expected {}, got {}", i, test_value, read_value);
+            info!("✗ Register {i} test failed: expected {test_value}, got {read_value}");
         }
     }
 
     // Test error handling
-    println!("\n--- Error Handling Tests ---");
+    info!("\n--- Error Handling Tests ---");
 
     // Test invalid register number
     match client.read_register(65535).await {
         Ok(value) => {
-            println!("✗ Invalid register number succeeded unexpectedly: {}", value);
+            info!("✗ Invalid register number succeeded unexpectedly: {value}");
         }
         Err(e) => {
-            println!("✓ Invalid register number correctly failed: {}", e);
+            info!("✓ Invalid register number correctly failed: {e}");
         }
     }
 
     // Test invalid register number for write
     match client.write_register(65535, 42).await {
         Ok(()) => {
-            println!("✗ Invalid register number write succeeded unexpectedly");
+            info!("✗ Invalid register number write succeeded unexpectedly");
         }
         Err(e) => {
-            println!("✓ Invalid register number write correctly failed: {}", e);
+            info!("✓ Invalid register number write correctly failed: {e}");
         }
     }
 
-    println!("Register operations example completed!");
+    info!("Register operations example completed!");
     Ok(())
 }

@@ -68,7 +68,7 @@ impl CommandHandler for FileControlHandler {
                     let filename_clone = filename.clone();
                     let content_len = content.len();
                     state.set_file(filename, content);
-                    eprintln!("File saved: {} ({} bytes)", filename_clone, content_len);
+                    debug!("File saved: {filename_clone} ({content_len} bytes)");
                 }
                 Ok(vec![])
             }
@@ -81,7 +81,7 @@ impl CommandHandler for FileControlHandler {
                     file_list.push_str(&file);
                     file_list.push('\0');
                 }
-                eprintln!("File list requested, returning: {:?}", file_list);
+                debug!("File list requested, returning: {file_list:?}");
                 Ok(file_list.as_bytes().to_vec())
             }
             0x16 => {
@@ -94,11 +94,10 @@ impl CommandHandler for FileControlHandler {
                         let mut response = filename.as_bytes().to_vec();
                         response.push(0);
                         response.extend(content);
-                        eprintln!("File requested: {} ({} bytes)", filename, content.len());
+                        debug!("File requested: {} ({} bytes)", filename, content.len());
                         return Ok(response);
-                    } else {
-                        eprintln!("File not found: {}", filename);
                     }
+                    debug!("File not found: {filename}");
                 }
                 Ok(vec![])
             }
@@ -109,7 +108,7 @@ impl CommandHandler for FileControlHandler {
                     let filename =
                         String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
                     let deleted = state.delete_file(&filename);
-                    eprintln!("File deletion requested: {} (deleted: {})", filename, deleted);
+                    debug!("File deletion requested: {filename} (deleted: {deleted})");
                 }
                 Ok(vec![])
             }

@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::expect_used)]
 // Integration tests for file operations
 
 use crate::common::mock_server_setup::MockServerManager;
@@ -12,7 +14,7 @@ test_with_logging!(test_file_list_initial_state, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
+    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
         .await
         .expect("Failed to create client");
 
@@ -23,7 +25,7 @@ test_with_logging!(test_file_list_initial_state, {
     assert_eq!(files.len(), 1, "MockServer should start with 1 file");
     assert!(files.contains(&"TEST.JOB".to_string()), "TEST.JOB should be in initial file list");
 
-    log::info!("✓ Initial file list verified: {:?}", files);
+    log::info!("✓ Initial file list verified: {files:?}");
 });
 
 test_with_logging!(test_file_send_receive_operations, {
@@ -31,7 +33,7 @@ test_with_logging!(test_file_send_receive_operations, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
+    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
         .await
         .expect("Failed to create client");
 
@@ -65,7 +67,7 @@ test_with_logging!(test_file_delete_operations, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
+    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
         .await
         .expect("Failed to create client");
 
@@ -97,7 +99,7 @@ test_with_logging!(test_file_operations_comprehensive, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{}", FILE_CONTROL_PORT))
+    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
         .await
         .expect("Failed to create client");
 

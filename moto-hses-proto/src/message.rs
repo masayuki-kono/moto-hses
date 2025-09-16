@@ -18,7 +18,8 @@ pub struct HsesCommonHeader {
 }
 
 impl HsesCommonHeader {
-    pub fn new(division: u8, ack: u8, request_id: u8, payload_size: u16) -> Self {
+    #[must_use]
+    pub const fn new(division: u8, ack: u8, request_id: u8, payload_size: u16) -> Self {
         Self {
             magic: *b"YERC",
             header_size: 0x20,
@@ -27,7 +28,7 @@ impl HsesCommonHeader {
             division,
             ack,
             request_id,
-            block_number: if ack == 0x01 { 0x80000000 } else { 0 },
+            block_number: if ack == 0x01 { 0x8000_0000 } else { 0 },
             reserved: *b"99999999",
         }
     }
@@ -44,6 +45,9 @@ impl HsesCommonHeader {
         dst.extend_from_slice(&self.reserved);
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if decoding fails
     pub fn decode(src: &mut &[u8]) -> Result<Self, ProtocolError> {
         if src.len() < 24 {
             return Err(ProtocolError::Underflow);
@@ -92,7 +96,8 @@ pub struct HsesRequestSubHeader {
 }
 
 impl HsesRequestSubHeader {
-    pub fn new(command: u16, instance: u16, attribute: u8, service: u8) -> Self {
+    #[must_use]
+    pub const fn new(command: u16, instance: u16, attribute: u8, service: u8) -> Self {
         Self { command, instance, attribute, service, padding: 0 }
     }
 
@@ -104,6 +109,9 @@ impl HsesRequestSubHeader {
         dst.put_u16_le(self.padding);
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if decoding fails
     pub fn decode(src: &mut &[u8]) -> Result<Self, ProtocolError> {
         if src.len() < 8 {
             return Err(ProtocolError::Underflow);
@@ -134,7 +142,8 @@ pub struct HsesResponseSubHeader {
 }
 
 impl HsesResponseSubHeader {
-    pub fn new(service: u8, status: u8, added_status: u16) -> Self {
+    #[must_use]
+    pub const fn new(service: u8, status: u8, added_status: u16) -> Self {
         Self {
             service: service + 0x80, // Add 0x80 to service for response
             status,
@@ -154,6 +163,9 @@ impl HsesResponseSubHeader {
         dst.put_u16_le(self.padding2);
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if decoding fails
     pub fn decode(src: &mut &[u8]) -> Result<Self, ProtocolError> {
         if src.len() < 8 {
             return Err(ProtocolError::Underflow);
@@ -183,6 +195,11 @@ pub struct HsesRequestMessage {
 
 impl HsesRequestMessage {
     #[allow(clippy::too_many_arguments)]
+    /// Create a new HSES request message
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the payload is too large for the protocol
     pub fn new(
         division: u8,
         ack: u8,
@@ -192,12 +209,16 @@ impl HsesRequestMessage {
         attribute: u8,
         service: u8,
         payload: Vec<u8>,
-    ) -> Self {
-        let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
+    ) -> Result<Self, ProtocolError> {
+        let payload_len = u16::try_from(payload.len()).map_err(|_| {
+            ProtocolError::InvalidMessage("Payload too large for protocol".to_string())
+        })?;
+        let header = HsesCommonHeader::new(division, ack, request_id, payload_len);
         let sub_header = HsesRequestSubHeader::new(command, instance, attribute, service);
-        Self { header, sub_header, payload }
+        Ok(Self { header, sub_header, payload })
     }
 
+    #[must_use]
     pub fn encode(&self) -> BytesMut {
         let mut buf = BytesMut::with_capacity(32 + self.payload.len());
         self.header.encode(&mut buf);
@@ -206,6 +227,9 @@ impl HsesRequestMessage {
         buf
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if decoding fails
     pub fn decode(src: &[u8]) -> Result<Self, ProtocolError> {
         let mut buf = src;
         let header = HsesCommonHeader::decode(&mut buf)?;
@@ -225,6 +249,11 @@ pub struct HsesResponseMessage {
 }
 
 impl HsesResponseMessage {
+    /// Create a new HSES response message
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the payload is too large for the protocol
     pub fn new(
         division: u8,
         ack: u8,
@@ -233,12 +262,16 @@ impl HsesResponseMessage {
         status: u8,
         added_status: u16,
         payload: Vec<u8>,
-    ) -> Self {
-        let header = HsesCommonHeader::new(division, ack, request_id, payload.len() as u16);
+    ) -> Result<Self, ProtocolError> {
+        let payload_len = u16::try_from(payload.len()).map_err(|_| {
+            ProtocolError::InvalidMessage("Payload too large for protocol".to_string())
+        })?;
+        let header = HsesCommonHeader::new(division, ack, request_id, payload_len);
         let sub_header = HsesResponseSubHeader::new(service, status, added_status);
-        Self { header, sub_header, payload }
+        Ok(Self { header, sub_header, payload })
     }
 
+    #[must_use]
     pub fn encode(&self) -> BytesMut {
         let mut buf = BytesMut::with_capacity(32 + self.payload.len());
         self.header.encode(&mut buf);
@@ -247,6 +280,9 @@ impl HsesResponseMessage {
         buf
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if decoding fails
     pub fn decode(src: &[u8]) -> Result<Self, ProtocolError> {
         let mut buf = src;
         let header = HsesCommonHeader::decode(&mut buf)?;
@@ -274,6 +310,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_common_header_encode_decode() {
         let header = HsesCommonHeader::new(1, 0, 1, 10);
         let mut buf = BytesMut::new();
@@ -301,6 +338,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_request_sub_header_encode_decode() {
         let sub_header = HsesRequestSubHeader::new(0x0070, 1, 0, 1);
         let mut buf = BytesMut::new();
@@ -326,6 +364,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_response_sub_header_encode_decode() {
         let sub_header = HsesResponseSubHeader::new(1, 0, 0x0000);
         let mut buf = BytesMut::new();
@@ -341,9 +380,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_request_message_creation() {
         let payload = vec![1, 2, 3];
-        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone());
+        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone()).unwrap();
         assert_eq!(message.header.division, 1);
         assert_eq!(message.header.ack, 0);
         assert_eq!(message.header.request_id, 1);
@@ -354,9 +394,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_request_message_encode_decode() {
         let payload = vec![1, 2, 3];
-        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload.clone());
+        let message = HsesRequestMessage::new(1, 0, 1, 0x0070, 1, 0, 1, payload).unwrap();
         let encoded = message.encode();
 
         let decoded = HsesRequestMessage::decode(&encoded).unwrap();
@@ -371,9 +412,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_response_message_creation() {
         let payload = vec![1, 2, 3];
-        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone());
+        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone()).unwrap();
         assert_eq!(message.header.division, 1);
         assert_eq!(message.header.ack, 1);
         assert_eq!(message.header.request_id, 1);
@@ -385,9 +427,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::unwrap_used)]
     fn test_hses_response_message_encode_decode() {
         let payload = vec![1, 2, 3];
-        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload.clone());
+        let message = HsesResponseMessage::new(1, 1, 1, 1, 0, 0x0000, payload).unwrap();
         let encoded = message.encode();
 
         let decoded = HsesResponseMessage::decode(&encoded).unwrap();
