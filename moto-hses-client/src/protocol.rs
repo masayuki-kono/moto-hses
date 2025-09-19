@@ -302,11 +302,13 @@ impl HsesClient {
                     }
                 }
                 5 => {
-                    // Alarm name (32 bytes)
+                    // Alarm name (32 bytes) - store as raw bytes
                     if response.len() >= 32 {
                         let name_end = response.iter().position(|&b| b == 0).unwrap_or(32);
-                        let name = String::from_utf8_lossy(&response[..name_end]).to_string();
-                        Ok(Alarm::new(0, 0, 0, String::new(), name))
+                        let name_bytes = response[..name_end].to_vec();
+                        let mut alarm = Alarm::new(0, 0, 0, String::new(), String::new());
+                        alarm.name_bytes = name_bytes;
+                        Ok(alarm)
                     } else {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
