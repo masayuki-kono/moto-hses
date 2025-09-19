@@ -36,8 +36,8 @@ impl CommandHandler for ExecutingJobInfoHandler {
         };
 
         match service {
-            0x0e => job_info.serialize(attribute),
-            0x01 => job_info.serialize_complete(),
+            0x0e => job_info.serialize(attribute, state.text_encoding),
+            0x01 => job_info.serialize_complete(state.text_encoding),
             _ => Err(proto::ProtocolError::InvalidService),
         }
     }
@@ -101,7 +101,9 @@ impl CommandHandler for MovHandler {
                 // SetAll
                 if message.payload.len() >= 104 {
                     // Parse position data and update state
-                    if let Ok(position) = proto::Position::deserialize(&message.payload[0..52]) {
+                    if let Ok(position) =
+                        proto::Position::deserialize(&message.payload[0..52], state.text_encoding)
+                    {
                         state.update_position(position);
                     }
                 }
@@ -130,7 +132,9 @@ impl CommandHandler for PmovHandler {
                 // SetAll
                 if message.payload.len() >= 88 {
                     // Parse position data and update state
-                    if let Ok(position) = proto::Position::deserialize(&message.payload[0..52]) {
+                    if let Ok(position) =
+                        proto::Position::deserialize(&message.payload[0..52], state.text_encoding)
+                    {
                         state.update_position(position);
                     }
                 }

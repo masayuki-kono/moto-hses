@@ -17,9 +17,9 @@ impl CommandHandler for StatusHandler {
 
         let attribute = message.sub_header.attribute;
         let mut data = match attribute {
-            1 => state.status.data1.serialize()?,
-            2 => state.status.data2.serialize()?,
-            _ => state.status.serialize()?, // Default to complete status
+            1 => state.status.data1.serialize(state.text_encoding)?,
+            2 => state.status.data2.serialize(state.text_encoding)?,
+            _ => state.status.serialize(state.text_encoding)?, // Default to complete status
         };
 
         // Extend to 8 bytes if needed
@@ -38,7 +38,7 @@ impl CommandHandler for AxisNameHandler {
     fn handle(
         &self,
         _message: &proto::HsesRequestMessage,
-        _state: &mut MockState,
+        state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let mut data = vec![0u8; 56]; // 7 axes * 8 bytes each
 
@@ -47,7 +47,8 @@ impl CommandHandler for AxisNameHandler {
             ["1st_axis", "2nd_axis", "3rd_axis", "4th_axis", "5th_axis", "6th_axis", "7th_axis"];
 
         for (i, name) in axis_names.iter().enumerate() {
-            let name_bytes = name.as_bytes();
+            let name_bytes =
+                moto_hses_proto::encoding_utils::encode_string(name, state.text_encoding);
             let start = i * 8;
             let len = name_bytes.len().min(7);
             data[start..start + len].copy_from_slice(&name_bytes[0..len]);
@@ -87,7 +88,7 @@ impl CommandHandler for ManagementTimeHandler {
     fn handle(
         &self,
         _message: &proto::HsesRequestMessage,
-        _state: &mut MockState,
+        state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let mut data = vec![0u8; 32];
 
@@ -96,12 +97,14 @@ impl CommandHandler for ManagementTimeHandler {
         let elapse_time = "987654321";
 
         // Copy start time (16 bytes)
-        let start_bytes = start_time.as_bytes();
+        let start_bytes =
+            moto_hses_proto::encoding_utils::encode_string(start_time, state.text_encoding);
         let start_len = start_bytes.len().min(15);
         data[0..start_len].copy_from_slice(&start_bytes[0..start_len]);
 
         // Copy elapse time (16 bytes)
-        let elapse_bytes = elapse_time.as_bytes();
+        let elapse_bytes =
+            moto_hses_proto::encoding_utils::encode_string(elapse_time, state.text_encoding);
         let elapse_len = elapse_bytes.len().min(15);
         data[16..16 + elapse_len].copy_from_slice(&elapse_bytes[0..elapse_len]);
 
@@ -116,25 +119,28 @@ impl CommandHandler for SystemInfoHandler {
     fn handle(
         &self,
         _message: &proto::HsesRequestMessage,
-        _state: &mut MockState,
+        state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let mut data = vec![0u8; 48];
 
         // Software version (16 bytes)
         let version = "V1.0.0";
-        let version_bytes = version.as_bytes();
+        let version_bytes =
+            moto_hses_proto::encoding_utils::encode_string(version, state.text_encoding);
         let len = version_bytes.len().min(15);
         data[0..len].copy_from_slice(&version_bytes[0..len]);
 
         // Model (16 bytes)
         let model = "FS100";
-        let model_bytes = model.as_bytes();
+        let model_bytes =
+            moto_hses_proto::encoding_utils::encode_string(model, state.text_encoding);
         let len = model_bytes.len().min(15);
         data[16..16 + len].copy_from_slice(&model_bytes[0..len]);
 
         // Parameter version (16 bytes)
         let param_version = "P1.0.0";
-        let param_version_bytes = param_version.as_bytes();
+        let param_version_bytes =
+            moto_hses_proto::encoding_utils::encode_string(param_version, state.text_encoding);
         let len = param_version_bytes.len().min(15);
         data[32..32 + len].copy_from_slice(&param_version_bytes[0..len]);
 

@@ -41,6 +41,7 @@ pub async fn create_test_client_with_host_and_port(
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
         buffer_size: 8192,
+        text_encoding: moto_hses_proto::TextEncoding::Utf8,
     };
 
     let client = HsesClient::new_with_config(config).await?;

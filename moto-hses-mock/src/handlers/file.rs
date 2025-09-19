@@ -8,6 +8,7 @@ use moto_hses_proto as proto;
 pub struct FileControlHandler;
 
 impl CommandHandler for FileControlHandler {
+    #[allow(clippy::too_many_lines)]
     fn handle(
         &self,
         message: &proto::HsesRequestMessage,
@@ -20,14 +21,18 @@ impl CommandHandler for FileControlHandler {
                 // Get file list
                 // Return a simple file list
                 let file_list = "TEST.JOB\0";
-                Ok(file_list.as_bytes().to_vec())
+                let file_list_bytes =
+                    moto_hses_proto::encoding_utils::encode_string(file_list, state.text_encoding);
+                Ok(file_list_bytes)
             }
             0x02 => {
                 // Send file
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     let content = message.payload[filename_pos + 1..].to_vec();
                     state.set_file(filename, content);
                 }
@@ -37,10 +42,15 @@ impl CommandHandler for FileControlHandler {
                 // Receive file
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     if let Some(content) = state.get_file(&filename) {
-                        let mut response = filename.as_bytes().to_vec();
+                        let mut response = moto_hses_proto::encoding_utils::encode_string(
+                            &filename,
+                            state.text_encoding,
+                        );
                         response.push(0);
                         response.extend(content);
                         return Ok(response);
@@ -52,8 +62,10 @@ impl CommandHandler for FileControlHandler {
                 // Delete file
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     state.delete_file(&filename);
                 }
                 Ok(vec![])
@@ -62,8 +74,10 @@ impl CommandHandler for FileControlHandler {
                 // Send file (Python client uses this)
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     let content = message.payload[filename_pos + 1..].to_vec();
                     let filename_clone = filename.clone();
                     let content_len = content.len();
@@ -82,16 +96,23 @@ impl CommandHandler for FileControlHandler {
                     file_list.push('\0');
                 }
                 debug!("File list requested, returning: {file_list:?}");
-                Ok(file_list.as_bytes().to_vec())
+                let file_list_bytes =
+                    moto_hses_proto::encoding_utils::encode_string(&file_list, state.text_encoding);
+                Ok(file_list_bytes)
             }
             0x16 => {
                 // Receive file (Python client uses this)
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     if let Some(content) = state.get_file(&filename) {
-                        let mut response = filename.as_bytes().to_vec();
+                        let mut response = moto_hses_proto::encoding_utils::encode_string(
+                            &filename,
+                            state.text_encoding,
+                        );
                         response.push(0);
                         response.extend(content);
                         debug!("File requested: {} ({} bytes)", filename, content.len());
@@ -105,8 +126,10 @@ impl CommandHandler for FileControlHandler {
                 // Delete file (Python client uses this)
                 // Parse filename from payload
                 if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename =
-                        String::from_utf8_lossy(&message.payload[..filename_pos]).to_string();
+                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload[..filename_pos],
+                        state.text_encoding,
+                    );
                     let deleted = state.delete_file(&filename);
                     debug!("File deletion requested: {filename} (deleted: {deleted})");
                 }

@@ -11,7 +11,7 @@ pub struct Alarm {
     pub data: u32,
     pub alarm_type: u32,
     pub time: String,
-    pub name_bytes: Vec<u8>, // Raw bytes for name field
+    pub name: String,
     pub sub_code_info: String,
     pub sub_code_data: String,
     pub sub_code_reverse: String,
@@ -25,7 +25,7 @@ impl Alarm {
             data,
             alarm_type,
             time,
-            name_bytes: name.into_bytes(),
+            name,
             sub_code_info: String::new(),
             sub_code_data: String::new(),
             sub_code_reverse: String::new(),
@@ -40,30 +40,15 @@ impl Alarm {
         self
     }
 
-    /// Get the alarm name as a string using the specified encoding
-    /// If encoding is None, UTF-8 is used as default
-    #[must_use]
-    pub fn get_name_with_encoding(&self, encoding: TextEncoding) -> String {
-        let (decoded, _encoding_used, had_errors) = encoding.to_encoding().decode(&self.name_bytes);
-        if had_errors {
-            // If specified encoding decoding had errors, fallback to UTF-8
-            String::from_utf8_lossy(&self.name_bytes).to_string()
-        } else {
-            decoded.to_string()
-        }
-    }
-
-    /// Get the alarm name as a string using UTF-8 encoding (default)
-    #[must_use]
-    pub fn get_name(&self) -> String {
-        self.get_name_with_encoding(TextEncoding::Utf8)
-    }
-
-    /// Serialize alarm data for response
+    /// Serialize alarm data for response with specified text encoding
     /// # Errors
     ///
     /// Returns an error if serialization fails
-    pub fn serialize(&self, attribute: u8) -> Result<Vec<u8>, ProtocolError> {
+    pub fn serialize(
+        &self,
+        attribute: u8,
+        encoding: TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
         match attribute {
@@ -81,7 +66,7 @@ impl Alarm {
             }
             4 => {
                 // Alarm time
-                let time_bytes = self.time.as_bytes();
+                let time_bytes = crate::encoding_utils::encode_string(&self.time, encoding);
                 let mut padded_time = vec![0u8; 16];
                 padded_time[..time_bytes.len().min(16)]
                     .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
@@ -89,14 +74,16 @@ impl Alarm {
             }
             5 => {
                 // Alarm name
+                let name_bytes = crate::encoding_utils::encode_string(&self.name, encoding);
                 let mut padded_name = vec![0u8; 32];
-                padded_name[..self.name_bytes.len().min(32)]
-                    .copy_from_slice(&self.name_bytes[..self.name_bytes.len().min(32)]);
+                padded_name[..name_bytes.len().min(32)]
+                    .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
                 data.extend_from_slice(&padded_name);
             }
             6 => {
                 // Sub code info
-                let info_bytes = self.sub_code_info.as_bytes();
+                let info_bytes =
+                    crate::encoding_utils::encode_string(&self.sub_code_info, encoding);
                 let mut padded_info = vec![0u8; 16];
                 padded_info[..info_bytes.len().min(16)]
                     .copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
@@ -104,7 +91,8 @@ impl Alarm {
             }
             7 => {
                 // Sub code data
-                let data_bytes = self.sub_code_data.as_bytes();
+                let data_bytes =
+                    crate::encoding_utils::encode_string(&self.sub_code_data, encoding);
                 let mut padded_data = vec![0u8; 96];
                 padded_data[..data_bytes.len().min(96)]
                     .copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
@@ -112,7 +100,8 @@ impl Alarm {
             }
             8 => {
                 // Sub code reverse
-                let reverse_bytes = self.sub_code_reverse.as_bytes();
+                let reverse_bytes =
+                    crate::encoding_utils::encode_string(&self.sub_code_reverse, encoding);
                 let mut padded_reverse = vec![0u8; 96];
                 padded_reverse[..reverse_bytes.len().min(96)]
                     .copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
@@ -130,7 +119,7 @@ impl Alarm {
     /// # Errors
     ///
     /// Returns an error if serialization fails
-    pub fn serialize_complete(&self) -> Result<Vec<u8>, ProtocolError> {
+    pub fn serialize_complete(&self, encoding: TextEncoding) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
         // Alarm code
@@ -141,34 +130,35 @@ impl Alarm {
         data.extend_from_slice(&self.alarm_type.to_le_bytes());
 
         // Alarm time (16 bytes)
-        let time_bytes = self.time.as_bytes();
+        let time_bytes = crate::encoding_utils::encode_string(&self.time, encoding);
         let mut padded_time = vec![0u8; 16];
         padded_time[..time_bytes.len().min(16)]
             .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
         data.extend_from_slice(&padded_time);
 
         // Alarm name (32 bytes)
+        let name_bytes = crate::encoding_utils::encode_string(&self.name, encoding);
         let mut padded_name = vec![0u8; 32];
-        padded_name[..self.name_bytes.len().min(32)]
-            .copy_from_slice(&self.name_bytes[..self.name_bytes.len().min(32)]);
+        padded_name[..name_bytes.len().min(32)]
+            .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
         data.extend_from_slice(&padded_name);
 
         // Sub code info (16 bytes)
-        let info_bytes = self.sub_code_info.as_bytes();
+        let info_bytes = crate::encoding_utils::encode_string(&self.sub_code_info, encoding);
         let mut padded_info = vec![0u8; 16];
         padded_info[..info_bytes.len().min(16)]
             .copy_from_slice(&info_bytes[..info_bytes.len().min(16)]);
         data.extend_from_slice(&padded_info);
 
         // Sub code data (96 bytes)
-        let data_bytes = self.sub_code_data.as_bytes();
+        let data_bytes = crate::encoding_utils::encode_string(&self.sub_code_data, encoding);
         let mut padded_data = vec![0u8; 96];
         padded_data[..data_bytes.len().min(96)]
             .copy_from_slice(&data_bytes[..data_bytes.len().min(96)]);
         data.extend_from_slice(&padded_data);
 
         // Sub code reverse (96 bytes)
-        let reverse_bytes = self.sub_code_reverse.as_bytes();
+        let reverse_bytes = crate::encoding_utils::encode_string(&self.sub_code_reverse, encoding);
         let mut padded_reverse = vec![0u8; 96];
         padded_reverse[..reverse_bytes.len().min(96)]
             .copy_from_slice(&reverse_bytes[..reverse_bytes.len().min(96)]);
@@ -185,7 +175,7 @@ impl Default for Alarm {
             data: 0,
             alarm_type: 0,
             time: "2024/01/01 00:00".to_string(),
-            name_bytes: b"No Alarm".to_vec(),
+            name: "No Alarm".to_string(),
             sub_code_info: String::new(),
             sub_code_data: String::new(),
             sub_code_reverse: String::new(),
@@ -198,10 +188,7 @@ impl Alarm {
     /// # Errors
     ///
     /// Returns an error if deserialization fails
-    pub fn deserialize_with_encoding(
-        data: &[u8],
-        _text_encoding: TextEncoding,
-    ) -> Result<Self, ProtocolError> {
+    pub fn deserialize(data: &[u8], text_encoding: TextEncoding) -> Result<Self, ProtocolError> {
         if data.len() < 60 {
             return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
         }
@@ -210,53 +197,22 @@ impl Alarm {
         let alarm_data = u32::from_le_bytes([data[4], data[5], data[6], data[7]]);
         let alarm_type = u32::from_le_bytes([data[8], data[9], data[10], data[11]]);
 
-        // Extract time (16 bytes, null-terminated)
+        // Extract time (16 bytes, null-terminated) and decode with specified encoding
         let time_end = data[12..28].iter().position(|&b| b == 0).unwrap_or(16);
-        let time = String::from_utf8_lossy(&data[12..12 + time_end]).to_string();
+        let time_bytes = &data[12..12 + time_end];
+        let time = crate::encoding_utils::decode_string_with_fallback(time_bytes, text_encoding);
 
-        // Extract name (32 bytes, null-terminated) - store as raw bytes
+        // Extract name (32 bytes, null-terminated) and decode with specified encoding
         let name_end = data[28..60].iter().position(|&b| b == 0).unwrap_or(32);
-        let name_bytes = data[28..28 + name_end].to_vec();
+        let name_bytes = &data[28..28 + name_end];
+        let name = crate::encoding_utils::decode_string_with_fallback(name_bytes, text_encoding);
 
         Ok(Self {
             code,
             data: alarm_data,
             alarm_type,
             time,
-            name_bytes,
-            sub_code_info: String::new(),
-            sub_code_data: String::new(),
-            sub_code_reverse: String::new(),
-        })
-    }
-
-    /// Deserialize alarm data from response (stores name as raw bytes)
-    /// # Errors
-    ///
-    /// Returns an error if deserialization fails
-    pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        if data.len() < 60 {
-            return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
-        }
-
-        let code = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-        let alarm_data = u32::from_le_bytes([data[4], data[5], data[6], data[7]]);
-        let alarm_type = u32::from_le_bytes([data[8], data[9], data[10], data[11]]);
-
-        // Extract time (16 bytes, null-terminated)
-        let time_end = data[12..28].iter().position(|&b| b == 0).unwrap_or(16);
-        let time = String::from_utf8_lossy(&data[12..12 + time_end]).to_string();
-
-        // Extract name (32 bytes, null-terminated) - store as raw bytes
-        let name_end = data[28..60].iter().position(|&b| b == 0).unwrap_or(32);
-        let name_bytes = data[28..28 + name_end].to_vec();
-
-        Ok(Self {
-            code,
-            data: alarm_data,
-            alarm_type,
-            time,
-            name_bytes,
+            name,
             sub_code_info: String::new(),
             sub_code_data: String::new(),
             sub_code_reverse: String::new(),
@@ -269,12 +225,15 @@ impl VariableType for Alarm {
         0x70
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        self.serialize_complete()
+    fn serialize(&self, encoding: crate::encoding::TextEncoding) -> Result<Vec<u8>, ProtocolError> {
+        self.serialize_complete(encoding)
     }
 
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Self::deserialize(data)
+    fn deserialize(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
+        Self::deserialize(data, encoding)
     }
 }
 
@@ -576,7 +535,7 @@ mod tests {
         assert_eq!(alarm.data, 1);
         assert_eq!(alarm.alarm_type, 1);
         assert_eq!(alarm.time, "2024/01/01 12:00");
-        assert_eq!(alarm.get_name(), "Test Alarm");
+        assert_eq!(alarm.name, "Test Alarm");
         assert_eq!(alarm.sub_code_info, "");
         assert_eq!(alarm.sub_code_data, "");
         assert_eq!(alarm.sub_code_reverse, "");
@@ -607,7 +566,7 @@ mod tests {
         assert_eq!(alarm.data, 0);
         assert_eq!(alarm.alarm_type, 0);
         assert_eq!(alarm.time, "2024/01/01 00:00");
-        assert_eq!(alarm.get_name(), "No Alarm");
+        assert_eq!(alarm.name, "No Alarm");
         assert_eq!(alarm.sub_code_info, "");
         assert_eq!(alarm.sub_code_data, "");
         assert_eq!(alarm.sub_code_reverse, "");
@@ -619,7 +578,7 @@ mod tests {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
-        let data = alarm.serialize_complete().unwrap();
+        let data = alarm.serialize_complete(TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 268); // 4+4+4+16+32+16+96+96
 
         // Check alarm code (first 4 bytes)
@@ -639,29 +598,29 @@ mod tests {
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
         // Test alarm code serialization
-        let data = alarm.serialize(1).unwrap();
+        let data = alarm.serialize(1, TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1001);
 
         // Test alarm data serialization
-        let data = alarm.serialize(2).unwrap();
+        let data = alarm.serialize(2, TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1);
 
         // Test alarm type serialization
-        let data = alarm.serialize(3).unwrap();
+        let data = alarm.serialize(3, TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1);
 
         // Test alarm time serialization
-        let data = alarm.serialize(4).unwrap();
+        let data = alarm.serialize(4, TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 16);
         let time_str =
             String::from_utf8_lossy(&data[..data.iter().position(|&b| b == 0).unwrap_or(16)]);
         assert_eq!(time_str, "2024/01/01 12:00");
 
         // Test alarm name serialization
-        let data = alarm.serialize(5).unwrap();
+        let data = alarm.serialize(5, TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 32);
         let name_str =
             String::from_utf8_lossy(&data[..data.iter().position(|&b| b == 0).unwrap_or(32)]);
@@ -674,7 +633,7 @@ mod tests {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
-        let result = alarm.serialize(99);
+        let result = alarm.serialize(99, TextEncoding::Utf8);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::InvalidAttribute));
     }
@@ -685,21 +644,21 @@ mod tests {
         let original_alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
-        let serialized = original_alarm.serialize_complete().unwrap();
-        let deserialized = Alarm::deserialize(&serialized).unwrap();
+        let serialized = original_alarm.serialize_complete(TextEncoding::Utf8).unwrap();
+        let deserialized = Alarm::deserialize(&serialized, TextEncoding::Utf8).unwrap();
 
         assert_eq!(deserialized.code, original_alarm.code);
         assert_eq!(deserialized.data, original_alarm.data);
         assert_eq!(deserialized.alarm_type, original_alarm.alarm_type);
         assert_eq!(deserialized.time, original_alarm.time);
-        assert_eq!(deserialized.get_name(), original_alarm.get_name());
+        assert_eq!(deserialized.name, original_alarm.name);
     }
 
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_alarm_deserialize_insufficient_data() {
         let short_data = vec![0u8; 10]; // Less than 60 bytes
-        let result = Alarm::deserialize(&short_data);
+        let result = Alarm::deserialize(&short_data, TextEncoding::Utf8);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }
@@ -732,10 +691,10 @@ mod tests {
         let alarm =
             Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
 
-        let serialized = alarm.serialize_complete().unwrap();
+        let serialized = alarm.serialize_complete(TextEncoding::Utf8).unwrap();
         assert_eq!(serialized.len(), 268);
 
-        let deserialized = Alarm::deserialize(&serialized).unwrap();
+        let deserialized = Alarm::deserialize(&serialized, TextEncoding::Utf8).unwrap();
         assert_eq!(deserialized.code, 1001);
     }
 
@@ -756,17 +715,17 @@ mod tests {
     fn test_test_alarms() {
         let servo_alarm = test_alarms::servo_error();
         assert_eq!(servo_alarm.code, 1001);
-        assert_eq!(servo_alarm.get_name(), "Servo Error");
+        assert_eq!(servo_alarm.name, "Servo Error");
         assert_eq!(servo_alarm.sub_code_info, "[SV#1]");
 
         let emergency_alarm = test_alarms::emergency_stop();
         assert_eq!(emergency_alarm.code, 2001);
-        assert_eq!(emergency_alarm.get_name(), "Emergency Stop");
+        assert_eq!(emergency_alarm.name, "Emergency Stop");
         assert_eq!(emergency_alarm.sub_code_info, "");
 
         let safety_alarm = test_alarms::safety_error();
         assert_eq!(safety_alarm.code, 3001);
-        assert_eq!(safety_alarm.get_name(), "Safety Error");
+        assert_eq!(safety_alarm.name, "Safety Error");
         assert_eq!(safety_alarm.sub_code_info, "[SV#2]");
     }
 
@@ -778,7 +737,7 @@ mod tests {
 
         let alarm = Alarm::new(1001, 1, 1, long_time.to_string(), long_name.to_string());
 
-        let data = alarm.serialize_complete().unwrap();
+        let data = alarm.serialize_complete(TextEncoding::Utf8).unwrap();
 
         // Time should be truncated to 16 bytes
         let time_str = String::from_utf8_lossy(&data[12..28]);
@@ -1021,5 +980,80 @@ mod tests {
         let debug_str = format!("{reset_cmd:?}");
         assert!(debug_str.contains("AlarmReset"));
         assert!(debug_str.contains("Reset"));
+    }
+
+    #[test]
+    fn test_alarm_encoding_utf8() {
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string());
+
+        // Test UTF-8 encoding (default)
+        assert_eq!(alarm.name, "Test Alarm");
+        assert_eq!(alarm.time, "2024/01/01 12:00");
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_alarm_encoding_shift_jis() {
+        // Create test alarm with Japanese text
+        let japanese_name = "テストアラーム";
+        let japanese_time = "2024/01/01 12:00";
+        let alarm = Alarm::new(1001, 1, 1, japanese_time.to_string(), japanese_name.to_string());
+
+        // Serialize with Shift_JIS encoding
+        let data = alarm.serialize_complete(TextEncoding::ShiftJis).unwrap();
+
+        // Deserialize with Shift_JIS encoding
+        let deserialized_alarm = Alarm::deserialize(&data, TextEncoding::ShiftJis).unwrap();
+
+        // Test Shift_JIS round-trip
+        assert_eq!(deserialized_alarm.name, japanese_name);
+        assert_eq!(deserialized_alarm.time, japanese_time);
+
+        // Deserialize with UTF-8 encoding (should produce garbled text)
+        let alarm_utf8 = Alarm::deserialize(&data, TextEncoding::Utf8).unwrap();
+
+        // The UTF-8 decoding should produce garbled text for Japanese name
+        assert_ne!(alarm_utf8.name, japanese_name);
+
+        // Time is ASCII, so it should be the same in both encodings
+        assert_eq!(alarm_utf8.time, japanese_time);
+    }
+
+    #[test]
+    fn test_alarm_sub_code_encoding() {
+        let alarm =
+            Alarm::new(1001, 1, 1, "2024/01/01 12:00".to_string(), "Test Alarm".to_string())
+                .with_sub_code(
+                    "[SV#1]".to_string(),
+                    "Sub code data".to_string(),
+                    "Reverse".to_string(),
+                );
+
+        // Test UTF-8 encoding (default)
+        assert_eq!(alarm.sub_code_info, "[SV#1]");
+        assert_eq!(alarm.sub_code_data, "Sub code data");
+        assert_eq!(alarm.sub_code_reverse, "Reverse");
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_alarm_deserialize_with_encoding() {
+        // Create test alarm
+        let time_str = "2024/01/01 12:00";
+        let name_str = "Test Alarm";
+        let alarm = Alarm::new(1001, 1, 1, time_str.to_string(), name_str.to_string());
+
+        // Serialize with UTF-8 encoding
+        let data = alarm.serialize_complete(TextEncoding::Utf8).unwrap();
+
+        // Deserialize with UTF-8 encoding
+        let deserialized_alarm = Alarm::deserialize(&data, TextEncoding::Utf8).unwrap();
+
+        assert_eq!(deserialized_alarm.code, 1001);
+        assert_eq!(deserialized_alarm.data, 1);
+        assert_eq!(deserialized_alarm.alarm_type, 1);
+        assert_eq!(deserialized_alarm.time, time_str);
+        assert_eq!(deserialized_alarm.name, name_str);
     }
 }

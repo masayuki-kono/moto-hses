@@ -19,6 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
         buffer_size: 8192,
+        text_encoding: moto_hses_proto::TextEncoding::ShiftJis,
     };
 
     // Create client

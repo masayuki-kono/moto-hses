@@ -9,12 +9,18 @@ impl VariableType for u8 {
     fn command_id() -> u16 {
         0x7a
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = vec![0u8; 4];
         data[0] = *self;
         Ok(data)
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
@@ -26,13 +32,19 @@ impl VariableType for i16 {
     fn command_id() -> u16 {
         0x7b
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         // Protocol specification: 4 bytes (Byte 0-1: I variable, Byte 2-3: Reserved)
         let mut data = vec![0u8; 4];
         data[0..2].copy_from_slice(&self.to_le_bytes());
         Ok(data)
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
@@ -46,10 +58,16 @@ impl VariableType for i32 {
     fn command_id() -> u16 {
         0x7c
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         Ok(self.to_le_bytes().to_vec())
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
@@ -62,10 +80,16 @@ impl VariableType for f32 {
     fn command_id() -> u16 {
         0x7d
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         Ok(self.to_le_bytes().to_vec())
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 4 {
             return Err(ProtocolError::Underflow);
         }
@@ -79,7 +103,10 @@ impl VariableType for Vec<u8> {
         0x7e // String variable command
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         // S variables are 16 bytes (4 × 32-bit integers)
         // Pad with null bytes to 16 bytes
         let mut result = vec![0u8; 16];
@@ -88,7 +115,10 @@ impl VariableType for Vec<u8> {
         Ok(result)
     }
 
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         // S variables should be 16 bytes, but handle shorter responses gracefully
         // Always pad to 16 bytes first, then remove trailing nulls for consistent behavior
         let mut padded_data = [0u8; 16];

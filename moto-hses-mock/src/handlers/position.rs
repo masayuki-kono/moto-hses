@@ -36,7 +36,8 @@ impl CommandHandler for PositionVarHandler {
             0x02 => {
                 // SetAll
                 if message.payload.len() >= 52
-                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                    && let Ok(position) =
+                        proto::Position::deserialize(&message.payload, state.text_encoding)
                 {
                     state.update_position(position);
                 }
@@ -49,7 +50,8 @@ impl CommandHandler for PositionVarHandler {
             0x10 => {
                 // Write
                 if message.payload.len() >= 52
-                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                    && let Ok(position) =
+                        proto::Position::deserialize(&message.payload, state.text_encoding)
                 {
                     state.update_position(position);
                 }
@@ -82,7 +84,7 @@ impl CommandHandler for BasePositionVarHandler {
                     // Parse base position data
                     let mut data = vec![0u8; 52];
                     data[0..36].copy_from_slice(&message.payload[0..36]);
-                    if let Ok(position) = proto::Position::deserialize(&data) {
+                    if let Ok(position) = proto::Position::deserialize(&data, state.text_encoding) {
                         state.update_position(position);
                     }
                 }
@@ -95,7 +97,8 @@ impl CommandHandler for BasePositionVarHandler {
             0x10 => {
                 // Write
                 if message.payload.len() >= 52
-                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                    && let Ok(position) =
+                        proto::Position::deserialize(&message.payload, state.text_encoding)
                 {
                     state.update_position(position);
                 }
@@ -128,7 +131,7 @@ impl CommandHandler for ExternalAxisVarHandler {
                     // Parse external axis data
                     let mut data = vec![0u8; 52];
                     data[0..36].copy_from_slice(&message.payload[0..36]);
-                    if let Ok(position) = proto::Position::deserialize(&data) {
+                    if let Ok(position) = proto::Position::deserialize(&data, state.text_encoding) {
                         state.update_position(position);
                     }
                 }
@@ -141,7 +144,8 @@ impl CommandHandler for ExternalAxisVarHandler {
             0x10 => {
                 // Write
                 if message.payload.len() >= 52
-                    && let Ok(position) = proto::Position::deserialize(&message.payload)
+                    && let Ok(position) =
+                        proto::Position::deserialize(&message.payload, state.text_encoding)
                 {
                     state.update_position(position);
                 }

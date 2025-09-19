@@ -119,6 +119,7 @@ test_with_logging!(test_retry_mechanism_actual, {
         retry_count: 3,
         retry_delay: std::time::Duration::from_millis(25),
         buffer_size: 8192,
+        text_encoding: moto_hses_proto::TextEncoding::Utf8,
     };
 
     let client = moto_hses_client::HsesClient::new_with_config(config)

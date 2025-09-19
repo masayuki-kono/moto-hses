@@ -2,6 +2,7 @@
 
 pub mod alarm;
 pub mod encoding;
+pub mod encoding_utils;
 pub mod error;
 pub mod file;
 pub mod job;

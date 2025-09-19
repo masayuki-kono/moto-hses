@@ -10,15 +10,16 @@ fn handle_alarm_service_request(
     alarm: &Alarm,
     service: u8,
     attribute: u8,
+    state: &MockState,
 ) -> Result<Vec<u8>, proto::ProtocolError> {
     match service {
         0x01 => {
             // Service = 0x01 (Get_Attribute_All) - Return complete alarm data (60 bytes)
-            alarm.serialize_complete()
+            alarm.serialize_complete(state.text_encoding)
         }
         0x0E => {
             // Service = 0x0E (Get_Attribute_Single) - Return specific attribute data
-            Ok(get_alarm_attribute_data(alarm, attribute))
+            Ok(get_alarm_attribute_data(alarm, attribute, state))
         }
         _ => {
             // Invalid service - return empty data
@@ -28,7 +29,7 @@ fn handle_alarm_service_request(
 }
 
 /// Common helper function to get specific alarm attribute data
-fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Vec<u8> {
+fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8, state: &MockState) -> Vec<u8> {
     match attribute {
         1 => {
             // Alarm code (4 bytes)
@@ -44,7 +45,8 @@ fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Vec<u8> {
         }
         4 => {
             // Alarm time (16 bytes)
-            let time_bytes = alarm.time.as_bytes();
+            let time_bytes =
+                moto_hses_proto::encoding_utils::encode_string(&alarm.time, state.text_encoding);
             let mut padded_time = vec![0u8; 16];
             padded_time[..time_bytes.len().min(16)]
                 .copy_from_slice(&time_bytes[..time_bytes.len().min(16)]);
@@ -52,9 +54,11 @@ fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Vec<u8> {
         }
         5 => {
             // Alarm name (32 bytes)
+            let name_bytes =
+                moto_hses_proto::encoding_utils::encode_string(&alarm.name, state.text_encoding);
             let mut padded_name = vec![0u8; 32];
-            padded_name[..alarm.name_bytes.len().min(32)]
-                .copy_from_slice(&alarm.name_bytes[..alarm.name_bytes.len().min(32)]);
+            padded_name[..name_bytes.len().min(32)]
+                .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
             padded_name
         }
         _ => {
@@ -97,7 +101,7 @@ impl CommandHandler for AlarmDataHandler {
         }
 
         let alarm = &state.alarms[instance_usize - 1];
-        handle_alarm_service_request(alarm, service, attribute)
+        handle_alarm_service_request(alarm, service, attribute, state)
     }
 }
 
@@ -131,7 +135,7 @@ impl CommandHandler for AlarmInfoHandler {
                 // No alarm found at this index - return empty data
                 Ok(vec![0u8; 4])
             },
-            |alarm| handle_alarm_service_request(alarm, service, attribute),
+            |alarm| handle_alarm_service_request(alarm, service, attribute, state),
         )
     }
 }

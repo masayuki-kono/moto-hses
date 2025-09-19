@@ -9,7 +9,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::net::UdpSocket;
 
-use moto_hses_proto::ProtocolError;
+use moto_hses_proto::{ProtocolError, TextEncoding};
 
 /// Client configuration options
 #[derive(Debug, Clone)]
@@ -20,6 +20,8 @@ pub struct ClientConfig {
     pub retry_count: u32,
     pub retry_delay: Duration,
     pub buffer_size: usize,
+    /// Text encoding used by the server (default: UTF-8)
+    pub text_encoding: TextEncoding,
 }
 
 impl Default for ClientConfig {
@@ -31,6 +33,7 @@ impl Default for ClientConfig {
             retry_count: 3,
             retry_delay: Duration::from_millis(100),
             buffer_size: 8192,
+            text_encoding: TextEncoding::Utf8,
         }
     }
 }
