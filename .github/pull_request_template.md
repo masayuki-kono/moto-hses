@@ -1,30 +1,24 @@
-## Summary
+## Overview
 
-<!-- Describe the purpose and overview of this pull request -->
+<!-- Brief description of what this PR accomplishes -->
 
-## Changes
+## Major Changes
 
-<!-- Explain what changes were made specifically -->
+- ✨ **Feature**: <!-- Description of new features -->
+- 🔧 **Improvement**: <!-- Description of improvements -->
+- 🐛 **Fix**: <!-- Description of bug fixes -->
+- 🏗️ **Refactor**: <!-- Description of refactoring -->
 
-## Testing
+## Technical Details
 
-- [ ] Unit tests have been added/updated
-- [ ] All existing tests pass
-- [ ] Manual testing has been performed
+<!-- Specific implementation details and architecture changes -->
 
-## Checklist
+## Breaking Changes
 
-- [ ] Code formatting is appropriate (`cargo fmt`)
-- [ ] No Clippy warnings (`cargo clippy`)
-- [ ] Security audit passes (`cargo audit`)
-- [ ] Documentation has been updated (if necessary)
+<!-- List any breaking changes and migration steps if needed -->
 
 ## Related Issues
 
 <!-- If there are related issue numbers, please list them -->
 
 Closes #
-
-## Additional Notes
-
-<!-- Any other information you want to share with reviewers -->

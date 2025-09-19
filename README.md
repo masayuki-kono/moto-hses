@@ -10,14 +10,6 @@ This repository is an experimental project using LLM-assisted development. Docum
 
 This library provides a type-safe, asynchronous Rust client for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol.
 
-## Features
-
-- **Type-safe API**: Leverage Rust's type system for compile-time safety
-- **Async-first**: Built on Tokio for efficient asynchronous I/O
-- **Comprehensive error handling**: Type-safe error handling with thiserror
-- **Memory efficient**: Zero-copy operations using the bytes crate
-- **Extensible**: Modular design for easy extension and testing
-
 ## Crates
 
 - `moto-hses-proto` — Protocol definitions and serialization
@@ -44,103 +36,49 @@ This library provides a type-safe, asynchronous Rust client for communicating wi
 ### Basic Usage
 
 ```rust
-use moto_hses_client::{HsesClient, VariableType, ClientError};
-use std::time::Duration;
+use moto_hses_client::HsesClient;
 
 #[tokio::main]
-async fn main() -> Result<(), ClientError> {
-    // Create client with default configuration
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create client
     let client = HsesClient::new("192.168.1.100:10040").await?;
 
     // Read robot status
     let status = client.read_status().await?;
     println!("Robot running: {}", status.is_running());
 
-    // Read variable (using generic type parameter)
-    let value: i32 = client.read_variable::<i32>(0).await?;
+    // Read variable (D000)
+    let value = client.read_i32(0).await?;
     println!("D000: {}", value);
 
-    // Write variable
-    client.write_variable(0, 42i32).await?;
-
-    // Read current position
-    let position = client.read_position(1, CoordinateSystemType::RobotPulse).await?;
-    println!("Current position: {:?}", position);
-
-    // Read alarm data
-    let alarm = client.read_alarm_data(1, 0).await?;
-    println!("Alarm: Code={}, Name={}", alarm.code, alarm.name);
-
-    // Check robot status
-    let status = client.read_status().await?;
-    println!("Running: {}, Servo: {}, Alarm: {}",
-             status.is_running(), status.is_servo_on(), status.has_alarm());
-
     Ok(())
 }
 ```
 
-### Alarm Operations
+### Examples
 
-```rust
-use moto_hses_client::{HsesClient, Alarm, ClientError};
+Comprehensive examples are available in the [`examples/`](moto-hses-client/examples/) directory:
 
-// Read alarm data
-let alarm = client.read_alarm_data(1, 0).await?;
-println!("Alarm: Code={}, Name={}", alarm.code, alarm.name);
+- [`basic_usage.rs`](moto-hses-client/examples/) — Basic client operations
+- [`alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs) — Alarm data handling
+- [`io_operations.rs`](moto-hses-client/examples/io_operations.rs) — I/O operations
+- [`position_operations.rs`](moto-hses-client/examples/position_operations.rs) — Position data operations
+- [`variable_operations.rs`](moto-hses-client/examples/variable_operations.rs) — Variable read/write operations
+- [`connection_management.rs`](moto-hses-client/examples/connection_management.rs) — Connection handling
+- [`file_operations.rs`](moto-hses-client/examples/file_operations.rs) — File transfer operations
+- [`hold_servo_control.rs`](moto-hses-client/examples/hold_servo_control.rs) — Servo control operations
+- [`register_operations.rs`](moto-hses-client/examples/register_operations.rs) — Register operations
+- [`read_executing_job_info.rs`](moto-hses-client/examples/read_executing_job_info.rs) — Job information
+- [`read_status.rs`](moto-hses-client/examples/read_status.rs) — Status monitoring
 
-// Read specific alarm attributes
-let alarm_code = client.read_alarm_data(1, 1).await?; // Code only
-let alarm_name = client.read_alarm_data(1, 5).await?; // Name only
-```
+### Running Examples
 
-> **Note**: For detailed alarm operations examples, see [`examples/alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs)
+```bash
+# Run a specific example
+RUST_LOG=info cargo run -p moto-hses-client --example alarm_operations -- 192.168.1.100 10040
 
-### I/O Operations
-
-```rust
-use moto_hses_client::{HsesClient, ClientError};
-
-// Read I/O state
-let io_state = client.read_io(1).await?; // Read robot user input #1
-println!("I/O #1 state: {}", if io_state { "ON" } else { "OFF" });
-
-// Write I/O state
-client.write_io(1001, true).await?; // Set robot user output #1001 to ON
-```
-
-> **Note**: For detailed I/O operations examples, see [`examples/io_operations.rs`](moto-hses-client/examples/io_operations.rs)
-
-### Advanced Usage with Custom Configuration
-
-```rust
-use moto_hses_client::{HsesClient, ClientConfig, ClientError};
-use std::time::Duration;
-
-#[tokio::main]
-async fn main() -> Result<(), ClientError> {
-    // Create custom configuration
-    let config = ClientConfig {
-        host: "192.168.1.100".to_string(),
-        port: 10040,
-        timeout: Duration::from_millis(500),
-        retry_count: 5,
-        retry_delay: Duration::from_millis(200),
-        buffer_size: 8192,
-    };
-
-    // Create client with custom configuration
-    let client = HsesClient::new_with_config(config).await?;
-
-    // Read different variable types
-    let int_value: i32 = client.read_variable::<i32>(0).await?;
-    let float_value: f32 = client.read_variable::<f32>(1).await?;
-    let byte_value: u8 = client.read_variable::<u8>(2).await?;
-
-    println!("D000: {}, R001: {}, B002: {}", int_value, float_value, byte_value);
-
-    Ok(())
-}
+# Run with logging
+RUST_LOG=info cargo run -p moto-hses-client --example io_operations -- 192.168.1.100 10040
 ```
 
 ### Mock Server Testing
@@ -153,7 +91,6 @@ RUST_LOG=info cargo run -p moto-hses-mock --example mock_basic_usage
 
 # Terminal 2: Run client examples against mock
 RUST_LOG=info cargo run -p moto-hses-client --example alarm_operations -- 127.0.0.1 10040
-RUST_LOG=info cargo run -p moto-hses-client --example io_operations -- 127.0.0.1 10040
 ```
 
 #### Automated Integration Testing
@@ -180,10 +117,6 @@ cargo test --test integration_tests
 - Communication integrity
 - Automatic resource cleanup
 - MockServer configuration and expected value validation
-
-## License
-
-Apache-2.0
 
 ## References
 
