@@ -1,6 +1,7 @@
 //! moto-hses-proto - HSES (High Speed Ethernet Server) protocol implementation
 
 pub mod alarm;
+pub mod encoding;
 pub mod error;
 pub mod file;
 pub mod job;
@@ -12,6 +13,7 @@ pub mod variables;
 
 // Re-export commonly used items for convenience
 pub use alarm::{Alarm, AlarmAttribute, ReadAlarmData};
+pub use encoding::TextEncoding;
 pub use error::ProtocolError;
 pub use file::response::{parse_file_content, parse_file_list};
 pub use file::{DeleteFile, ReadFileList, ReceiveFile, SendFile};

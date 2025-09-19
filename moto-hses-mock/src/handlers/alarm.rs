@@ -52,10 +52,9 @@ fn get_alarm_attribute_data(alarm: &Alarm, attribute: u8) -> Vec<u8> {
         }
         5 => {
             // Alarm name (32 bytes)
-            let name_bytes = alarm.name.as_bytes();
             let mut padded_name = vec![0u8; 32];
-            padded_name[..name_bytes.len().min(32)]
-                .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
+            padded_name[..alarm.name_bytes.len().min(32)]
+                .copy_from_slice(&alarm.name_bytes[..alarm.name_bytes.len().min(32)]);
             padded_name
         }
         _ => {

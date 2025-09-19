@@ -27,7 +27,7 @@ test_with_logging!(test_complete_alarm_data, {
         alarm_data.data,
         alarm_data.alarm_type,
         alarm_data.time,
-        alarm_data.name
+        alarm_data.get_name()
     );
 
     // Verify alarm data matches expected values from MockServer default state
@@ -37,7 +37,7 @@ test_with_logging!(test_complete_alarm_data, {
     assert_eq!(alarm_data.data, 1, "Alarm data should match expected value");
     assert_eq!(alarm_data.alarm_type, 1, "Alarm type should match expected value");
     assert_eq!(alarm_data.time, "2024/01/01 12:00", "Alarm time should match expected value");
-    assert_eq!(alarm_data.name, "Servo Error", "Alarm name should match expected value");
+    assert_eq!(alarm_data.get_name(), "Servo Error", "Alarm name should match expected value");
 
     log::info!("All alarm data values match expected values from MockServer");
     log::info!("Test completed successfully");
@@ -91,8 +91,8 @@ test_with_logging!(test_specific_alarm_attributes, {
         .read_alarm_data(1, AlarmAttribute::Name as u8)
         .await
         .expect("Failed to read alarm name");
-    log::info!("Alarm name: {}", alarm_name.name);
-    assert_eq!(alarm_name.name, "Servo Error", "Alarm name should match expected value");
+    log::info!("Alarm name: {}", alarm_name.get_name());
+    assert_eq!(alarm_name.get_name(), "Servo Error", "Alarm name should match expected value");
 
     log::info!("All specific alarm attributes match expected values");
 });
@@ -129,7 +129,7 @@ test_with_logging!(test_alarm_instances, {
             "Alarm instance {}: Code={}, Name={}",
             instance,
             alarm_instance.code,
-            alarm_instance.name
+            alarm_instance.get_name()
         );
 
         // Verify expected values
@@ -138,7 +138,8 @@ test_with_logging!(test_alarm_instances, {
             "Alarm instance {instance} code should match expected value {expected_code}"
         );
         assert_eq!(
-            alarm_instance.name, expected_name,
+            alarm_instance.get_name(),
+            expected_name,
             "Alarm instance {instance} name should match expected value '{expected_name}'"
         );
     }
@@ -180,7 +181,7 @@ test_with_logging!(test_alarm_history_major_failure, {
             "Major failure alarm {}: Code={}, Name={}",
             instance,
             alarm_history_code.code,
-            alarm_history_name.name
+            alarm_history_name.get_name()
         );
 
         // Verify expected values
@@ -189,7 +190,8 @@ test_with_logging!(test_alarm_history_major_failure, {
             "Major failure alarm {instance} code should match expected value {expected_code}"
         );
         assert_eq!(
-            alarm_history_name.name, expected_name,
+            alarm_history_name.get_name(),
+            expected_name,
             "Major failure alarm {instance} name should match expected value '{expected_name}'"
         );
     }
@@ -221,7 +223,7 @@ test_with_logging!(test_alarm_history_monitor, {
                 "Monitor alarm {}: Code={}, Name={}",
                 instance,
                 alarm_history.code,
-                alarm_history.name
+                alarm_history.get_name()
             );
             // If there's an alarm, verify it has valid data
             assert!(
@@ -229,7 +231,7 @@ test_with_logging!(test_alarm_history_monitor, {
                 "Monitor alarm {instance} should have positive code if not 'No alarm'"
             );
             assert!(
-                !alarm_history.name.is_empty(),
+                !alarm_history.get_name().is_empty(),
                 "Monitor alarm {instance} should have non-empty name if not 'No alarm'"
             );
         } else {
