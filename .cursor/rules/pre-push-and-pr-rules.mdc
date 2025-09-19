@@ -37,25 +37,6 @@ cargo test --all-features --workspace
 - **Required**: All tests must pass
 - **Coverage**: Ensure new functionality has appropriate test coverage
 
-### 3.1. Integration Tests (Local)
-
-#### Protocol Communication Tests
-
-```bash
-# Test mock server protocol communication
-cargo test --test protocol_communication_tests
-```
-
-#### End-to-End Integration Tests
-
-```bash
-# Comprehensive client-server integration tests
-cargo test --test integration_tests
-```
-
-- **Required**: Both test types must pass locally before pushing
-- **Coverage**: Protocol communication tests verify mock server correctness, end-to-end tests verify client-server communication
-
 ### 4. Security Audit
 
 ```bash
@@ -92,47 +73,4 @@ Examples:
 
 ### Description Template
 
-Use this structured format for all pull requests:
-
-```markdown
-## Overview
-
-Brief description of what this PR accomplishes.
-
-## Major Changes
-
-- ✨ **Feature**: Description of new features
-- 🔧 **Improvement**: Description of improvements
-- 🐛 **Fix**: Description of bug fixes
-- 🏗️ **Refactor**: Description of refactoring
-
-## Technical Details
-
-- Specific implementation details
-- Architecture changes
-- Performance improvements
-
-## Testing
-
-- How to test the changes
-- Test coverage information
-- Manual testing steps if applicable
-
-## Breaking Changes
-
-- List any breaking changes
-- Migration steps if needed
-```
-
-### Required Sections
-
-- **Overview**: Clear summary of changes
-- **Major Changes**: Categorized list of changes
-- **Testing**: How changes were tested
-- **Breaking Changes**: If any (or "None" if none)
-
-### Optional Sections
-
-- **Technical Details**: For complex changes
-- **Screenshots**: For UI changes
-- **Performance Impact**: For performance-related changes
+Use the structured format defined in `.github/pull_request_template.md` for all pull requests.

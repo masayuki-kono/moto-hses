@@ -23,29 +23,15 @@ This document outlines the comprehensive testing strategy for the Rust HSES clie
 These tests verify individual protocol components without network communication:
 
 - **Message serialization/deserialization**: `HsesRequestMessage` and `HsesResponseMessage` encoding/decoding
-- **Command structures**: Individual command types (`ReadVar`, `WriteVar`, `ReadStatus`, etc.)
-- **Data type serialization**: Variable type serialization for `u8`, `i32`, `f32`, etc.
 - **Enum validation**: Division, Service, CoordinateSystem enum values
-- **Status data parsing**: `StatusData1` and `StatusData2` bit field parsing
-- **Alarm data structures**: Alarm serialization with various attributes
-- **Position data**: Pulse and Cartesian position creation and validation
-- **Job information**: Executing job info serialization and validation
 
 ### Client Layer Tests
 
 These tests verify client-side components in isolation:
 
-- **Configuration validation**: `ClientConfig` default values and validation
-- **Error handling**: `ClientError` types and display formatting
-- **Mock server utilities**: Test server creation and configuration helpers
-
 ### Mock Server Tests
 
 These tests verify mock server components without actual UDP communication:
-
-- **Server startup**: Mock server initialization and port binding
-- **Test utilities**: Server creation helpers for different test scenarios
-- **Configuration validation**: Mock server configuration and expected value setup
 
 ## End-to-End Integration Tests
 

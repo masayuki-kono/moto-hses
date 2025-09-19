@@ -8,13 +8,12 @@ alwaysApply: true
 
 ## Development Approach
 
-This project implement features step by step, ensuring that unit tests pass at each stage of development.
+This project implements features step by step, ensuring that unit tests pass at each stage of development.
 
 ## Basic Rules
 
 ### 1. Incremental Implementation Principle
 
-- Implement from Phase 1 (Protocol Layer) following the implementation guide
 - Run unit tests after each step completion and ensure all tests pass
 - If tests fail, do not proceed to the next step until fixes are complete
 
@@ -28,10 +27,8 @@ When there are unclear points, refer to specifications in the following order:
 
 ### 3. Code Quality
 
-- Follow Rust best practices
 - Resolve `cargo clippy` warnings
 - Use `cargo fmt` to standardize code formatting
-- Implement appropriate error handling
 
 ## Testing Strategy
 
@@ -58,54 +55,14 @@ cargo test --test protocol_communication_tests
 cargo test --test integration_tests
 ```
 
-### Test Quality Standards
-
-- Test both normal and abnormal cases for each feature
-- Test edge cases (boundary values, invalid data)
-
-## Code Review Criteria
-
-### Implementation Quality
-
-- Does it conform to the implementation guide specifications?
-- Is type safety ensured?
-- Is error handling appropriate?
-- Is performance considered?
-
-### Test Quality
-
-- Do all unit tests pass?
-- Is test coverage sufficient?
-- Are edge cases tested?
-
-### Documentation Quality
-
-- Are code comments appropriate?
-- Is API documentation up to date?
-- Is consistency maintained with the implementation guide?
-
 ## Debugging and Troubleshooting
 
 ### Common Issues
 
-1. **Protocol Errors**: Verify consistency with HSES specification
+1. **Protocol Errors**: Verify consistency with HSES Protocol Specification
 2. **Type Errors**: Check `VariableType` trait implementation
 3. **Serialization Errors**: Verify byte order and data structure
 4. **Network Errors**: Check UDP communication settings and timeouts
-
-### Debugging Tools
-
-- Use `cargo test -- --nocapture` to check test output
-- Use `println!` or `dbg!` macros to output debug information
-- Use Wireshark to analyze network packets
-
-## Emergency Response
-
-### Inconsistency with Implementation Guide
-
-1. Recheck the relevant section of the implementation guide
-2. Refer to related specifications (protocol-commands.md.md, architecture.md, hses-protocol.md)
-3. Update implementation guide if necessary
 
 ### Test Failure Response
 
@@ -113,3 +70,12 @@ cargo test --test integration_tests
 2. Verify consistency between implementation and specification
 3. Apply fixes incrementally
 4. Re-run all tests after fixes
+
+### Logs
+
+Integration test logs from `cargo test --test integration_tests` are output to:
+```
+moto-hses-client/logs/integration_tests.log
+```
+
+When analyzing communication errors between client and mock server, check the output logs to verify that sent and received data are consistent.
