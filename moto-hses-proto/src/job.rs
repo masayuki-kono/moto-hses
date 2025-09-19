@@ -28,13 +28,17 @@ impl ExecutingJobInfo {
     /// # Errors
     ///
     /// Returns an error if serialization fails
-    pub fn serialize(&self, attribute: u8) -> Result<Vec<u8>, ProtocolError> {
+    pub fn serialize(
+        &self,
+        attribute: u8,
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
         match attribute {
             1 => {
                 // Job name (32 bytes)
-                let name_bytes = self.job_name.as_bytes();
+                let name_bytes = crate::encoding_utils::encode_string(&self.job_name, encoding);
                 let mut padded_name = vec![0u8; 32];
                 padded_name[..name_bytes.len().min(32)]
                     .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
@@ -64,11 +68,14 @@ impl ExecutingJobInfo {
     /// # Errors
     ///
     /// Returns an error if serialization fails
-    pub fn serialize_complete(&self) -> Result<Vec<u8>, ProtocolError> {
+    pub fn serialize_complete(
+        &self,
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
 
         // Job name (32 bytes)
-        let name_bytes = self.job_name.as_bytes();
+        let name_bytes = crate::encoding_utils::encode_string(&self.job_name, encoding);
         let mut padded_name = vec![0u8; 32];
         padded_name[..name_bytes.len().min(32)]
             .copy_from_slice(&name_bytes[..name_bytes.len().min(32)]);
@@ -104,14 +111,18 @@ impl ExecutingJobInfo {
     /// # Errors
     ///
     /// Returns an error if deserialization fails
-    pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    pub fn deserialize(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 44 {
             return Err(ProtocolError::Deserialization("Insufficient data length".to_string()));
         }
 
-        // Extract job name (32 bytes, null-terminated)
+        // Extract job name (32 bytes, null-terminated) and decode with specified encoding
         let name_end = data[0..32].iter().position(|&b| b == 0).unwrap_or(32);
-        let job_name = String::from_utf8_lossy(&data[0..name_end]).to_string();
+        let name_bytes = &data[0..name_end];
+        let job_name = crate::encoding_utils::decode_string_with_fallback(name_bytes, encoding);
 
         // Extract line number (4 bytes)
         let line_number = u32::from_le_bytes([data[32], data[33], data[34], data[35]]);
@@ -130,7 +141,11 @@ impl ExecutingJobInfo {
     /// # Errors
     ///
     /// Returns an error if deserialization fails
-    pub fn deserialize_attribute(data: &[u8], attribute: u8) -> Result<Self, ProtocolError> {
+    pub fn deserialize_attribute(
+        data: &[u8],
+        attribute: u8,
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         match attribute {
             1 => {
                 // Job name (32 bytes)
@@ -140,7 +155,9 @@ impl ExecutingJobInfo {
                     ));
                 }
                 let name_end = data[0..32].iter().position(|&b| b == 0).unwrap_or(32);
-                let job_name = String::from_utf8_lossy(&data[0..name_end]).to_string();
+                let name_bytes = &data[0..name_end];
+                let job_name =
+                    crate::encoding_utils::decode_string_with_fallback(name_bytes, encoding);
                 Ok(Self { job_name, line_number: 0, step_number: 0, speed_override_value: 0 })
             }
             2 => {
@@ -190,7 +207,7 @@ impl ExecutingJobInfo {
             }
             _ => {
                 // Default to complete deserialization
-                Self::deserialize(data)
+                Self::deserialize(data, encoding)
             }
         }
     }
@@ -201,12 +218,15 @@ impl VariableType for ExecutingJobInfo {
         0x73
     }
 
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        self.serialize_complete()
+    fn serialize(&self, encoding: crate::encoding::TextEncoding) -> Result<Vec<u8>, ProtocolError> {
+        self.serialize_complete(encoding)
     }
 
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Self::deserialize(data)
+    fn deserialize(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
+        Self::deserialize(data, encoding)
     }
 }
 
@@ -363,7 +383,7 @@ mod tests {
     fn test_executing_job_info_serialize_complete() {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
-        let data = job_info.serialize_complete().unwrap();
+        let data = job_info.serialize_complete(crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 44); // 32 + 4 + 4 + 4
 
         // Check job name (first 32 bytes)
@@ -386,23 +406,23 @@ mod tests {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
         // Test job name serialization
-        let data = job_info.serialize(1).unwrap();
+        let data = job_info.serialize(1, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 32);
         let name_str = String::from_utf8_lossy(&data[0..32]);
         assert!(name_str.starts_with("TEST.JOB"));
 
         // Test line number serialization
-        let data = job_info.serialize(2).unwrap();
+        let data = job_info.serialize(2, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1000);
 
         // Test step number serialization
-        let data = job_info.serialize(3).unwrap();
+        let data = job_info.serialize(3, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 1);
 
         // Test speed override value serialization
-        let data = job_info.serialize(4).unwrap();
+        let data = job_info.serialize(4, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(data.len(), 4);
         assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 100);
     }
@@ -412,7 +432,7 @@ mod tests {
     fn test_executing_job_info_serialize_invalid_attribute() {
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
-        let result = job_info.serialize(99);
+        let result = job_info.serialize(99, crate::encoding::TextEncoding::Utf8);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::InvalidAttribute));
     }
@@ -422,8 +442,11 @@ mod tests {
     fn test_executing_job_info_deserialize() {
         let original_job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
-        let serialized = original_job_info.serialize_complete().unwrap();
-        let deserialized = ExecutingJobInfo::deserialize(&serialized).unwrap();
+        let serialized =
+            original_job_info.serialize_complete(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize(&serialized, crate::encoding::TextEncoding::Utf8)
+                .unwrap();
 
         assert_eq!(deserialized.job_name, original_job_info.job_name);
         assert_eq!(deserialized.line_number, original_job_info.line_number);
@@ -435,7 +458,8 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_executing_job_info_deserialize_insufficient_data() {
         let short_data = vec![0u8; 10]; // Less than 44 bytes
-        let result = ExecutingJobInfo::deserialize(&short_data);
+        let result =
+            ExecutingJobInfo::deserialize(&short_data, crate::encoding::TextEncoding::Utf8);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }
@@ -467,10 +491,12 @@ mod tests {
 
         let job_info = ExecutingJobInfo::new("TEST.JOB".to_string(), 1000, 1, 100);
 
-        let serialized = job_info.serialize_complete().unwrap();
+        let serialized = job_info.serialize_complete(crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(serialized.len(), 44);
 
-        let deserialized = ExecutingJobInfo::deserialize(&serialized).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize(&serialized, crate::encoding::TextEncoding::Utf8)
+                .unwrap();
         assert_eq!(deserialized.job_name, "TEST.JOB");
     }
 
@@ -559,7 +585,7 @@ mod tests {
 
         let job_info = ExecutingJobInfo::new(long_job_name.to_string(), 1000, 1, 100);
 
-        let data = job_info.serialize_complete().unwrap();
+        let data = job_info.serialize_complete(crate::encoding::TextEncoding::Utf8).unwrap();
 
         // Job name should be truncated to 32 bytes
         let name_str = String::from_utf8_lossy(&data[0..32]);
@@ -572,7 +598,12 @@ mod tests {
     fn test_executing_job_info_deserialize_attribute() {
         // Test job name deserialization
         let job_name_data = b"TEST.JOB\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-        let job_info = ExecutingJobInfo::deserialize_attribute(job_name_data, 1).unwrap();
+        let job_info = ExecutingJobInfo::deserialize_attribute(
+            job_name_data,
+            1,
+            crate::encoding::TextEncoding::Utf8,
+        )
+        .unwrap();
         assert_eq!(job_info.job_name, "TEST.JOB");
         assert_eq!(job_info.line_number, 0);
         assert_eq!(job_info.step_number, 0);
@@ -580,7 +611,12 @@ mod tests {
 
         // Test line number deserialization
         let line_number_data = [232, 3, 0, 0]; // 1000 in little-endian
-        let job_info = ExecutingJobInfo::deserialize_attribute(&line_number_data, 2).unwrap();
+        let job_info = ExecutingJobInfo::deserialize_attribute(
+            &line_number_data,
+            2,
+            crate::encoding::TextEncoding::Utf8,
+        )
+        .unwrap();
         assert_eq!(job_info.job_name, "");
         assert_eq!(job_info.line_number, 1000);
         assert_eq!(job_info.step_number, 0);
@@ -588,7 +624,12 @@ mod tests {
 
         // Test step number deserialization
         let step_number_data = [1, 0, 0, 0]; // 1 in little-endian
-        let job_info = ExecutingJobInfo::deserialize_attribute(&step_number_data, 3).unwrap();
+        let job_info = ExecutingJobInfo::deserialize_attribute(
+            &step_number_data,
+            3,
+            crate::encoding::TextEncoding::Utf8,
+        )
+        .unwrap();
         assert_eq!(job_info.job_name, "");
         assert_eq!(job_info.line_number, 0);
         assert_eq!(job_info.step_number, 1);
@@ -596,7 +637,12 @@ mod tests {
 
         // Test speed override value deserialization
         let speed_override_data = [100, 0, 0, 0]; // 100 in little-endian
-        let job_info = ExecutingJobInfo::deserialize_attribute(&speed_override_data, 4).unwrap();
+        let job_info = ExecutingJobInfo::deserialize_attribute(
+            &speed_override_data,
+            4,
+            crate::encoding::TextEncoding::Utf8,
+        )
+        .unwrap();
         assert_eq!(job_info.job_name, "");
         assert_eq!(job_info.line_number, 0);
         assert_eq!(job_info.step_number, 0);
@@ -608,13 +654,21 @@ mod tests {
     fn test_executing_job_info_deserialize_attribute_insufficient_data() {
         // Test insufficient data for job name
         let short_data = vec![0u8; 10];
-        let result = ExecutingJobInfo::deserialize_attribute(&short_data, 1);
+        let result = ExecutingJobInfo::deserialize_attribute(
+            &short_data,
+            1,
+            crate::encoding::TextEncoding::Utf8,
+        );
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
 
         // Test insufficient data for line number
         let short_data = vec![0u8; 2];
-        let result = ExecutingJobInfo::deserialize_attribute(&short_data, 2);
+        let result = ExecutingJobInfo::deserialize_attribute(
+            &short_data,
+            2,
+            crate::encoding::TextEncoding::Utf8,
+        );
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
     }

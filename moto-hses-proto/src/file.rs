@@ -36,12 +36,17 @@ impl Command for ReadFileList {
 pub struct SendFile {
     pub filename: String,
     pub content: Vec<u8>,
+    pub encoding: crate::encoding::TextEncoding,
 }
 
 impl SendFile {
     #[must_use]
-    pub const fn new(filename: String, content: Vec<u8>) -> Self {
-        Self { filename, content }
+    pub const fn new(
+        filename: String,
+        content: Vec<u8>,
+        encoding: crate::encoding::TextEncoding,
+    ) -> Self {
+        Self { filename, content, encoding }
     }
 }
 
@@ -65,7 +70,8 @@ impl Command for SendFile {
     }
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut payload = self.filename.as_bytes().to_vec();
+        let filename_bytes = crate::encoding_utils::encode_string(&self.filename, self.encoding);
+        let mut payload = filename_bytes;
         payload.push(0); // Null terminator
         payload.extend_from_slice(&self.content);
         Ok(payload)
@@ -76,12 +82,13 @@ impl Command for SendFile {
 #[derive(Debug, Clone)]
 pub struct ReceiveFile {
     pub filename: String,
+    pub encoding: crate::encoding::TextEncoding,
 }
 
 impl ReceiveFile {
     #[must_use]
-    pub const fn new(filename: String) -> Self {
-        Self { filename }
+    pub const fn new(filename: String, encoding: crate::encoding::TextEncoding) -> Self {
+        Self { filename, encoding }
     }
 }
 
@@ -105,7 +112,8 @@ impl Command for ReceiveFile {
     }
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut payload = self.filename.as_bytes().to_vec();
+        let filename_bytes = crate::encoding_utils::encode_string(&self.filename, self.encoding);
+        let mut payload = filename_bytes;
         payload.push(0); // Null terminator
         Ok(payload)
     }
@@ -115,12 +123,13 @@ impl Command for ReceiveFile {
 #[derive(Debug, Clone)]
 pub struct DeleteFile {
     pub filename: String,
+    pub encoding: crate::encoding::TextEncoding,
 }
 
 impl DeleteFile {
     #[must_use]
-    pub const fn new(filename: String) -> Self {
-        Self { filename }
+    pub const fn new(filename: String, encoding: crate::encoding::TextEncoding) -> Self {
+        Self { filename, encoding }
     }
 }
 
@@ -144,7 +153,8 @@ impl Command for DeleteFile {
     }
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let mut payload = self.filename.as_bytes().to_vec();
+        let filename_bytes = crate::encoding_utils::encode_string(&self.filename, self.encoding);
+        let mut payload = filename_bytes;
         payload.push(0); // Null terminator
         Ok(payload)
     }
@@ -154,13 +164,16 @@ impl Command for DeleteFile {
 pub mod response {
     use super::ProtocolError;
 
-    /// Parse file list response
+    /// Parse file list response with specified text encoding
     ///
     /// # Errors
     ///
     /// Returns an error if parsing fails
-    pub fn parse_file_list(data: &[u8]) -> Result<Vec<String>, ProtocolError> {
-        let content = String::from_utf8_lossy(data);
+    pub fn parse_file_list(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<String>, ProtocolError> {
+        let content = crate::encoding_utils::decode_string_with_fallback(data, encoding);
         let files: Vec<String> = content
             .split('\0')
             .filter(|s| !s.is_empty())
@@ -203,14 +216,18 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_read_file_list_deserialization() {
         let data = b"file1.job\0file2.job\0";
-        let files = response::parse_file_list(data).unwrap();
+        let files = response::parse_file_list(data, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(files, vec!["file1.job", "file2.job"]);
     }
 
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_send_file_serialization() {
-        let cmd = SendFile::new("test.job".to_string(), b"content".to_vec());
+        let cmd = SendFile::new(
+            "test.job".to_string(),
+            b"content".to_vec(),
+            crate::encoding::TextEncoding::Utf8,
+        );
         let data = cmd.serialize().unwrap();
         let expected = b"test.job\0content".to_vec();
         assert_eq!(data, expected);
@@ -219,7 +236,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_receive_file_serialization() {
-        let cmd = ReceiveFile::new("test.job".to_string());
+        let cmd = ReceiveFile::new("test.job".to_string(), crate::encoding::TextEncoding::Utf8);
         let data = cmd.serialize().unwrap();
         let expected = b"test.job\0".to_vec();
         assert_eq!(data, expected);
@@ -236,7 +253,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_delete_file_serialization() {
-        let cmd = DeleteFile::new("test.job".to_string());
+        let cmd = DeleteFile::new("test.job".to_string(), crate::encoding::TextEncoding::Utf8);
         let data = cmd.serialize().unwrap();
         let expected = b"test.job\0".to_vec();
         assert_eq!(data, expected);

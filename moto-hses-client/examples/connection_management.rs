@@ -36,6 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 3,
         retry_delay: Duration::from_millis(100),
         buffer_size: 8192,
+        text_encoding: moto_hses_proto::TextEncoding::ShiftJis,
     };
 
     // Attempt to connect with error handling
@@ -101,6 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 1,
         retry_delay: Duration::from_millis(50),
         buffer_size: 8192,
+        text_encoding: moto_hses_proto::TextEncoding::ShiftJis,
     };
 
     match HsesClient::new_with_config(invalid_config).await {

@@ -99,7 +99,10 @@ impl Position {
     /// # Errors
     /// Returns `ProtocolError::Underflow` if data is insufficient
     /// Returns `ProtocolError::PositionError` if data format is invalid
-    pub fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    pub fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         if data.len() < 52 {
             return Err(ProtocolError::Underflow);
         }
@@ -163,11 +166,17 @@ impl VariableType for Position {
     fn command_id() -> u16 {
         0x7f
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         self.serialize()
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
-        Self::deserialize(data)
+    fn deserialize(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
+        Self::deserialize(data, encoding)
     }
 }
 
@@ -211,7 +220,8 @@ mod tests {
     fn test_position_serialization() {
         let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
         let serialized = position.serialize().unwrap();
-        let deserialized = Position::deserialize(&serialized).unwrap();
+        let deserialized =
+            Position::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(position, deserialized);
     }
 
@@ -230,7 +240,8 @@ mod tests {
             CoordinateSystem::Base,
         ));
         let serialized = position.serialize().unwrap();
-        let deserialized = Position::deserialize(&serialized).unwrap();
+        let deserialized =
+            Position::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(position, deserialized);
     }
 
@@ -241,7 +252,8 @@ mod tests {
         assert_eq!(Position::command_id(), 0x7f);
 
         let serialized = position.serialize().unwrap();
-        let deserialized = Position::deserialize(&serialized).unwrap();
+        let deserialized =
+            Position::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(position, deserialized);
     }
 }

@@ -31,6 +31,7 @@ impl MockServer {
         let file_socket = Arc::new(UdpSocket::bind(file_addr).await?);
 
         let mut mock_state = MockState {
+            text_encoding: config.text_encoding,
             status: config.default_status.clone(),
             position: config.default_position.clone(),
             registers: config.registers.clone(),
@@ -380,6 +381,12 @@ impl MockServerBuilder {
     #[must_use]
     pub const fn file_port(mut self, port: u16) -> Self {
         self.config.file_port = port;
+        self
+    }
+
+    #[must_use]
+    pub const fn text_encoding(mut self, encoding: proto::TextEncoding) -> Self {
+        self.config.text_encoding = encoding;
         self
     }
 

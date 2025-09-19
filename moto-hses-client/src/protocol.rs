@@ -36,7 +36,7 @@ impl HsesClient {
     {
         let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        Self::deserialize_response(&response)
+        T::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// # Errors
@@ -59,7 +59,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_status(&self) -> Result<Status, ClientError> {
         let response = self.send_command_with_retry(ReadStatus, Division::Robot).await?;
-        Self::deserialize_response(&response)
+        Status::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// Read status data 1 (basic status information)
@@ -69,7 +69,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_status_data1(&self) -> Result<StatusData1, ClientError> {
         let response = self.send_command_with_retry(ReadStatusData1, Division::Robot).await?;
-        Self::deserialize_response(&response)
+        StatusData1::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// Read status data 2 (additional status information)
@@ -79,7 +79,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_status_data2(&self) -> Result<StatusData2, ClientError> {
         let response = self.send_command_with_retry(ReadStatusData2, Division::Robot).await?;
-        Self::deserialize_response(&response)
+        StatusData2::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// # Errors
@@ -92,7 +92,7 @@ impl HsesClient {
     ) -> Result<Position, ClientError> {
         let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        Self::deserialize_response(&response)
+        Position::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// # Errors
@@ -207,10 +207,12 @@ impl HsesClient {
 
         // Use attribute-specific deserialization for single attributes
         if attribute > 0 {
-            ExecutingJobInfo::deserialize_attribute(&response, attribute).map_err(ClientError::from)
+            ExecutingJobInfo::deserialize_attribute(&response, attribute, self.config.text_encoding)
+                .map_err(ClientError::from)
         } else {
             // Use standard deserialization for complete data
-            Self::deserialize_response(&response)
+            ExecutingJobInfo::deserialize(&response, self.config.text_encoding)
+                .map_err(ClientError::from)
         }
     }
 
@@ -242,7 +244,9 @@ impl HsesClient {
 
         if attribute == 0 {
             // Service = 0x01 (Get_Attribute_All) - Return all data
-            let deserialized: C::Response = Self::deserialize_response(&response)?;
+            let deserialized: C::Response =
+                C::Response::deserialize(&response, self.config.text_encoding)
+                    .map_err(ClientError::from)?;
             Ok(deserialized.into())
         } else {
             // Service = 0x0E (Get_Attribute_Single) - Return only specified attribute
@@ -295,20 +299,26 @@ impl HsesClient {
                     // Alarm time (16 bytes)
                     if response.len() >= 16 {
                         let time_end = response.iter().position(|&b| b == 0).unwrap_or(16);
-                        let time = String::from_utf8_lossy(&response[..time_end]).to_string();
+                        let time_bytes = &response[..time_end];
+                        let time = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                            time_bytes,
+                            self.config.text_encoding,
+                        );
                         Ok(Alarm::new(0, 0, 0, time, String::new()))
                     } else {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
                 }
                 5 => {
-                    // Alarm name (32 bytes) - store as raw bytes
+                    // Alarm name (32 bytes)
                     if response.len() >= 32 {
                         let name_end = response.iter().position(|&b| b == 0).unwrap_or(32);
-                        let name_bytes = response[..name_end].to_vec();
-                        let mut alarm = Alarm::new(0, 0, 0, String::new(), String::new());
-                        alarm.name_bytes = name_bytes;
-                        Ok(alarm)
+                        let name_bytes = &response[..name_end];
+                        let name = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                            name_bytes,
+                            self.config.text_encoding,
+                        );
+                        Ok(Alarm::new(0, 0, 0, String::new(), name))
                     } else {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
@@ -411,7 +421,7 @@ impl HsesClient {
     pub async fn read_file_list(&self) -> Result<Vec<String>, ClientError> {
         let command = ReadFileList;
         let response = self.send_command_with_retry(command, Division::File).await?;
-        parse_file_list(&response).map_err(ClientError::from)
+        parse_file_list(&response, self.config.text_encoding).map_err(ClientError::from)
     }
 
     /// Send file to controller
@@ -424,7 +434,8 @@ impl HsesClient {
     ///
     /// Returns an error if the file send request fails
     pub async fn send_file(&self, filename: &str, content: &[u8]) -> Result<(), ClientError> {
-        let command = SendFile::new(filename.to_string(), content.to_vec());
+        let command =
+            SendFile::new(filename.to_string(), content.to_vec(), self.config.text_encoding);
         let _response = self.send_command_with_retry(command, Division::File).await?;
         Ok(())
     }
@@ -440,7 +451,7 @@ impl HsesClient {
     ///
     /// Returns an error if the file receive request fails
     pub async fn receive_file(&self, filename: &str) -> Result<Vec<u8>, ClientError> {
-        let command = ReceiveFile::new(filename.to_string());
+        let command = ReceiveFile::new(filename.to_string(), self.config.text_encoding);
         let response = self.send_command_with_retry(command, Division::File).await?;
         parse_file_content(&response).map_err(ClientError::from)
     }
@@ -454,7 +465,7 @@ impl HsesClient {
     ///
     /// Returns an error if the file delete request fails
     pub async fn delete_file(&self, filename: &str) -> Result<(), ClientError> {
-        let command = DeleteFile::new(filename.to_string());
+        let command = DeleteFile::new(filename.to_string(), self.config.text_encoding);
         let _response = self.send_command_with_retry(command, Division::File).await?;
         Ok(())
     }
@@ -642,12 +653,5 @@ impl HsesClient {
 
             return Ok(payload);
         }
-    }
-
-    fn deserialize_response<T>(data: &[u8]) -> Result<T, ClientError>
-    where
-        T: VariableType,
-    {
-        T::deserialize(data).map_err(ClientError::from)
     }
 }

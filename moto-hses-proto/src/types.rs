@@ -22,16 +22,19 @@ pub trait Command {
 
 pub trait VariableType: Send + Sync + 'static {
     fn command_id() -> u16;
-    /// Serialize the variable to byte data
+    /// Serialize the variable to byte data with specified text encoding
     ///
     /// # Errors
     /// Returns `ProtocolError` if serialization fails
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError>;
-    /// Deserialize the variable from byte data
+    fn serialize(&self, encoding: crate::encoding::TextEncoding) -> Result<Vec<u8>, ProtocolError>;
+    /// Deserialize the variable from byte data with specified text encoding
     ///
     /// # Errors
     /// Returns `ProtocolError` if deserialization fails
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError>
+    fn deserialize(
+        data: &[u8],
+        encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError>
     where
         Self: Sized;
 }
@@ -124,7 +127,9 @@ impl<T: VariableType> Command for WriteVar<T> {
         T::command_id()
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        self.value.serialize()
+        // WriteVar requires encoding, but Command trait doesn't support it
+        // This is a design limitation - we'll use UTF-8 as default
+        self.value.serialize(crate::encoding::TextEncoding::Utf8)
     }
     fn instance(&self) -> u16 {
         u16::from(self.index) // Variable number (0-99 for byte, 0-999 for int/real)
@@ -380,8 +385,9 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization() {
         let value: u8 = 42;
-        let serialized = value.serialize().unwrap();
-        let deserialized = u8::deserialize(&serialized).unwrap();
+        let serialized = value.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            u8::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(value, deserialized);
     }
 
@@ -389,8 +395,9 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization_i32() {
         let value: i32 = 12345;
-        let serialized = value.serialize().unwrap();
-        let deserialized = i32::deserialize(&serialized).unwrap();
+        let serialized = value.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            i32::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(value, deserialized);
     }
 
@@ -398,8 +405,9 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_variable_type_serialization_f32() {
         let value: f32 = std::f32::consts::PI;
-        let serialized = value.serialize().unwrap();
-        let deserialized = f32::deserialize(&serialized).unwrap();
+        let serialized = value.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            f32::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert!((value - deserialized).abs() < f32::EPSILON);
     }
 

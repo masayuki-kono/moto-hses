@@ -35,6 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         retry_count: 5,
         retry_delay: Duration::from_millis(200),
         buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
     };
 
     // Connect to the controller
@@ -58,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             info!("  Data: {}", alarm.data);
             info!("  Type: {}", alarm.alarm_type);
             info!("  Time: {}", alarm.time);
-            info!("  Name: {}", alarm.get_name_with_encoding(TextEncoding::ShiftJis));
+            info!("  Name: {}", alarm.name);
             info!("  Raw alarm data: {alarm:?}");
         }
         Err(e) => {
@@ -113,9 +114,7 @@ async fn test_alarm_history(
                 if alarm.code != 0 {
                     info!(
                         "✓ {} alarm {instance}: Code={}, Name={}",
-                        alarm_type,
-                        alarm.code,
-                        alarm.get_name_with_encoding(TextEncoding::ShiftJis)
+                        alarm_type, alarm.code, alarm.name
                     );
                     info!("  Full alarm data for instance {instance}: {alarm:?}");
                 } else {

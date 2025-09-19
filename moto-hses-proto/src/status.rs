@@ -68,13 +68,19 @@ impl VariableType for Status {
     fn command_id() -> u16 {
         0x72
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
-        data.extend(self.data1.serialize()?);
-        data.extend(self.data2.serialize()?);
+        data.extend(self.data1.serialize(crate::encoding::TextEncoding::Utf8)?);
+        data.extend(self.data2.serialize(crate::encoding::TextEncoding::Utf8)?);
         Ok(data)
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         Self::from_bytes(data)
     }
 }
@@ -162,7 +168,10 @@ impl VariableType for StatusData1 {
     fn command_id() -> u16 {
         0x72
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
         let mut status_word = 0u32;
 
@@ -194,7 +203,10 @@ impl VariableType for StatusData1 {
         data.extend_from_slice(&status_word.to_le_bytes());
         Ok(data)
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         Self::from_bytes(data)
     }
 }
@@ -203,7 +215,10 @@ impl VariableType for StatusData2 {
     fn command_id() -> u16 {
         0x72
     }
-    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+    fn serialize(
+        &self,
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Vec<u8>, ProtocolError> {
         let mut data = Vec::new();
         let mut status_word = 0u32;
 
@@ -229,7 +244,10 @@ impl VariableType for StatusData2 {
         data.extend_from_slice(&status_word.to_le_bytes());
         Ok(data)
     }
-    fn deserialize(data: &[u8]) -> Result<Self, ProtocolError> {
+    fn deserialize(
+        data: &[u8],
+        _encoding: crate::encoding::TextEncoding,
+    ) -> Result<Self, ProtocolError> {
         Self::from_bytes(data)
     }
 }
@@ -272,8 +290,9 @@ mod tests {
         };
         let status = Status::new(data1, data2);
 
-        let serialized = status.serialize().unwrap();
-        let deserialized = Status::deserialize(&serialized).unwrap();
+        let serialized = status.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            Status::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(status.data1.step, deserialized.data1.step);
         assert_eq!(status.data2.servo_on, deserialized.data2.servo_on);
         assert_eq!(status.data1.running, deserialized.data1.running);
@@ -334,8 +353,9 @@ mod tests {
         };
         let status = Status::new(data1, data2);
 
-        let serialized = status.serialize().unwrap();
-        let deserialized = Status::deserialize(&serialized).unwrap();
+        let serialized = status.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            Status::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(status.data1.step, deserialized.data1.step);
     }
 
@@ -348,8 +368,9 @@ mod tests {
         assert!(!status_data1.running);
         assert!(!status_data1.teach);
 
-        let serialized = status_data1.serialize().unwrap();
-        let deserialized = StatusData1::deserialize(&serialized).unwrap();
+        let serialized = status_data1.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            StatusData1::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(status_data1.step, deserialized.step);
     }
 
@@ -362,8 +383,9 @@ mod tests {
         assert!(!status_data2.alarm);
         assert!(!status_data2.error);
 
-        let serialized = status_data2.serialize().unwrap();
-        let deserialized = StatusData2::deserialize(&serialized).unwrap();
+        let serialized = status_data2.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
+        let deserialized =
+            StatusData2::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
         assert_eq!(status_data2.servo_on, deserialized.servo_on);
     }
 }

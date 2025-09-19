@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 /// Mock server state
 #[derive(Debug, Clone)]
 pub struct MockState {
+    pub text_encoding: proto::TextEncoding,
     pub status: proto::Status,
     pub position: proto::Position,
     pub variables: HashMap<u8, Vec<u8>>,
@@ -145,6 +146,7 @@ impl Default for MockState {
         );
 
         Self {
+            text_encoding: proto::TextEncoding::Utf8,
             status: proto::Status::new(
                 proto::StatusData1 {
                     step: false,

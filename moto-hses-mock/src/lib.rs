@@ -21,6 +21,7 @@ pub struct MockConfig {
     pub host: String,
     pub robot_port: u16,
     pub file_port: u16,
+    pub text_encoding: proto::TextEncoding,
     pub default_status: proto::Status,
     pub default_position: proto::Position,
     pub registers: HashMap<u16, i16>,
@@ -54,6 +55,7 @@ impl MockConfig {
             host: host.into(),
             robot_port,
             file_port,
+            text_encoding: proto::TextEncoding::Utf8,
             default_status: proto::Status::new(
                 proto::StatusData1 {
                     step: false,
