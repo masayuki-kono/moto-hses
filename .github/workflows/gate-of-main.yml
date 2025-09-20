@@ -1,0 +1,69 @@
+name: Gate of Main
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTDOCFLAGS: "-D warnings"
+
+jobs:
+  gatekeeper:
+    name: Quality Gatekeeper
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Install clippy-sarif and sarif-fmt
+        run: |
+          cargo install clippy-sarif sarif-fmt
+
+      - name: Run Clippy and generate SARIF
+        run: |
+          cargo clippy --locked --all-targets --all-features --message-format=json |
+          clippy-sarif | tee clippy-results.sarif | sarif-fmt
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: clippy-results.sarif
+
+      - name: Run all tests (unit + integration + protocol communication)
+        run: cargo test --locked --all-features --workspace
+
+      - name: Run tests with release mode
+        run: cargo test --locked --release --all-features --workspace
+
+      - name: Build documentation
+        run: cargo doc --all-features --no-deps
+
+      - name: Show Test Logs on Failure
+        if: failure()
+        run: |
+          echo "=== Test Logs ==="
+          cat moto-hses-client/logs/integration_tests.log || echo "No integration test log found"
+
+      - name: Upload Test Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: moto-hses-client/logs/
+          retention-days: 7
