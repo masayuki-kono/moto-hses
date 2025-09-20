@@ -3,6 +3,8 @@
 [![Crates.io](https://img.shields.io/crates/v/moto-hses-proto)](https://crates.io/crates/moto-hses-proto)
 [![Documentation](https://docs.rs/moto-hses-proto/badge.svg)](https://docs.rs/moto-hses-proto)
 [![License](https://img.shields.io/crates/l/moto-hses-proto)](https://crates.io/crates/moto-hses-proto)
+[![Gate of Main](https://github.com/masayuki-kono/moto-hses/actions/workflows/gate-of-main.yml/badge.svg)](https://github.com/masayuki-kono/moto-hses/actions/workflows/gate-of-main.yml)
+[![Security Audit](https://github.com/masayuki-kono/moto-hses/actions/workflows/security-audit.yml/badge.svg)](https://github.com/masayuki-kono/moto-hses/actions/workflows/security-audit.yml)
 
 Protocol definitions and serialization for Yaskawa High-Speed Ethernet Server (HSES).
 
