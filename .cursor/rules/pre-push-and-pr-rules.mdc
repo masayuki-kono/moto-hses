@@ -10,6 +10,8 @@ alwaysApply: true
 
 Before pushing code to any branch, especially before creating pull requests, ensure all local checks pass:
 
+> **Note**: Execute checks in order for efficiency. Fast checks (formatting, clippy) run first, followed by slower checks (tests, docs, security).
+
 ### 1. Code Formatting
 
 ```bash
@@ -37,7 +39,16 @@ cargo test --all-features --workspace
 - **Required**: All tests must pass
 - **Coverage**: Ensure new functionality has appropriate test coverage
 
-### 4. Security Audit
+### 4. Documentation Build
+
+```bash
+cargo doc --all-features --no-deps
+```
+
+- **Required**: Documentation must build without warnings
+- **Fix if needed**: Address rustdoc warnings in code comments
+
+### 5. Security Audit
 
 ```bash
 cargo audit
@@ -46,7 +57,7 @@ cargo audit
 - **Required**: No known security vulnerabilities
 - **Action**: Update dependencies if vulnerabilities are found
 
-### 5. Dependency Check
+### 6. Dependency Check
 
 ```bash
 cargo outdated

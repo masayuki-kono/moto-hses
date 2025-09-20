@@ -1,5 +1,5 @@
 //! Mock HSES UDP server
-//! Usage: cargo run -p moto-hses-mock -- [host] [`robot_port`] [`file_port`]
+//! Usage: cargo run -p moto-hses-mock -- \[host\] \[`robot_port`\] \[`file_port`\]
 //! Examples:
 //!   cargo run -p moto-hses-mock                    # Default: 127.0.0.1:10040, 127.0.0.1:10041
 //!   cargo run -p moto-hses-mock -- 192.168.1.100 10040 10041

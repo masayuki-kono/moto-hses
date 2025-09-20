@@ -1,5 +1,8 @@
 # moto-hses
 
+[![Gate of Main](https://github.com/masayuki-kono/moto-hses/actions/workflows/gate-of-main.yml/badge.svg)](https://github.com/masayuki-kono/moto-hses/actions/workflows/gate-of-main.yml)
+[![Security Audit](https://github.com/masayuki-kono/moto-hses/actions/workflows/security-audit.yml/badge.svg)](https://github.com/masayuki-kono/moto-hses/actions/workflows/security-audit.yml)
+
 Rust implementation of Yaskawa High-Speed Ethernet Server (HSES) client library.
 
 ## ⚠️ Important Notice
