@@ -8,7 +8,7 @@ authors = ["masayuki-kono@mamezou.com"]
 repository = "https://github.com/masayuki-kono/moto-hses"
 homepage = "https://github.com/masayuki-kono/moto-hses"
 documentation = "https://docs.rs/moto-hses-mock"
-keywords = ["yaskawa", "hses", "ethernet", "udp", "mock", "server", "testing"]
+keywords = ["yaskawa", "robot", "hses", "ethernet", "mock"]
 categories = ["development-tools", "testing", "network-programming"]
 readme = "README.md"
 
