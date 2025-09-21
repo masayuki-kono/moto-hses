@@ -9,7 +9,7 @@ repository = "https://github.com/masayuki-kono/moto-hses"
 homepage = "https://github.com/masayuki-kono/moto-hses"
 documentation = "https://docs.rs/moto-hses-mock"
 keywords = ["yaskawa", "robot", "hses", "ethernet", "mock"]
-categories = ["development-tools", "testing", "network-programming"]
+categories = ["development-tools", "network-programming"]
 readme = "README.md"
 
 [dependencies]
