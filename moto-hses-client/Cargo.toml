@@ -15,13 +15,13 @@ readme = "README.md"
 [dependencies]
 tokio = { workspace = true }
 thiserror = { workspace = true }
-moto-hses-proto = { workspace = true }
+moto-hses-proto = { version = "0.0.1", path = "../moto-hses-proto" }
 futures = { workspace = true }
 log = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
-moto-hses-mock = { workspace = true }
+moto-hses-mock = { version = "0.0.1", path = "../moto-hses-mock" }
 env_logger = { workspace = true }
 chrono = { workspace = true }
 

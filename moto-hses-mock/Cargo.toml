@@ -14,7 +14,7 @@ readme = "README.md"
 
 [dependencies]
 tokio = { workspace = true }
-moto-hses-proto = { workspace = true }
+moto-hses-proto = { version = "0.0.1", path = "../moto-hses-proto" }
 log = { workspace = true }
 env_logger = { workspace = true }
 
