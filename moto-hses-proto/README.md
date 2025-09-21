@@ -17,34 +17,47 @@ This crate provides the core protocol definitions and serialization/deserializat
 - **Type-safe protocol definitions**: Rust structs and enums for all HSES message types
 - **Efficient serialization**: Zero-copy deserialization where possible
 - **Comprehensive error handling**: Detailed error types for protocol violations
-- **Unicode support**: Proper handling of Japanese text in robot data
+- **Japanese language support**: Proper handling of Japanese text (Shift-JIS) in robot data
 
-## Usage
+## Installation
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-moto-hses-proto = "0.0.1"
+moto-hses-proto = "0.0.2"
 ```
 
-## Example
+## Usage
 
 ```rust
-use moto_hses_proto::*;
+use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, Service, Division, ReadAlarmData, Alarm};
 
-// Create a read variable command
-let command = Command::ReadVariable {
-    variable_type: VariableType::Integer,
-    index: 0,
-};
+// Create a read alarm command
+let read_alarm = ReadAlarmData::new();
+
+// Create HSES request message
+let request = HsesRequestMessage::new(
+    Service::Control,
+    read_alarm,
+    Division::Robot,
+    vec![], // No additional data needed for read commands
+);
 
 // Serialize to bytes
-let mut buffer = Vec::new();
-command.serialize(&mut buffer)?;
+let request_bytes: Vec<u8> = request.try_into()?;
 
 // Deserialize from bytes
-let (parsed_command, _) = Command::deserialize(&buffer)?;
+let parsed_request = HsesRequestMessage::try_from(request_bytes.as_slice())?;
+
+// Example: Create an alarm for testing
+let alarm = Alarm::new(
+    1001,  // alarm code
+    0,     // data
+    0,     // alarm type
+    "2024-01-01 12:00:00".to_string(), // time
+    "Test alarm".to_string()           // name
+);
 ```
 
 ## Protocol Support

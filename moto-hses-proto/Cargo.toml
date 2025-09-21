@@ -1,6 +1,6 @@
 [package]
 name = "moto-hses-proto"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 license = "Apache-2.0"
 description = "Protocol definitions and serialization for Yaskawa High-Speed Ethernet Server (HSES)"
@@ -8,7 +8,7 @@ authors = ["masayuki-kono@mamezou.com"]
 repository = "https://github.com/masayuki-kono/moto-hses"
 homepage = "https://github.com/masayuki-kono/moto-hses"
 documentation = "https://docs.rs/moto-hses-proto"
-keywords = ["yaskawa", "hses", "ethernet", "protocol", "serialization", "robot"]
+keywords = ["yaskawa", "robot", "hses", "ethernet", "serialization"]
 categories = ["network-programming", "encoding", "hardware-support"]
 readme = "README.md"
 

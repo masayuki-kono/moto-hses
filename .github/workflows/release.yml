@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'moto-hses-*-v*'   # 例: moto-hses-proto-v0.2.0
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,7 +10,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -20,7 +18,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Run release-plz (publish + GitHub Release)
-        uses: MarcoIeni/release-plz-action@v0.5
+        uses: release-plz/action@v0.5
         with:
           command: release
         env:
