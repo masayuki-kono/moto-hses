@@ -13,8 +13,8 @@ categories = ["development-tools", "testing", "network-programming"]
 readme = "README.md"
 
 [dependencies]
-tokio = { workspace = true }
 moto-hses-proto = { version = "0.0.1", path = "../moto-hses-proto" }
+tokio = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 
