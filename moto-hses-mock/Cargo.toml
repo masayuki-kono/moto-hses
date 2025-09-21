@@ -18,12 +18,12 @@ tokio = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 
+[dev-dependencies]
+tokio-test = { workspace = true }
+
 [lints]
 workspace = true
 
 [[example]]
 name = "mock_basic_usage"
 path = "examples/mock_basic_usage.rs"
-
-[dev-dependencies]
-tokio-test = "0.4"
