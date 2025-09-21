@@ -1,0 +1,27 @@
+name: Create Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: "Crate name (e.g., moto-hses-proto)"
+        required: true
+      version:
+        description: "Release version (e.g., 0.2.0)"
+        required: true
+
+jobs:
+  create_tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ github.event.inputs.crate }}-v${{ github.event.inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag $TAG
+          git push origin $TAG
