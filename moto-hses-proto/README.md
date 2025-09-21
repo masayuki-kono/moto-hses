@@ -25,7 +25,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-moto-hses-proto = "0.0.1"
+moto-hses-proto = "0.0.2"
 ```
 
 ## Usage
