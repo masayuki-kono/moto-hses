@@ -17,12 +17,8 @@ This crate provides a high-level, type-safe, asynchronous Rust client for commun
 - **Async/await support**: Built on Tokio for high-performance async I/O
 - **Type-safe API**: Leverages Rust's type system for compile-time safety
 - **Comprehensive operations**: Support for all HSES protocol operations
-- **Connection management**: Automatic connection handling and cleanup
-- **Error handling**: Detailed error types with context information
-- **Logging support**: Built-in logging for debugging and monitoring
-- **Examples included**: Comprehensive examples for all major operations
 
-## Usage
+## Installation
 
 Add this to your `Cargo.toml`:
 
@@ -32,7 +28,7 @@ moto-hses-client = "0.0.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
-## Quick Start
+## Usage
 
 ```rust
 use moto_hses_client::HsesClient;
@@ -42,13 +38,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client
     let client = HsesClient::new("192.168.1.100:10040").await?;
 
-    // Read robot status
-    let status = client.read_status().await?;
-    println!("Robot running: {}", status.is_running());
+    // Read alarm data
+    let alarm = client.read_alarm_data(1, 0).await?;
+    println!("Alarm Code: {}", alarm.code);
+    println!("Alarm Name: {}", alarm.name);
 
-    // Read variable (D000)
-    let value = client.read_i32(0).await?;
-    println!("D000: {}", value);
+    // Reset alarm
+    client.reset_alarm().await?;
+    println!("Alarm reset completed");
 
     Ok(())
 }
@@ -102,24 +99,6 @@ The crate includes comprehensive examples in the `examples/` directory:
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run --example alarm_operations -- 192.168.1.100 10040
-
-# Run with logging
-RUST_LOG=info cargo run --example io_operations -- 192.168.1.100 10040
-```
-
-## Error Handling
-
-The client provides comprehensive error handling through the `HsesError` type:
-
-```rust
-use moto_hses_client::HsesError;
-
-match client.read_status().await {
-    Ok(status) => println!("Status: {:?}", status),
-    Err(HsesError::ConnectionFailed) => println!("Failed to connect to robot"),
-    Err(HsesError::Timeout) => println!("Operation timed out"),
-    Err(e) => println!("Other error: {}", e),
-}
 ```
 
 ## Testing
@@ -132,31 +111,41 @@ moto-hses-mock = "0.0.1"
 ```
 
 ```rust
-use moto_hses_mock::MockServer;
+use moto_hses_client::HsesClient;
+use moto_hses_mock::{MockServer, MockServerBuilder};
+use moto_hses_proto::Alarm;
 
 #[tokio::test]
-async fn test_client_operations() {
-    let server = MockServer::new("127.0.0.1:10040").await.unwrap();
+async fn test_alarm_operations() {
+    // Start mock server with test alarm
+    let server = MockServerBuilder::new()
+        .host("127.0.0.1")
+        .robot_port(10040)
+        .file_port(10041)
+        .with_alarm(Alarm::new(1001, 0, 0, "2024-01-01 12:00:00".to_string(), "Test alarm".to_string()))
+        .build()
+        .await
+        .unwrap();
+    
+    // Start the server in the background
+    let server_handle = tokio::spawn(async move {
+        server.run().await.unwrap();
+    });
+    
     let client = HsesClient::new("127.0.0.1:10040").await.unwrap();
     
-    // Test your operations here
-    let status = client.read_status().await.unwrap();
-    assert!(status.is_running());
+    // Test alarm operations
+    let alarm = client.read_alarm_data(1, 0).await.unwrap();
+    assert_eq!(alarm.code, 1001);
+    assert_eq!(alarm.name, "Test alarm");
+    
+    // Test alarm reset
+    client.reset_alarm().await.unwrap();
+    
+    // Clean up
+    server_handle.abort();
 }
 ```
-
-## Dependencies
-
-- **tokio**: Async runtime
-- **futures**: Future utilities
-- **log**: Logging framework
-- **moto-hses-proto**: Protocol definitions
-
-### Development Dependencies
-
-- **moto-hses-mock**: Mock HSES server for testing
-- **tokio-test**: Testing utilities for async code
-- **env_logger**: Logging implementation for tests
 
 ## License
 

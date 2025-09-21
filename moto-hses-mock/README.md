@@ -17,11 +17,8 @@ This crate provides a mock implementation of the Yaskawa High-Speed Ethernet Ser
 - **Full HSES protocol support**: Implements all major HSES protocol commands
 - **Configurable responses**: Customize robot behavior and responses
 - **Async implementation**: Built on Tokio for high-performance testing
-- **Logging support**: Detailed logging for debugging
-- **Easy integration**: Simple API for test setup
-- **Realistic simulation**: Mimics real robot behavior patterns
 
-## Usage
+## Installation
 
 Add this to your `Cargo.toml`:
 
@@ -31,59 +28,28 @@ moto-hses-mock = "0.0.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
-## Quick Start
+## Usage
 
 ```rust
-use moto_hses_mock::MockServer;
-
-#[tokio::test]
-async fn test_client_operations() {
-    // Start mock server
-    let server = MockServer::new("127.0.0.1:10040").await.unwrap();
-    
-    // Your client code here
-    let client = moto_hses_client::HsesClient::new("127.0.0.1:10040").await.unwrap();
-    let status = client.read_status().await.unwrap();
-    
-    // Assertions
-    assert!(status.is_running());
-}
-```
-
-## Basic Usage
-
-### Starting a Mock Server
-
-```rust
-use moto_hses_mock::MockServer;
+use moto_hses_mock::{MockServer, MockServerBuilder};
+use moto_hses_proto::Alarm;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Start mock server on default address
-    let server = MockServer::new("127.0.0.1:10040").await?;
+    // Start mock server with custom configuration using builder pattern
+    let server = MockServerBuilder::new()
+        .host("192.168.1.100")
+        .robot_port(20000)
+        .file_port(20001)
+        .with_alarm(Alarm::new(1001, 0, 0, "2024-01-01 12:00:00".to_string(), "Test alarm".to_string()))
+        .with_io_state(1, true)
+        .build()
+        .await?;
     
     // Server will run until the program exits
     server.run().await?;
     
     Ok(())
-}
-```
-
-### Custom Configuration
-
-```rust
-use moto_hses_mock::{MockServer, MockConfig};
-
-#[tokio::test]
-async fn test_with_custom_config() {
-    let config = MockConfig::default()
-        .with_robot_running(true)
-        .with_alarm_code(0)
-        .with_variable_value(0, 42);
-    
-    let server = MockServer::with_config("127.0.0.1:10040", config).await.unwrap();
-    
-    // Test your client with custom configuration
 }
 ```
 
@@ -132,84 +98,6 @@ cargo run --example mock_basic_usage
 # Run with custom address and port
 cargo run --example mock_basic_usage -- 192.168.1.100 10040 10041
 ```
-
-## Testing Integration
-
-### With moto-hses-client
-
-```rust
-use moto_hses_client::HsesClient;
-use moto_hses_mock::MockServer;
-
-#[tokio::test]
-async fn test_variable_operations() {
-    // Start mock server
-    let _server = MockServer::new("127.0.0.1:10040").await.unwrap();
-    
-    // Create client
-    let client = HsesClient::new("127.0.0.1:10040").await.unwrap();
-    
-    // Test variable operations
-    let value = client.read_i32(0).await.unwrap();
-    assert_eq!(value, 0); // Default mock value
-    
-    client.write_i32(0, 42).await.unwrap();
-    let value = client.read_i32(0).await.unwrap();
-    assert_eq!(value, 42);
-}
-```
-
-### Integration Tests
-
-```rust
-#[tokio::test]
-async fn test_integration() {
-    let server = MockServer::new("127.0.0.1:10040").await.unwrap();
-    let client = HsesClient::new("127.0.0.1:10040").await.unwrap();
-    
-    // Run comprehensive integration tests
-    test_all_client_operations(&client).await;
-}
-```
-
-## Configuration
-
-The mock server can be configured with various options:
-
-```rust
-use moto_hses_mock::{MockServer, MockConfig};
-
-let config = MockConfig::default()
-    .with_robot_running(true)
-    .with_alarm_code(0)
-    .with_variable_value(0, 42)
-    .with_io_state(0, true);
-
-let server = MockServer::with_config("127.0.0.1:10040", config).await?;
-```
-
-## Logging
-
-Enable logging to see detailed server activity:
-
-```rust
-use env_logger;
-
-#[tokio::main]
-async fn main() {
-    env_logger::init();
-    
-    let server = MockServer::new("127.0.0.1:10040").await.unwrap();
-    server.run().await.unwrap();
-}
-```
-
-## Dependencies
-
-- **tokio**: Async runtime
-- **log**: Logging framework
-- **env_logger**: Logging implementation
-- **moto-hses-proto**: Protocol definitions
 
 ## License
 
