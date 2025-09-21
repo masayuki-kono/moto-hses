@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.2] - 2025-09-22
+
+### Changed
+- Updated README.md with MockServerBuilder usage examples
+- Improved documentation accuracy and consistency
+
 ## [0.0.1] - 2025-09-22
 
 ### Added

@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-moto-hses-client = "0.0.1"
+moto-hses-client = "0.0.2"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -107,7 +107,7 @@ The crate can be tested using the separate `moto-hses-mock` crate:
 
 ```toml
 [dev-dependencies]
-moto-hses-mock = "0.0.1"
+moto-hses-mock = "0.0.2"
 ```
 
 ```rust
