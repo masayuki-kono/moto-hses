@@ -15,6 +15,19 @@ authors = ["masayuki-kono@mamezou.com"]
 bytes = "1.10"
 thiserror = "1.0"
 tokio = { version = "1.47", features = ["net", "rt-multi-thread", "macros", "time", "sync"] }
+moto-hses-proto = "0.0.1"
+moto-hses-mock = "0.0.1"
+futures = "0.3"
+log = "0.4"
+tokio-test = "0.4"
+env_logger = "0.11"
+chrono = { version = "0.4", features = ["serde"] }
+encoding_rs = "0.8"
+
+# Use local versions during development, crates.io versions during release
+[patch.crates-io]
+moto-hses-proto = { path = "moto-hses-proto" }
+moto-hses-mock = { path = "moto-hses-mock" }
 
 [workspace.lints.rust]
 unsafe_code = "deny"

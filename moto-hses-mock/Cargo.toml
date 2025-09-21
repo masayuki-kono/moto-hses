@@ -3,13 +3,20 @@ name = "moto-hses-mock"
 version = "0.0.1"
 edition = "2024"
 license = "Apache-2.0"
-description = "Local mock server for HSES (UDP) used in E2E tests"
+description = "Mock HSES UDP server for testing and development"
+authors = ["masayuki-kono@mamezou.com"]
+repository = "https://github.com/masayuki-kono/moto-hses"
+homepage = "https://github.com/masayuki-kono/moto-hses"
+documentation = "https://docs.rs/moto-hses-mock"
+keywords = ["yaskawa", "hses", "ethernet", "udp", "mock", "server", "testing"]
+categories = ["development-tools", "testing", "network-programming"]
+readme = "README.md"
 
 [dependencies]
 tokio = { workspace = true }
-moto-hses-proto = { path = "../moto-hses-proto" }
-log = "0.4"
-env_logger = "0.11"
+moto-hses-proto = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
 
 [lints]
 workspace = true
