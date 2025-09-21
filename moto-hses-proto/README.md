@@ -17,7 +17,7 @@ This crate provides the core protocol definitions and serialization/deserializat
 - **Type-safe protocol definitions**: Rust structs and enums for all HSES message types
 - **Efficient serialization**: Zero-copy deserialization where possible
 - **Comprehensive error handling**: Detailed error types for protocol violations
-- **Unicode support**: Proper handling of Japanese text in robot data
+- **Japanese language support**: Proper handling of Japanese text in robot data
 
 ## Usage
 
