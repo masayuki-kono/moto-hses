@@ -86,7 +86,6 @@ The crate includes comprehensive examples in the `examples/` directory:
 - `io_operations.rs` - I/O operations
 - `position_operations.rs` - Position data operations
 - `variable_operations.rs` - Variable read/write operations
-- `connection_management.rs` - Connection handling
 - `file_operations.rs` - File transfer operations
 - `hold_servo_control.rs` - Servo control operations
 - `register_operations.rs` - Register operations

@@ -45,10 +45,6 @@ name = "position_operations"
 path = "examples/position_operations.rs"
 
 [[example]]
-name = "connection_management"
-path = "examples/connection_management.rs"
-
-[[example]]
 name = "file_operations"
 path = "examples/file_operations.rs"
 
