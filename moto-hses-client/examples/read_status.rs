@@ -1,6 +1,7 @@
 use log::info;
-use moto_hses_client::HsesClient;
-use moto_hses_proto::ROBOT_CONTROL_PORT;
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,13 +22,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let controller_addr = format!("{host}:{robot_port}");
-    info!("Connecting to controller at {controller_addr}...");
-    let client = HsesClient::new(&controller_addr).await?;
+    // Create custom configuration
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
 
-    info!("Successfully connected to controller");
+    // Connect to the controller
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            info!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            info!("✗ Failed to connect: {e}");
+            return Ok(());
+        }
+    };
 
-    info!("=== 0x72 Command (Status Information Reading) Usage Example ===\n");
+    info!("=== 0x72 Command (Status Information Reading) ===\n");
 
     // 1. Read complete status information (Data1 + Data2)
     info!("1. Read complete status information (Data1 + Data2):");
