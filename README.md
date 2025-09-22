@@ -67,7 +67,6 @@ Comprehensive examples are available in the [`examples/`](moto-hses-client/examp
 - [`io_operations.rs`](moto-hses-client/examples/io_operations.rs) — I/O operations
 - [`position_operations.rs`](moto-hses-client/examples/position_operations.rs) — Position data operations
 - [`variable_operations.rs`](moto-hses-client/examples/variable_operations.rs) — Variable read/write operations
-- [`connection_management.rs`](moto-hses-client/examples/connection_management.rs) — Connection handling
 - [`file_operations.rs`](moto-hses-client/examples/file_operations.rs) — File transfer operations
 - [`hold_servo_control.rs`](moto-hses-client/examples/hold_servo_control.rs) — Servo control operations
 - [`register_operations.rs`](moto-hses-client/examples/register_operations.rs) — Register operations
