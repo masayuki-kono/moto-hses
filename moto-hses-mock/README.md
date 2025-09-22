@@ -38,7 +38,7 @@ use moto_hses_proto::Alarm;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start mock server with custom configuration using builder pattern
     let server = MockServerBuilder::new()
-        .host("192.168.1.100")
+        .host("192.168.0.3")
         .robot_port(20000)
         .file_port(20001)
         .with_alarm(Alarm::new(1001, 0, 0, "2024-01-01 12:00:00".to_string(), "Test alarm".to_string()))
@@ -96,7 +96,7 @@ The crate includes examples demonstrating various usage patterns:
 cargo run --example mock_basic_usage
 
 # Run with custom address and port
-cargo run --example mock_basic_usage -- 192.168.1.100 10040 10041
+cargo run --example mock_basic_usage -- 192.168.0.3 10040 10041
 ```
 
 ## License

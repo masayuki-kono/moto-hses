@@ -36,7 +36,7 @@ use moto_hses_client::HsesClient;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client
-    let client = HsesClient::new("192.168.1.100:10040").await?;
+    let client = HsesClient::new("192.168.0.3:10040").await?;
 
     // Read alarm data
     let alarm = client.read_alarm_data(1, 0).await?;
@@ -96,7 +96,7 @@ The crate includes comprehensive examples in the `examples/` directory:
 
 ```bash
 # Run a specific example
-RUST_LOG=info cargo run --example alarm_operations -- 192.168.1.100 10040
+RUST_LOG=info cargo run --example alarm_operations -- 192.168.0.3 10040
 ```
 
 ## Testing
