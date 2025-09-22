@@ -82,7 +82,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 The crate includes comprehensive examples in the `examples/` directory:
 
-- `basic_usage.rs` - Basic client operations
 - `alarm_operations.rs` - Alarm data handling
 - `io_operations.rs` - I/O operations
 - `position_operations.rs` - Position data operations

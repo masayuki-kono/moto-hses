@@ -46,13 +46,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create client
     let client = HsesClient::new("192.168.1.100:10040").await?;
 
-    // Read robot status
-    let status = client.read_status().await?;
-    println!("Robot running: {}", status.is_running());
+    // Read alarm data
+    let alarm = client.read_alarm_data(1, 0).await?;
+    println!("Alarm Code: {}", alarm.code);
+    println!("Alarm Name: {}", alarm.name);
 
-    // Read variable (D000)
-    let value = client.read_i32(0).await?;
-    println!("D000: {}", value);
+    // Reset alarm
+    client.reset_alarm().await?;
+    println!("Alarm reset completed");
 
     Ok(())
 }
@@ -62,7 +63,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Comprehensive examples are available in the [`examples/`](moto-hses-client/examples/) directory:
 
-- [`basic_usage.rs`](moto-hses-client/examples/) — Basic client operations
 - [`alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs) — Alarm data handling
 - [`io_operations.rs`](moto-hses-client/examples/io_operations.rs) — I/O operations
 - [`position_operations.rs`](moto-hses-client/examples/position_operations.rs) — Position data operations
@@ -79,9 +79,6 @@ Comprehensive examples are available in the [`examples/`](moto-hses-client/examp
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run -p moto-hses-client --example alarm_operations -- 192.168.1.100 10040
-
-# Run with logging
-RUST_LOG=info cargo run -p moto-hses-client --example io_operations -- 192.168.1.100 10040
 ```
 
 ### Mock Server Testing
@@ -111,15 +108,11 @@ cargo test --test integration_tests
 - Mock server protocol implementation
 - Message encoding/decoding
 - Command handling
-- UDP communication with mock server
 
 **Integration tests** verify:
 
 - Client-server communication
 - All client operations with validation
-- Communication integrity
-- Automatic resource cleanup
-- MockServer configuration and expected value validation
 
 ## References
 
