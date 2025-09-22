@@ -7,7 +7,6 @@ use std::time::Duration;
 #[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    // Parse command line arguments
     let args: Vec<String> = std::env::args().collect();
 
     let (host, robot_port) = match args.as_slice() {
@@ -23,9 +22,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ("127.0.0.1".to_string(), ROBOT_CONTROL_PORT)
         }
     };
-
-    info!("HSES Client Alarm Operations Example");
-    info!("Connecting to controller at: {host}:{robot_port}");
 
     // Create custom configuration
     let config = ClientConfig {
