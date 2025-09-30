@@ -1,7 +1,7 @@
 //! File control commands for HSES protocol
 
-use crate::error::ProtocolError;
 use crate::commands::Command;
+use crate::error::ProtocolError;
 
 /// File list request command
 #[derive(Debug, Clone)]
