@@ -56,7 +56,7 @@ Detailed changes (if necessary)
 feat: add HSES protocol implementation
 
 - Implement Command and VariableType traits
-- Add basic enums (Division, Service, CoordinateSystem)
+- Add basic enums (Division, Service, CoordinateSystemType)
 - Add Variable<T> struct for type-safe operations
 - Add unit tests for core functionality
 ```

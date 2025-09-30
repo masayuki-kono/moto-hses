@@ -23,7 +23,7 @@ This document outlines the comprehensive testing strategy for the Rust HSES clie
 These tests verify individual protocol components without network communication:
 
 - **Message serialization/deserialization**: `HsesRequestMessage` and `HsesResponseMessage` encoding/decoding
-- **Enum validation**: Division, Service, CoordinateSystem enum values
+- **Enum validation**: Division, Service, CoordinateSystemType enum values
 
 ### Client Layer Tests
 

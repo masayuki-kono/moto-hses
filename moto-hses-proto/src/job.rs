@@ -1,7 +1,7 @@
 //! Job information data structures and operations
 
+use crate::commands::{Command, VariableType};
 use crate::error::ProtocolError;
-use crate::types::{Command, VariableType};
 
 /// Executing job information data structure
 #[derive(Debug, Clone)]

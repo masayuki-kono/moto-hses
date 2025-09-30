@@ -1,8 +1,8 @@
 //! Alarm data structures and operations
 
+use crate::commands::{Command, VariableType};
 use crate::encoding::TextEncoding;
 use crate::error::ProtocolError;
-use crate::types::{Command, VariableType};
 
 /// Alarm data structure
 #[derive(Debug, Clone)]

@@ -1,8 +1,25 @@
 //! Position data structures and operations
 
+use crate::commands::VariableType;
 use crate::error::ProtocolError;
-use crate::types::{CoordinateSystem, VariableType};
 use bytes::Buf;
+
+// Coordinate system types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CoordinateSystemType {
+    Base,
+    Robot,
+    Tool,
+    User(u8),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlGroupPositionType {
+    RobotPulse = 0,
+    BasePulse = 1,
+    StationPulse = 3,
+    RobotCartesian = 4,
+}
 
 // Position data structures
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,7 +45,7 @@ pub struct CartesianPosition {
     pub rz: f32,
     pub tool_no: u8,
     pub user_coord_no: u8,
-    pub coordinate_system: CoordinateSystem,
+    pub coordinate_system: CoordinateSystemType,
 }
 
 impl CartesianPosition {
@@ -43,7 +60,7 @@ impl CartesianPosition {
         rz: f32,
         tool_no: u8,
         user_coord_no: u8,
-        coordinate_system: CoordinateSystem,
+        coordinate_system: CoordinateSystemType,
     ) -> Self {
         Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, coordinate_system }
     }
@@ -152,7 +169,7 @@ impl Position {
                     rz,
                     tool_no,
                     user_coord_no,
-                    CoordinateSystem::Base,
+                    CoordinateSystemType::Base,
                 )))
             }
             _ => {
@@ -182,8 +199,24 @@ impl VariableType for Position {
 
 #[cfg(test)]
 mod tests {
+    use super::CoordinateSystemType;
     use super::*;
-    use crate::types::CoordinateSystem;
+
+    #[test]
+    fn test_coordinate_system_enum() {
+        assert_eq!(CoordinateSystemType::Base, CoordinateSystemType::Base);
+        assert_eq!(CoordinateSystemType::Robot, CoordinateSystemType::Robot);
+        assert_eq!(CoordinateSystemType::Tool, CoordinateSystemType::Tool);
+        assert_eq!(CoordinateSystemType::User(1), CoordinateSystemType::User(1));
+    }
+
+    #[test]
+    fn test_control_group_position_type_enum() {
+        assert_eq!(ControlGroupPositionType::RobotPulse as u8, 0);
+        assert_eq!(ControlGroupPositionType::BasePulse as u8, 1);
+        assert_eq!(ControlGroupPositionType::StationPulse as u8, 3);
+        assert_eq!(ControlGroupPositionType::RobotCartesian as u8, 4);
+    }
 
     #[test]
     fn test_pulse_position_creation() {
@@ -205,14 +238,14 @@ mod tests {
             0.0,
             1,
             0,
-            CoordinateSystem::Base,
+            CoordinateSystemType::Base,
         );
         assert_eq!(position.x, 100.0);
         assert_eq!(position.y, 200.0);
         assert_eq!(position.z, 300.0);
         assert_eq!(position.tool_no, 1);
         assert_eq!(position.user_coord_no, 0);
-        assert_eq!(position.coordinate_system, CoordinateSystem::Base);
+        assert_eq!(position.coordinate_system, CoordinateSystemType::Base);
     }
 
     #[test]
@@ -237,7 +270,7 @@ mod tests {
             0.0,
             1,
             0,
-            CoordinateSystem::Base,
+            CoordinateSystemType::Base,
         ));
         let serialized = position.serialize().unwrap();
         let deserialized =
