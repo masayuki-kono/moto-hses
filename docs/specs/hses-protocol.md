@@ -1204,14 +1204,14 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 
 - **Command**: 0x84
 - **Instance**: Fixed to 2
-  - Details: Specifies the type of status switching command. `2`: CYCLE (STEP/CYCLE/CONTINUE switching)
 - **Attribute**: Fixed to 1
 - **Service**:
   - `0x10` (Set_Attribute_Single): Execute the specified request
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): CYCLE specification
-    - Byte 0: Data 1
-    - CYCLE = 1: STEP / 2: CYCLE / 3: CONTINUE
+    - `1`: STEP
+    - `2`: ONE CYCLE
+    - `3`: CONTINUOUS
 
 **Response Structure:**
 

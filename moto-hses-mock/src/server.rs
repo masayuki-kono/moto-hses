@@ -36,6 +36,7 @@ impl MockServer {
             position: config.default_position.clone(),
             registers: config.registers.clone(),
             variables: config.variables.clone(),
+            cycle_mode: config.cycle_mode,
             ..Default::default()
         };
 
@@ -353,6 +354,12 @@ impl MockServer {
         let mut state = self.state.write().await;
         state.update_position(position);
     }
+
+    /// Get the current cycle mode
+    pub async fn get_cycle_mode(&self) -> proto::CycleMode {
+        let state = self.state.read().await;
+        state.get_cycle_mode()
+    }
 }
 
 /// Server builder for easy configuration
@@ -435,6 +442,12 @@ impl MockServerBuilder {
     #[must_use]
     pub fn with_variables(mut self, variables: std::collections::HashMap<u8, Vec<u8>>) -> Self {
         self.config.variables = variables;
+        self
+    }
+
+    #[must_use]
+    pub const fn with_cycle_mode(mut self, mode: proto::CycleMode) -> Self {
+        self.config.cycle_mode = mode;
         self
     }
 

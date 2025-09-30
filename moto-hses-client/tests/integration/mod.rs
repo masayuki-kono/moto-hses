@@ -3,6 +3,7 @@
 
 pub mod alarm_operations;
 pub mod connection_management;
+pub mod cycle_mode_control;
 pub mod file_operations;
 pub mod hold_servo_control;
 pub mod io_operations;

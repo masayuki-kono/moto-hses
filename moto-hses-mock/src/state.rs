@@ -20,6 +20,7 @@ pub struct MockState {
     pub servo_on: bool,
     pub hold_state: bool,
     pub hlock_state: bool,
+    pub cycle_mode: proto::CycleMode,
     pub files: HashMap<String, Vec<u8>>,
 }
 
@@ -180,6 +181,7 @@ impl Default for MockState {
             servo_on: true,
             hold_state: false,
             hlock_state: false,
+            cycle_mode: proto::CycleMode::Continuous,
             files,
         }
     }
@@ -296,6 +298,17 @@ impl MockState {
     #[must_use]
     pub const fn is_hlock_enabled(&self) -> bool {
         self.hlock_state
+    }
+
+    /// Set cycle mode
+    pub const fn set_cycle_mode(&mut self, mode: proto::CycleMode) {
+        self.cycle_mode = mode;
+    }
+
+    /// Get cycle mode
+    #[must_use]
+    pub const fn get_cycle_mode(&self) -> proto::CycleMode {
+        self.cycle_mode
     }
 }
 

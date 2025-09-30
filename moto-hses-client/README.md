@@ -78,11 +78,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - Joint position data
 - Position monitoring
 
+### Cycle Mode Control
+- Step mode switching
+- One cycle mode switching
+- Continuous mode switching
+
 ## Examples
 
 The crate includes comprehensive examples in the `examples/` directory:
 
 - `alarm_operations.rs` - Alarm data handling
+- `cycle_mode_control.rs` - Cycle mode switching operations
 - `io_operations.rs` - I/O operations
 - `position_operations.rs` - Position data operations
 - `variable_operations.rs` - Variable read/write operations
@@ -97,6 +103,7 @@ The crate includes comprehensive examples in the `examples/` directory:
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run --example alarm_operations -- 192.168.0.3 10040
+
 ```
 
 ## Testing

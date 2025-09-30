@@ -112,3 +112,15 @@ When creating PRs, you MUST:
 - ✅ **Business impact**: Explain why the changes matter
 - ✅ **User-facing changes**: Describe visible improvements
 - ✅ **Concise technical details**: Only essential implementation notes
+
+### CLI PR Creation
+
+When creating PRs via CLI, use the following command structure:
+
+```bash
+gh pr create --title "type: brief description" --body "PR description" --assignee @me
+```
+
+**Key points**:
+- Use `--assignee @me` to automatically assign the PR to yourself
+- This ensures proper ownership and review workflow

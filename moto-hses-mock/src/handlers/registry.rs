@@ -7,11 +7,11 @@ use std::sync::Arc;
 
 // Import all handlers
 use super::alarm::{AlarmDataHandler, AlarmInfoHandler, AlarmResetHandler};
+use super::cycle_mode_switching::CycleModeSwitchingHandler;
 use super::file::FileControlHandler;
 use super::io::{IoHandler, RegisterHandler};
 use super::job::{
     ExecutingJobInfoHandler, JobSelectHandler, JobStartHandler, MovHandler, PmovHandler,
-    SelectCycleHandler,
 };
 use super::position::{
     BasePositionVarHandler, ExternalAxisVarHandler, PositionErrorHandler, PositionHandler,
@@ -87,8 +87,10 @@ impl CommandHandlerRegistry {
 
         // Job and movement handlers
         handlers.insert(0x83, Arc::new(HoldServoHandler) as Arc<dyn CommandHandler + Send + Sync>);
-        handlers
-            .insert(0x84, Arc::new(SelectCycleHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(
+            0x84,
+            Arc::new(CycleModeSwitchingHandler) as Arc<dyn CommandHandler + Send + Sync>,
+        );
         handlers.insert(0x86, Arc::new(JobStartHandler) as Arc<dyn CommandHandler + Send + Sync>);
         handlers.insert(0x87, Arc::new(JobSelectHandler) as Arc<dyn CommandHandler + Send + Sync>);
         handlers.insert(0x8a, Arc::new(MovHandler) as Arc<dyn CommandHandler + Send + Sync>);

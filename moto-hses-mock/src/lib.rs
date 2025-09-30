@@ -30,6 +30,7 @@ pub struct MockConfig {
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: Vec<proto::Alarm>,
     pub executing_job: Option<proto::ExecutingJobInfo>,
+    pub cycle_mode: proto::CycleMode,
 }
 
 impl MockConfig {
@@ -86,6 +87,7 @@ impl MockConfig {
             alarms: Vec::new(),
             alarm_history: Vec::new(),
             executing_job: Some(proto::ExecutingJobInfo::new("TEST.JOB".to_string(), 2, 1, 100)),
+            cycle_mode: proto::CycleMode::Continuous,
         }
     }
 
