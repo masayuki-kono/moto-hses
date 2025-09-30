@@ -1,6 +1,6 @@
 use log::info;
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{AlarmAttribute, ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test alarm data reading (0x70 command)
     info!("\n--- Complete Alarm Data (Instance 1) ---");
-    match client.read_alarm_data(1, 0).await {
+    match client.read_alarm_data(1, AlarmAttribute::All).await {
         Ok(alarm) => {
             info!("✓ Complete alarm data read successfully");
             info!("  Code: {}", alarm.code);
@@ -105,7 +105,7 @@ async fn test_alarm_history(
 ) {
     info!("Testing {alarm_type} alarm history(max 10 instances)...");
     for instance in instances {
-        match client.read_alarm_history(instance, 0).await {
+        match client.read_alarm_history(instance, AlarmAttribute::All).await {
             Ok(alarm) => {
                 if alarm.code != 0 {
                     info!(

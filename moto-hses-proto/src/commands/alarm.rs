@@ -6,6 +6,7 @@ use crate::error::ProtocolError;
 /// Alarm attribute types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AlarmAttribute {
+    All = 0,
     Code = 1,
     Data = 2,
     Type = 3,
@@ -19,6 +20,7 @@ pub enum AlarmAttribute {
 impl From<u8> for AlarmAttribute {
     fn from(value: u8) -> Self {
         match value {
+            0 => Self::All,
             2 => Self::Data,
             3 => Self::Type,
             4 => Self::Time,
@@ -35,12 +37,12 @@ impl From<u8> for AlarmAttribute {
 #[derive(Debug, Clone)]
 pub struct ReadAlarmData {
     pub instance: u16,
-    pub attribute: u8,
+    pub attribute: AlarmAttribute,
 }
 
 impl ReadAlarmData {
     #[must_use]
-    pub const fn new(instance: u16, attribute: u8) -> Self {
+    pub const fn new(instance: u16, attribute: AlarmAttribute) -> Self {
         Self { instance, attribute }
     }
 
@@ -51,12 +53,6 @@ impl ReadAlarmData {
             self.instance,
             1..=100 | 1001..=1100 | 2001..=2100 | 3001..=3100 | 4001..=4100
         )
-    }
-
-    /// Validate attribute range for alarm data
-    #[must_use]
-    pub const fn is_valid_attribute(&self) -> bool {
-        matches!(self.attribute, 0..=8)
     }
 }
 
@@ -78,11 +74,11 @@ impl Command for ReadAlarmData {
     }
 
     fn attribute(&self) -> u8 {
-        self.attribute
+        self.attribute as u8
     }
 
     fn service(&self) -> u8 {
-        if self.attribute == 0 {
+        if self.attribute == AlarmAttribute::All {
             0x01 // Get_Attribute_All
         } else {
             0x0e // Get_Attribute_Single
@@ -105,12 +101,12 @@ pub enum AlarmCategory {
 #[derive(Debug, Clone)]
 pub struct ReadAlarmHistory {
     pub instance: u16,
-    pub attribute: u8,
+    pub attribute: AlarmAttribute,
 }
 
 impl ReadAlarmHistory {
     #[must_use]
-    pub const fn new(instance: u16, attribute: u8) -> Self {
+    pub const fn new(instance: u16, attribute: AlarmAttribute) -> Self {
         Self { instance, attribute }
     }
 
@@ -168,11 +164,11 @@ impl Command for ReadAlarmHistory {
     }
 
     fn attribute(&self) -> u8 {
-        self.attribute
+        self.attribute as u8
     }
 
     fn service(&self) -> u8 {
-        if self.attribute == 0 {
+        if self.attribute == AlarmAttribute::All {
             0x01 // Get_Attribute_All
         } else {
             0x0e // Get_Attribute_Single
@@ -253,6 +249,7 @@ mod tests {
 
     #[test]
     fn test_alarm_attribute_from_u8() {
+        assert_eq!(AlarmAttribute::from(0), AlarmAttribute::All);
         assert_eq!(AlarmAttribute::from(1), AlarmAttribute::Code);
         assert_eq!(AlarmAttribute::from(2), AlarmAttribute::Data);
         assert_eq!(AlarmAttribute::from(3), AlarmAttribute::Type);
@@ -266,15 +263,15 @@ mod tests {
 
     #[test]
     fn test_read_alarm_data_new() {
-        let command = ReadAlarmData::new(1, 0);
+        let command = ReadAlarmData::new(1, AlarmAttribute::All);
         assert_eq!(command.instance, 1);
-        assert_eq!(command.attribute, 0);
+        assert_eq!(command.attribute, AlarmAttribute::All);
     }
 
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_read_alarm_data_command_trait() {
-        let command = ReadAlarmData::new(2, 5);
+        let command = ReadAlarmData::new(2, AlarmAttribute::Name);
 
         assert_eq!(ReadAlarmData::command_id(), 0x70);
         assert_eq!(command.instance(), 2);
@@ -287,7 +284,7 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_read_alarm_history_command_trait() {
-        let cmd = ReadAlarmHistory::new(1, 1);
+        let cmd = ReadAlarmHistory::new(1, AlarmAttribute::Code);
         assert_eq!(ReadAlarmHistory::command_id(), 0x71);
         assert_eq!(cmd.instance(), 1);
         assert_eq!(cmd.attribute(), 1);
@@ -298,135 +295,150 @@ mod tests {
     #[allow(clippy::unwrap_used, clippy::cognitive_complexity)]
     fn test_read_alarm_history_instance_validation() {
         // Valid instances
-        assert!(ReadAlarmHistory::new(1, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(50, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(100, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(1001, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(1050, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(1100, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(2001, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(2050, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(2100, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(3001, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(3050, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(3100, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(4001, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(4050, 1).is_valid_instance());
-        assert!(ReadAlarmHistory::new(4100, 1).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(50, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(100, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1001, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1050, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(1100, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2001, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2050, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(2100, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3001, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3050, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(3100, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4001, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4050, AlarmAttribute::Code).is_valid_instance());
+        assert!(ReadAlarmHistory::new(4100, AlarmAttribute::Code).is_valid_instance());
 
         // Invalid instances
-        assert!(!ReadAlarmHistory::new(0, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(101, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(500, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(1000, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(1101, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(2000, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(2101, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(3000, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(3101, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(4000, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(4101, 1).is_valid_instance());
-        assert!(!ReadAlarmHistory::new(5000, 1).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(0, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(101, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(500, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(1000, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(1101, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(2000, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(2101, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(3000, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(3101, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(4000, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(4101, AlarmAttribute::Code).is_valid_instance());
+        assert!(!ReadAlarmHistory::new(5000, AlarmAttribute::Code).is_valid_instance());
     }
 
     #[test]
     fn test_read_alarm_history_category_detection() {
         // Major failure alarms (1-100)
-        assert_eq!(ReadAlarmHistory::new(1, 1).get_alarm_category(), AlarmCategory::MajorFailure);
-        assert_eq!(ReadAlarmHistory::new(50, 1).get_alarm_category(), AlarmCategory::MajorFailure);
-        assert_eq!(ReadAlarmHistory::new(100, 1).get_alarm_category(), AlarmCategory::MajorFailure);
+        assert_eq!(
+            ReadAlarmHistory::new(1, AlarmAttribute::Code).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(50, AlarmAttribute::Code).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(100, AlarmAttribute::Code).get_alarm_category(),
+            AlarmCategory::MajorFailure
+        );
 
         // Monitor alarms (1001-1100)
         assert_eq!(
-            ReadAlarmHistory::new(1001, 1).get_alarm_category(),
+            ReadAlarmHistory::new(1001, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::MonitorAlarm
         );
         assert_eq!(
-            ReadAlarmHistory::new(1050, 1).get_alarm_category(),
+            ReadAlarmHistory::new(1050, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::MonitorAlarm
         );
         assert_eq!(
-            ReadAlarmHistory::new(1100, 1).get_alarm_category(),
+            ReadAlarmHistory::new(1100, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::MonitorAlarm
         );
 
         // User alarm (system) (2001-2100)
         assert_eq!(
-            ReadAlarmHistory::new(2001, 1).get_alarm_category(),
+            ReadAlarmHistory::new(2001, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmSystem
         );
         assert_eq!(
-            ReadAlarmHistory::new(2050, 1).get_alarm_category(),
+            ReadAlarmHistory::new(2050, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmSystem
         );
         assert_eq!(
-            ReadAlarmHistory::new(2100, 1).get_alarm_category(),
+            ReadAlarmHistory::new(2100, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmSystem
         );
 
         // User alarm (user) (3001-3100)
         assert_eq!(
-            ReadAlarmHistory::new(3001, 1).get_alarm_category(),
+            ReadAlarmHistory::new(3001, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmUser
         );
         assert_eq!(
-            ReadAlarmHistory::new(3050, 1).get_alarm_category(),
+            ReadAlarmHistory::new(3050, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmUser
         );
         assert_eq!(
-            ReadAlarmHistory::new(3100, 1).get_alarm_category(),
+            ReadAlarmHistory::new(3100, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::UserAlarmUser
         );
 
         // Offline alarm (4001-4100)
         assert_eq!(
-            ReadAlarmHistory::new(4001, 1).get_alarm_category(),
+            ReadAlarmHistory::new(4001, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::OfflineAlarm
         );
         assert_eq!(
-            ReadAlarmHistory::new(4050, 1).get_alarm_category(),
+            ReadAlarmHistory::new(4050, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::OfflineAlarm
         );
         assert_eq!(
-            ReadAlarmHistory::new(4100, 1).get_alarm_category(),
+            ReadAlarmHistory::new(4100, AlarmAttribute::Code).get_alarm_category(),
             AlarmCategory::OfflineAlarm
         );
 
         // Invalid instances
-        assert_eq!(ReadAlarmHistory::new(0, 1).get_alarm_category(), AlarmCategory::Invalid);
-        assert_eq!(ReadAlarmHistory::new(5000, 1).get_alarm_category(), AlarmCategory::Invalid);
+        assert_eq!(
+            ReadAlarmHistory::new(0, AlarmAttribute::Code).get_alarm_category(),
+            AlarmCategory::Invalid
+        );
+        assert_eq!(
+            ReadAlarmHistory::new(5000, AlarmAttribute::Code).get_alarm_category(),
+            AlarmCategory::Invalid
+        );
     }
 
     #[test]
     fn test_read_alarm_history_index_calculation() {
         // Major failure alarms (1-100) -> index 0-99
-        assert_eq!(ReadAlarmHistory::new(1, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(50, 1).get_alarm_index(), 49);
-        assert_eq!(ReadAlarmHistory::new(100, 1).get_alarm_index(), 99);
+        assert_eq!(ReadAlarmHistory::new(1, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(50, AlarmAttribute::Code).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(100, AlarmAttribute::Code).get_alarm_index(), 99);
 
         // Monitor alarms (1001-1100) -> index 0-99
-        assert_eq!(ReadAlarmHistory::new(1001, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(1050, 1).get_alarm_index(), 49);
-        assert_eq!(ReadAlarmHistory::new(1100, 1).get_alarm_index(), 99);
+        assert_eq!(ReadAlarmHistory::new(1001, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(1050, AlarmAttribute::Code).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(1100, AlarmAttribute::Code).get_alarm_index(), 99);
 
         // User alarm (system) (2001-2100) -> index 0-99
-        assert_eq!(ReadAlarmHistory::new(2001, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(2050, 1).get_alarm_index(), 49);
-        assert_eq!(ReadAlarmHistory::new(2100, 1).get_alarm_index(), 99);
+        assert_eq!(ReadAlarmHistory::new(2001, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(2050, AlarmAttribute::Code).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(2100, AlarmAttribute::Code).get_alarm_index(), 99);
 
         // User alarm (user) (3001-3100) -> index 0-99
-        assert_eq!(ReadAlarmHistory::new(3001, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(3050, 1).get_alarm_index(), 49);
-        assert_eq!(ReadAlarmHistory::new(3100, 1).get_alarm_index(), 99);
+        assert_eq!(ReadAlarmHistory::new(3001, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(3050, AlarmAttribute::Code).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(3100, AlarmAttribute::Code).get_alarm_index(), 99);
 
         // Offline alarm (4001-4100) -> index 0-99
-        assert_eq!(ReadAlarmHistory::new(4001, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(4050, 1).get_alarm_index(), 49);
-        assert_eq!(ReadAlarmHistory::new(4100, 1).get_alarm_index(), 99);
+        assert_eq!(ReadAlarmHistory::new(4001, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(4050, AlarmAttribute::Code).get_alarm_index(), 49);
+        assert_eq!(ReadAlarmHistory::new(4100, AlarmAttribute::Code).get_alarm_index(), 99);
 
         // Invalid instances
-        assert_eq!(ReadAlarmHistory::new(0, 1).get_alarm_index(), 0);
-        assert_eq!(ReadAlarmHistory::new(5000, 1).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(0, AlarmAttribute::Code).get_alarm_index(), 0);
+        assert_eq!(ReadAlarmHistory::new(5000, AlarmAttribute::Code).get_alarm_index(), 0);
     }
 
     #[test]

@@ -2,7 +2,8 @@
 
 use crate::{CommandHandler, state::MockState};
 use moto_hses_proto::{
-    Alarm, HsesRequestMessage, ProtocolError, ReadAlarmData, ReadAlarmHistory, encoding_utils,
+    Alarm, AlarmAttribute, HsesRequestMessage, ProtocolError, ReadAlarmData, ReadAlarmHistory,
+    encoding_utils,
 };
 
 /// Common helper function to handle alarm attribute reading based on service type
@@ -80,16 +81,11 @@ impl CommandHandler for AlarmDataHandler {
         let service = message.sub_header.service;
 
         // Create ReadAlarmData command to validate instance and attribute
-        let alarm_data_cmd = ReadAlarmData::new(instance, attribute);
+        let alarm_data_cmd = ReadAlarmData::new(instance, AlarmAttribute::from(attribute));
 
         // Validate instance range
         if !alarm_data_cmd.is_valid_instance() {
             return Err(ProtocolError::InvalidCommand);
-        }
-
-        // Validate attribute range
-        if !alarm_data_cmd.is_valid_attribute() {
-            return Err(ProtocolError::InvalidAttribute);
         }
 
         let instance_usize = instance as usize;
@@ -117,7 +113,7 @@ impl CommandHandler for AlarmInfoHandler {
         let service = message.sub_header.service;
 
         // Create ReadAlarmHistory command to validate instance
-        let alarm_history_cmd = ReadAlarmHistory::new(instance, attribute);
+        let alarm_history_cmd = ReadAlarmHistory::new(instance, AlarmAttribute::from(attribute));
 
         // Validate instance range
         if !alarm_history_cmd.is_valid_instance() {
