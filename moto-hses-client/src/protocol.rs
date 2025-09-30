@@ -188,6 +188,23 @@ impl HsesClient {
         Ok(())
     }
 
+    /// Set cycle mode (0x84 command)
+    ///
+    /// # Arguments
+    /// * `mode` - Cycle mode to set (Step, `OneCycle`, or Continuous)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub async fn set_cycle_mode(
+        &self,
+        mode: moto_hses_proto::CycleMode,
+    ) -> Result<(), ClientError> {
+        let command = moto_hses_proto::CycleModeSwitchingCommand::new(mode);
+        let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
     /// Read executing job information
     ///
     /// # Arguments

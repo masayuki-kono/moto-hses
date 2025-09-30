@@ -3,6 +3,7 @@
 pub mod alarm;
 pub mod commands;
 pub mod constants;
+pub mod cycle_mode;
 pub mod encoding;
 pub mod encoding_utils;
 pub mod error;
@@ -21,6 +22,7 @@ pub use commands::{
     VariableType, WriteIo, WriteRegister, WriteVar,
 };
 pub use constants::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
+pub use cycle_mode::{CycleMode, CycleModeSwitchingCommand};
 pub use encoding::TextEncoding;
 pub use error::ProtocolError;
 pub use file::response::{parse_file_content, parse_file_list};

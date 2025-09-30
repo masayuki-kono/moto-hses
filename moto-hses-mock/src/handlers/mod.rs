@@ -21,6 +21,7 @@ pub trait CommandHandler {
 
 // Re-export all handler modules
 pub mod alarm;
+pub mod cycle_mode_switching;
 pub mod file;
 pub mod io;
 pub mod job;

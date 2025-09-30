@@ -146,25 +146,3 @@ impl CommandHandler for PmovHandler {
         }
     }
 }
-
-/// Handler for `SelectCycle` command (0x84)
-pub struct SelectCycleHandler;
-
-impl CommandHandler for SelectCycleHandler {
-    fn handle(
-        &self,
-        message: &proto::HsesRequestMessage,
-        _state: &mut MockState,
-    ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let service = message.sub_header.service;
-
-        match service {
-            0x10 => {
-                // Select cycle type
-                // For now, just acknowledge the cycle selection
-                Ok(vec![])
-            }
-            _ => Err(proto::ProtocolError::InvalidService),
-        }
-    }
-}
