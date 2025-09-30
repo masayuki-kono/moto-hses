@@ -2,10 +2,10 @@
 
 use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
 use moto_hses_proto::{
-    Alarm, Command, CoordinateSystemType, DeleteFile, Division, ExecutingJobInfo, HoldServoControl,
-    Position, ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo, ReadFileList, ReadIo,
-    ReadStatus, ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile, SendFile, Status,
-    StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
+    Alarm, Command, ControlGroupPositionType, DeleteFile, Division, ExecutingJobInfo,
+    HoldServoControl, Position, ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo,
+    ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile,
+    SendFile, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
 };
 use moto_hses_proto::{parse_file_content, parse_file_list};
 use std::sync::atomic::Ordering;
@@ -88,7 +88,7 @@ impl HsesClient {
     pub async fn read_position(
         &self,
         control_group: u8,
-        coord_system: CoordinateSystemType,
+        coord_system: ControlGroupPositionType,
     ) -> Result<Position, ClientError> {
         let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -361,7 +361,7 @@ impl HsesClient {
     ///
     /// Returns an error if communication fails
     pub async fn read_register(&self, register_number: u16) -> Result<i16, ClientError> {
-        use moto_hses_proto::types::ReadRegister;
+        use moto_hses_proto::ReadRegister;
         let command = ReadRegister { register_number };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
 
@@ -385,7 +385,7 @@ impl HsesClient {
         register_number: u16,
         value: i16,
     ) -> Result<(), ClientError> {
-        use moto_hses_proto::types::WriteRegister;
+        use moto_hses_proto::WriteRegister;
         let command = WriteRegister { register_number, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())

@@ -1,7 +1,7 @@
 //! Status data structures and operations
 
 use crate::error::ProtocolError;
-use crate::types::VariableType;
+use crate::commands::VariableType;
 use bytes::Buf;
 
 // Enhanced status structure

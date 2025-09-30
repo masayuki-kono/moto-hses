@@ -1,7 +1,7 @@
 //! Variable type implementations
 
+use crate::commands::VariableType;
 use crate::error::ProtocolError;
-use crate::types::VariableType;
 use bytes::Buf;
 
 // Implementations for basic variable types

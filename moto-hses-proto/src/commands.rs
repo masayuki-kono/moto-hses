@@ -1,10 +1,8 @@
-//! Basic types and traits for HSES protocol
+//! HSES protocol commands and core traits
 
 use crate::error::ProtocolError;
+use crate::position::ControlGroupPositionType;
 use std::marker::PhantomData;
-
-pub const ROBOT_CONTROL_PORT: u16 = 10040;
-pub const FILE_CONTROL_PORT: u16 = 10041;
 
 // Core traits for type-safe commands
 pub trait Command {
@@ -54,22 +52,6 @@ pub enum Service {
     SetAll = 0x02,
     ReadMultiple = 0x33,
     WriteMultiple = 0x34,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CoordinateSystem {
-    Base,
-    Robot,
-    Tool,
-    User(u8),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CoordinateSystemType {
-    RobotPulse = 0,
-    BasePulse = 1,
-    StationPulse = 3,
-    RobotCartesian = 4,
 }
 
 // Type-safe command definitions
@@ -228,7 +210,7 @@ pub struct ReadStatusData1;
 pub struct ReadStatusData2;
 pub struct ReadCurrentPosition {
     pub control_group: u8,
-    pub coordinate_system: CoordinateSystemType,
+    pub coordinate_system: ControlGroupPositionType,
 }
 
 // Command implementations
@@ -327,22 +309,6 @@ mod tests {
     }
 
     #[test]
-    fn test_coordinate_system_enum() {
-        assert_eq!(CoordinateSystem::Base, CoordinateSystem::Base);
-        assert_eq!(CoordinateSystem::Robot, CoordinateSystem::Robot);
-        assert_eq!(CoordinateSystem::Tool, CoordinateSystem::Tool);
-        assert_eq!(CoordinateSystem::User(1), CoordinateSystem::User(1));
-    }
-
-    #[test]
-    fn test_coordinate_system_type_enum() {
-        assert_eq!(CoordinateSystemType::RobotPulse as u8, 0);
-        assert_eq!(CoordinateSystemType::BasePulse as u8, 1);
-        assert_eq!(CoordinateSystemType::StationPulse as u8, 3);
-        assert_eq!(CoordinateSystemType::RobotCartesian as u8, 4);
-    }
-
-    #[test]
     #[allow(clippy::unwrap_used)]
     fn test_read_var_command() {
         let read_cmd = ReadVar::<u8> { index: 1, _phantom: PhantomData };
@@ -374,7 +340,7 @@ mod tests {
     fn test_read_current_position_command() {
         let read_pos = ReadCurrentPosition {
             control_group: 1,
-            coordinate_system: CoordinateSystemType::RobotPulse,
+            coordinate_system: ControlGroupPositionType::RobotPulse,
         };
         assert_eq!(ReadCurrentPosition::command_id(), 0x75);
         let serialized = read_pos.serialize().unwrap();

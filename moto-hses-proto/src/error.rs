@@ -18,8 +18,8 @@ pub enum ProtocolError {
     Deserialization(String),
     #[error("invalid variable type")]
     InvalidVariableType,
-    #[error("invalid coordinate system")]
-    InvalidCoordinateSystem,
+    #[error("invalid coordinate system type")]
+    InvalidCoordinateSystemType,
     #[error("position data error: {0}")]
     PositionError(String),
     #[error("file operation error: {0}")]

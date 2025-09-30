@@ -18,7 +18,7 @@ test_with_logging!(test_read_robot_pulse_position, {
     log::debug!("Client created successfully");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse)
+        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse)
         .await
         .expect("Failed to read robot pulse position");
 
@@ -51,7 +51,7 @@ test_with_logging!(test_read_base_pulse_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::BasePulse)
+        .read_position(1, moto_hses_proto::ControlGroupPositionType::BasePulse)
         .await
         .expect("Failed to read base pulse position");
 
@@ -83,7 +83,7 @@ test_with_logging!(test_read_station_pulse_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::StationPulse)
+        .read_position(1, moto_hses_proto::ControlGroupPositionType::StationPulse)
         .await
         .expect("Failed to read station pulse position");
 
@@ -115,7 +115,7 @@ test_with_logging!(test_read_robot_cartesian_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::RobotCartesian)
+        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotCartesian)
         .await
         .expect("Failed to read robot cartesian position");
 
@@ -152,7 +152,7 @@ test_with_logging!(test_read_r1_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse)
+        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse)
         .await
         .expect("Failed to read R1 position");
 
@@ -180,7 +180,7 @@ test_with_logging!(test_read_r2_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(2, moto_hses_proto::CoordinateSystemType::RobotPulse)
+        .read_position(2, moto_hses_proto::ControlGroupPositionType::RobotPulse)
         .await
         .expect("Failed to read R2 position");
 
@@ -208,7 +208,7 @@ test_with_logging!(test_read_b1_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(11, moto_hses_proto::CoordinateSystemType::RobotPulse)
+        .read_position(11, moto_hses_proto::ControlGroupPositionType::RobotPulse)
         .await
         .expect("Failed to read B1 position");
 
@@ -240,7 +240,7 @@ test_with_logging!(test_read_b2_position, {
     let client = create_test_client().await.expect("Failed to create client");
 
     let position = client
-        .read_position(12, moto_hses_proto::CoordinateSystemType::RobotPulse)
+        .read_position(12, moto_hses_proto::ControlGroupPositionType::RobotPulse)
         .await
         .expect("Failed to read B2 position");
 
@@ -274,7 +274,7 @@ test_with_logging!(test_continuous_position_monitoring, {
     // Test position monitoring for 5 seconds (as per legacy example)
     log::debug!("Monitoring position for 5 seconds...");
     for i in 1..=5 {
-        match client.read_position(1, moto_hses_proto::CoordinateSystemType::RobotPulse).await {
+        match client.read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse).await {
             Ok(position) => {
                 log::debug!("  [{i}s] Position: {position:?}");
 

@@ -1,6 +1,6 @@
 use log::info;
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{CoordinateSystemType, ROBOT_CONTROL_PORT};
+use moto_hses_proto::{ControlGroupPositionType, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 
 #[tokio::main]
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Current Position Reading ---");
 
     // Read position in robot pulse coordinates
-    match client.read_position(1, CoordinateSystemType::RobotPulse).await {
+    match client.read_position(1, ControlGroupPositionType::RobotPulse).await {
         Ok(position) => {
             info!("✓ Robot pulse position read successfully");
             info!("  Position: {position:?}");
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in base pulse coordinates
-    match client.read_position(1, CoordinateSystemType::BasePulse).await {
+    match client.read_position(1, ControlGroupPositionType::BasePulse).await {
         Ok(position) => {
             info!("✓ Base pulse position read successfully");
             info!("  Position: {position:?}");
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in station pulse coordinates
-    match client.read_position(1, CoordinateSystemType::StationPulse).await {
+    match client.read_position(1, ControlGroupPositionType::StationPulse).await {
         Ok(position) => {
             info!("✓ Station pulse position read successfully");
             info!("  Position: {position:?}");
@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position in robot cartesian coordinates
-    match client.read_position(1, CoordinateSystemType::RobotCartesian).await {
+    match client.read_position(1, ControlGroupPositionType::RobotCartesian).await {
         Ok(position) => {
             info!("✓ Robot cartesian position read successfully");
             info!("  Position: {position:?}");
@@ -101,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Different Control Groups ---");
 
     // Read position for control group 1 (R1)
-    match client.read_position(1, CoordinateSystemType::RobotPulse).await {
+    match client.read_position(1, ControlGroupPositionType::RobotPulse).await {
         Ok(position) => {
             info!("✓ R1 position read successfully");
             info!("  Position: {position:?}");
@@ -112,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for control group 2 (R2)
-    match client.read_position(2, CoordinateSystemType::RobotPulse).await {
+    match client.read_position(2, ControlGroupPositionType::RobotPulse).await {
         Ok(position) => {
             info!("✓ R2 position read successfully");
             info!("  Position: {position:?}");
@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for base control group 1 (B1)
-    match client.read_position(11, CoordinateSystemType::RobotPulse).await {
+    match client.read_position(11, ControlGroupPositionType::RobotPulse).await {
         Ok(position) => {
             info!("✓ B1 position read successfully");
             info!("  Position: {position:?}");
@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Read position for base control group 2 (B2)
-    match client.read_position(12, CoordinateSystemType::RobotPulse).await {
+    match client.read_position(12, ControlGroupPositionType::RobotPulse).await {
         Ok(position) => {
             info!("✓ B2 position read successfully");
             info!("  Position: {position:?}");
@@ -149,7 +149,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Monitoring position for 5 seconds...");
 
     for i in 1..=5 {
-        match client.read_position(1, CoordinateSystemType::RobotPulse).await {
+        match client.read_position(1, ControlGroupPositionType::RobotPulse).await {
             Ok(position) => {
                 info!("  [{i}s] Position: {position:?}");
             }
