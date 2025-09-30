@@ -1269,8 +1269,6 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `0x10` (Set_Attribute_Single): Execute the specified request
 - **Payload**: Data exists during writing operation only
   - 32-bit integer (4 bytes): Fixed to 1
-    - Byte 0: Data 1
-    - Byte 1-3: Reserved
 
 **Response Structure:**
 
