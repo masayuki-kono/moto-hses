@@ -1,7 +1,7 @@
 //! Status data structures and operations
 
-use crate::commands::VariableType;
 use crate::error::ProtocolError;
+use crate::payload::HsesPayload;
 use bytes::Buf;
 
 // Enhanced status structure
@@ -64,10 +64,7 @@ impl Status {
     }
 }
 
-impl VariableType for Status {
-    fn command_id() -> u16 {
-        0x72
-    }
+impl HsesPayload for Status {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -164,10 +161,7 @@ impl StatusData2 {
     }
 }
 
-impl VariableType for StatusData1 {
-    fn command_id() -> u16 {
-        0x72
-    }
+impl HsesPayload for StatusData1 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -211,10 +205,7 @@ impl VariableType for StatusData1 {
     }
 }
 
-impl VariableType for StatusData2 {
-    fn command_id() -> u16 {
-        0x72
-    }
+impl HsesPayload for StatusData2 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -331,8 +322,6 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_status_variable_type_trait() {
-        assert_eq!(Status::command_id(), 0x72);
-
         let data1 = StatusData1 {
             step: true,
             one_cycle: false,

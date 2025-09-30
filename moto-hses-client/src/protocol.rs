@@ -1,13 +1,14 @@
 //! Protocol communication for HSES client
 
-use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
 use moto_hses_proto::{
-    Alarm, Command, ControlGroupPositionType, DeleteFile, Division, ExecutingJobInfo,
-    HoldServoControl, Position, ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo,
-    ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile,
-    SendFile, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
+    Alarm, AlarmReset, Command, ControlGroupPositionType, DeleteFile, Division, ExecutingJobInfo,
+    HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory, ReadCurrentPosition,
+    ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
+    ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
+    WriteVar,
+    commands::{parse_file_content, parse_file_list},
 };
-use moto_hses_proto::{parse_file_content, parse_file_list};
+
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
 
@@ -32,7 +33,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
     where
-        T: VariableType,
+        T: HsesPayload + VariableCommandId,
     {
         let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -44,7 +45,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
     where
-        T: VariableType,
+        T: HsesPayload + VariableCommandId,
     {
         let command = WriteVar::<T> { index, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -255,7 +256,7 @@ impl HsesClient {
         attribute: u8,
     ) -> Result<Alarm, ClientError>
     where
-        C::Response: VariableType + Into<Alarm>,
+        C::Response: HsesPayload + Into<Alarm>,
     {
         let response = self.send_command_with_retry(command, Division::Robot).await?;
 
