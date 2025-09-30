@@ -32,7 +32,7 @@ This API is designed based on the following HSES protocol commands:
 | `read_variable<ExternalAxis>()`, `write_variable()`               | 0x81       | External axis type variable (EX) reading / writing command                  |
 | `reset_alarm()`                                                   | 0x82       | Alarm reset / error cancel command                                          |
 | `set_hold()`, `set_servo()`                                       | 0x83       | HOLD / servo ON/OFF command                                                 |
-| `set_execution_mode()`                                            | 0x84       | Step / cycle / continuous switching command                                 |
+| `set_cycle_mode()`                                            | 0x84       | Step / cycle / continuous switching command                                 |
 | `display_message()`                                               | 0x85       | Character string display command to the programming pendant                 |
 | `start_job()`                                                     | 0x86       | Start-up (job START) command                                                |
 | `select_job()`                                                    | 0x87       | Job select command                                                          |
