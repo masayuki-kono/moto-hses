@@ -17,7 +17,7 @@ test_with_logging!(test_complete_alarm_data, {
 
     log::info!("Reading complete alarm data for instance 1, attribute 0...");
     let alarm_data = client
-        .read_alarm_data(1, 0) // Read complete alarm data (attribute 0)
+        .read_alarm_data(1, AlarmAttribute::All) // Read complete alarm data (attribute 0)
         .await
         .expect("Failed to read complete alarm data");
 
@@ -51,46 +51,36 @@ test_with_logging!(test_specific_alarm_attributes, {
 
     // Test reading alarm code
     log::info!("Testing alarm code attribute...");
-    let alarm_code = client
-        .read_alarm_data(1, AlarmAttribute::Code as u8)
-        .await
-        .expect("Failed to read alarm code");
+    let alarm_code =
+        client.read_alarm_data(1, AlarmAttribute::Code).await.expect("Failed to read alarm code");
     log::info!("Alarm code: {}", alarm_code.code);
     assert_eq!(alarm_code.code, 1001, "Alarm code should match expected value");
 
     // Test reading alarm data
     log::info!("Testing alarm data attribute...");
-    let alarm_data = client
-        .read_alarm_data(1, AlarmAttribute::Data as u8)
-        .await
-        .expect("Failed to read alarm data");
+    let alarm_data =
+        client.read_alarm_data(1, AlarmAttribute::Data).await.expect("Failed to read alarm data");
     log::info!("Alarm data: {}", alarm_data.data);
     assert_eq!(alarm_data.data, 1, "Alarm data should match expected value");
 
     // Test reading alarm type
     log::info!("Testing alarm type attribute...");
-    let alarm_type = client
-        .read_alarm_data(1, AlarmAttribute::Type as u8)
-        .await
-        .expect("Failed to read alarm type");
+    let alarm_type =
+        client.read_alarm_data(1, AlarmAttribute::Type).await.expect("Failed to read alarm type");
     log::info!("Alarm type: {}", alarm_type.alarm_type);
     assert_eq!(alarm_type.alarm_type, 1, "Alarm type should match expected value");
 
     // Test reading alarm time
     log::info!("Testing alarm time attribute...");
-    let alarm_time = client
-        .read_alarm_data(1, AlarmAttribute::Time as u8)
-        .await
-        .expect("Failed to read alarm time");
+    let alarm_time =
+        client.read_alarm_data(1, AlarmAttribute::Time).await.expect("Failed to read alarm time");
     log::info!("Alarm time: {}", alarm_time.time);
     assert_eq!(alarm_time.time, "2024/01/01 12:00", "Alarm time should match expected value");
 
     // Test reading alarm name
     log::info!("Testing alarm name attribute...");
-    let alarm_name = client
-        .read_alarm_data(1, AlarmAttribute::Name as u8)
-        .await
-        .expect("Failed to read alarm name");
+    let alarm_name =
+        client.read_alarm_data(1, AlarmAttribute::Name).await.expect("Failed to read alarm name");
     log::info!("Alarm name: {}", alarm_name.name);
     assert_eq!(alarm_name.name, "Servo Error", "Alarm name should match expected value");
 
@@ -121,7 +111,7 @@ test_with_logging!(test_alarm_instances, {
 
     for (instance, expected_code, expected_name) in expected_alarms {
         let alarm_instance = client
-            .read_alarm_data(instance, 0) // Read complete alarm data
+            .read_alarm_data(instance, AlarmAttribute::All) // Read complete alarm data
             .await
             .expect("Failed to read alarm instance");
 
@@ -166,13 +156,13 @@ test_with_logging!(test_alarm_history_major_failure, {
     for (instance, expected_code, expected_name) in expected_history {
         // Test alarm history code
         let alarm_history_code = client
-            .read_alarm_history(instance, AlarmAttribute::Code as u8)
+            .read_alarm_history(instance, AlarmAttribute::Code)
             .await
             .expect("Failed to read major failure alarm code");
 
         // Test alarm history name
         let alarm_history_name = client
-            .read_alarm_history(instance, AlarmAttribute::Name as u8)
+            .read_alarm_history(instance, AlarmAttribute::Name)
             .await
             .expect("Failed to read major failure alarm name");
 
@@ -212,7 +202,7 @@ test_with_logging!(test_alarm_history_monitor, {
 
     for instance in 1001..=1003 {
         let alarm_history = client
-            .read_alarm_history(instance, AlarmAttribute::Name as u8)
+            .read_alarm_history(instance, AlarmAttribute::Name)
             .await
             .expect("Failed to read monitor alarm");
 
@@ -254,7 +244,7 @@ test_with_logging!(test_alarm_history_attributes, {
     // Test alarm history code attribute
     log::info!("Testing alarm history code attribute...");
     let alarm_code = client
-        .read_alarm_history(1, AlarmAttribute::Code as u8)
+        .read_alarm_history(1, AlarmAttribute::Code)
         .await
         .expect("Failed to read major failure alarm code");
     log::info!("Major failure alarm #1 code: {}", alarm_code.code);
@@ -263,7 +253,7 @@ test_with_logging!(test_alarm_history_attributes, {
     // Test alarm history time attribute
     log::info!("Testing alarm history time attribute...");
     let alarm_time = client
-        .read_alarm_history(1, AlarmAttribute::Time as u8)
+        .read_alarm_history(1, AlarmAttribute::Time)
         .await
         .expect("Failed to read major failure alarm time");
     log::info!("Major failure alarm #1 time: {}", alarm_time.time);
@@ -283,7 +273,7 @@ test_with_logging!(test_invalid_alarm_history_instance, {
 
     // Test invalid instance (should return error)
     log::info!("Testing invalid alarm history instance...");
-    let result = client.read_alarm_history(5000, AlarmAttribute::Code as u8).await;
+    let result = client.read_alarm_history(5000, AlarmAttribute::Code).await;
 
     // Assert that invalid instance returns error
     assert!(result.is_err(), "Invalid alarm history instance should return error");
@@ -299,7 +289,7 @@ test_with_logging!(test_invalid_alarm_instance, {
 
     // Test invalid alarm instance (5000 is outside all valid ranges)
     log::info!("Testing invalid alarm instance...");
-    let result = client.read_alarm_data(5000, 1).await;
+    let result = client.read_alarm_data(5000, AlarmAttribute::Code).await;
     assert!(result.is_err(), "Invalid alarm instance should return error");
 });
 
@@ -309,10 +299,12 @@ test_with_logging!(test_invalid_alarm_attribute, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test invalid alarm attribute (255 is invalid)
-    log::info!("Testing invalid alarm attribute...");
-    let result = client.read_alarm_data(1, 255).await;
-    assert!(result.is_err(), "Invalid alarm attribute should return error");
+    // Test invalid alarm attribute (255 is invalid, but AlarmAttribute::from(255) returns Code)
+    // This test now verifies that even with an invalid u8 value, the system handles it gracefully
+    log::info!("Testing alarm attribute conversion...");
+    let result = client.read_alarm_data(1, AlarmAttribute::from(255)).await;
+    // Since AlarmAttribute::from(255) returns Code (default), this should succeed
+    assert!(result.is_ok(), "AlarmAttribute::from(255) should return Code and succeed");
 });
 
 test_with_logging!(test_alarm_reset_command, {
@@ -347,40 +339,30 @@ test_with_logging!(test_alarm_operations_comprehensive, {
 
     // Test complete alarm data reading (attribute 0)
     let _complete_alarm = client
-        .read_alarm_data(1, 0) // Read complete alarm data
+        .read_alarm_data(1, AlarmAttribute::All) // Read complete alarm data
         .await
         .expect("Failed to read complete alarm data");
 
     // Test specific alarm attributes
-    let _alarm_code = client
-        .read_alarm_data(1, AlarmAttribute::Code as u8)
-        .await
-        .expect("Failed to read alarm code");
+    let _alarm_code =
+        client.read_alarm_data(1, AlarmAttribute::Code).await.expect("Failed to read alarm code");
 
-    let _alarm_data = client
-        .read_alarm_data(1, AlarmAttribute::Data as u8)
-        .await
-        .expect("Failed to read alarm data");
+    let _alarm_data =
+        client.read_alarm_data(1, AlarmAttribute::Data).await.expect("Failed to read alarm data");
 
-    let _alarm_type = client
-        .read_alarm_data(1, AlarmAttribute::Type as u8)
-        .await
-        .expect("Failed to read alarm type");
+    let _alarm_type =
+        client.read_alarm_data(1, AlarmAttribute::Type).await.expect("Failed to read alarm type");
 
-    let _alarm_time = client
-        .read_alarm_data(1, AlarmAttribute::Time as u8)
-        .await
-        .expect("Failed to read alarm time");
+    let _alarm_time =
+        client.read_alarm_data(1, AlarmAttribute::Time).await.expect("Failed to read alarm time");
 
-    let _alarm_name = client
-        .read_alarm_data(1, AlarmAttribute::Name as u8)
-        .await
-        .expect("Failed to read alarm name");
+    let _alarm_name =
+        client.read_alarm_data(1, AlarmAttribute::Name).await.expect("Failed to read alarm name");
 
     // Test multiple alarm instances (1-4)
     for i in 1..=4 {
         let _instance = client
-            .read_alarm_data(i, 0) // Read complete alarm data
+            .read_alarm_data(i, AlarmAttribute::All) // Read complete alarm data
             .await
             .expect("Failed to read alarm instance");
     }
@@ -388,7 +370,7 @@ test_with_logging!(test_alarm_operations_comprehensive, {
     // Test alarm history - major failure alarms
     for i in 1..=3 {
         let _major_failure = client
-            .read_alarm_history(i, AlarmAttribute::Code as u8)
+            .read_alarm_history(i, AlarmAttribute::Code)
             .await
             .expect("Failed to read major failure alarm");
     }
@@ -396,19 +378,19 @@ test_with_logging!(test_alarm_operations_comprehensive, {
     // Test alarm history - monitor alarms
     for i in 1001..=1003 {
         let _monitor_alarm = client
-            .read_alarm_history(i, AlarmAttribute::Name as u8)
+            .read_alarm_history(i, AlarmAttribute::Name)
             .await
             .expect("Failed to read monitor alarm");
     }
 
     // Test alarm history attributes
     let _history_code = client
-        .read_alarm_history(1, AlarmAttribute::Code as u8)
+        .read_alarm_history(1, AlarmAttribute::Code)
         .await
         .expect("Failed to read alarm history code");
 
     let _history_time = client
-        .read_alarm_history(1, AlarmAttribute::Time as u8)
+        .read_alarm_history(1, AlarmAttribute::Time)
         .await
         .expect("Failed to read alarm history time");
 

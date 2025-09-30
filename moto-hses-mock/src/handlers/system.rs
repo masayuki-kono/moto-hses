@@ -13,7 +13,7 @@ impl CommandHandler for StatusHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        use moto_hses_proto::VariableType;
+        use moto_hses_proto::HsesPayload;
 
         let attribute = message.sub_header.attribute;
         let mut data = match attribute {

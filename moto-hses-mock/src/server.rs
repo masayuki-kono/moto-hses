@@ -3,6 +3,7 @@
 use crate::handlers::CommandHandlerRegistry;
 use crate::state::{MockState, SharedState};
 use moto_hses_proto as proto;
+use proto::commands::alarm::AlarmCategory;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
@@ -56,9 +57,7 @@ impl MockServer {
             for alarm in &config.alarm_history {
                 // Determine category based on alarm code or use a default category
                 // For simplicity, we'll add all to major_failure category
-                mock_state
-                    .alarm_history
-                    .add_alarm(proto::alarm::AlarmCategory::MajorFailure, alarm.clone());
+                mock_state.alarm_history.add_alarm(AlarmCategory::MajorFailure, alarm.clone());
             }
         }
 

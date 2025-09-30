@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HsesClient::new("192.168.0.3:10040").await?;
 
     // Read alarm data
-    let alarm = client.read_alarm_data(1, 0).await?;
+    let alarm = client.read_alarm_data(1, AlarmAttribute::All).await?;
     println!("Alarm Code: {}", alarm.code);
     println!("Alarm Name: {}", alarm.name);
 
@@ -140,7 +140,7 @@ async fn test_alarm_operations() {
     let client = HsesClient::new("127.0.0.1:10040").await.unwrap();
     
     // Test alarm operations
-    let alarm = client.read_alarm_data(1, 0).await.unwrap();
+    let alarm = client.read_alarm_data(1, AlarmAttribute::All).await.unwrap();
     assert_eq!(alarm.code, 1001);
     assert_eq!(alarm.name, "Test alarm");
     
