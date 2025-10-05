@@ -86,28 +86,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Test different task types
-    info!("\nTesting different task types:");
-
-    for task_type in 1..=6 {
-        match client.read_executing_job_info(task_type, 1).await {
-            Ok(job_info) => {
-                let task_name = match task_type {
-                    1 => "Master Task",
-                    2 => "Sub Task 1",
-                    3 => "Sub Task 2",
-                    4 => "Sub Task 3",
-                    5 => "Sub Task 4",
-                    6 => "Sub Task 5",
-                    _ => "Unknown",
-                };
-                info!("  {} ({}): {}", task_name, task_type, job_info.job_name);
-            }
-            Err(e) => {
-                info!("  Task {task_type}: Error - {e}");
-            }
-        }
-    }
-
     Ok(())
 }

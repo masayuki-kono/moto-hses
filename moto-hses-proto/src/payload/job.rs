@@ -53,8 +53,9 @@ impl ExecutingJobInfo {
                 data.extend_from_slice(&self.step_number.to_le_bytes());
             }
             4 => {
-                // Speed override value (4 bytes)
-                data.extend_from_slice(&self.speed_override_value.to_le_bytes());
+                // Speed override value (4 bytes) - convert from % to 0.01%
+                let raw_speed_override_value = self.speed_override_value * 100;
+                data.extend_from_slice(&raw_speed_override_value.to_le_bytes());
             }
             _ => {
                 return Err(ProtocolError::InvalidAttribute);
@@ -87,8 +88,9 @@ impl ExecutingJobInfo {
         // Step number (4 bytes)
         data.extend_from_slice(&self.step_number.to_le_bytes());
 
-        // Speed override value (4 bytes)
-        data.extend_from_slice(&self.speed_override_value.to_le_bytes());
+        // Speed override value (4 bytes) - convert from % to 0.01%
+        let raw_speed_override_value = self.speed_override_value * 100;
+        data.extend_from_slice(&raw_speed_override_value.to_le_bytes());
 
         Ok(data)
     }
@@ -100,7 +102,7 @@ impl Default for ExecutingJobInfo {
             job_name: "NO_JOB".to_string(),
             line_number: 0,
             step_number: 0,
-            speed_override_value: 100,
+            speed_override_value: 100, // 100% (will be converted to 10000 in 0.01% units)
         }
     }
 }
@@ -130,8 +132,9 @@ impl ExecutingJobInfo {
         // Extract step number (4 bytes)
         let step_number = u32::from_le_bytes([data[36], data[37], data[38], data[39]]);
 
-        // Extract speed override value (4 bytes)
-        let speed_override_value = u32::from_le_bytes([data[40], data[41], data[42], data[43]]);
+        // Extract speed override value (4 bytes) and convert from 0.01% to %
+        let raw_speed_override_value = u32::from_le_bytes([data[40], data[41], data[42], data[43]]);
+        let speed_override_value = raw_speed_override_value / 100;
 
         Ok(Self { job_name, line_number, step_number, speed_override_value })
     }
@@ -191,13 +194,15 @@ impl ExecutingJobInfo {
                 })
             }
             4 => {
-                // Speed override value (4 bytes)
+                // Speed override value (4 bytes) and convert from 0.01% to %
                 if data.len() < 4 {
                     return Err(ProtocolError::Deserialization(
                         "Insufficient data length for speed override value".to_string(),
                     ));
                 }
-                let speed_override_value = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
+                let raw_speed_override_value =
+                    u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
+                let speed_override_value = raw_speed_override_value / 100;
                 Ok(Self {
                     job_name: String::new(),
                     line_number: 0,

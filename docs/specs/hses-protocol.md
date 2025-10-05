@@ -428,7 +428,10 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 **Speed Override Value (32-bit integer 11):**
 
-- Speed override value
+- Speed override value (unit: 0.01%)
+- Examples:
+  - 100% → 10000
+  - 75% → 7500
 
 **Important Note**: For the job name, it is transmitted in the form of the character strings whose language code was selected by the programming pendant. Use the same language code as the FS100, or the characters corrupt in case the client side does not correspond to its language code.
 
