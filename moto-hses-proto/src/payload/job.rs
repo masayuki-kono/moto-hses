@@ -230,3 +230,196 @@ impl HsesPayload for ExecutingJobInfo {
         Self::deserialize(data, encoding)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::encoding::TextEncoding;
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_new() {
+        let job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        assert_eq!(job_info.job_name, "TEST_JOB");
+        assert_eq!(job_info.line_number, 10);
+        assert_eq!(job_info.step_number, 5);
+        assert_eq!(job_info.speed_override_value, 80);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_default() {
+        let job_info = ExecutingJobInfo::default();
+
+        assert_eq!(job_info.job_name, "NO_JOB");
+        assert_eq!(job_info.line_number, 0);
+        assert_eq!(job_info.step_number, 0);
+        assert_eq!(job_info.speed_override_value, 100);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_serialize_complete() {
+        let job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        let data = job_info.serialize_complete(TextEncoding::Utf8).unwrap();
+        assert_eq!(data.len(), 44); // 32 + 4 + 4 + 4
+
+        // Check job name (first 32 bytes)
+        let name_str = String::from_utf8_lossy(&data[0..32]);
+        assert!(name_str.starts_with("TEST_JOB"));
+
+        // Check line number (next 4 bytes)
+        assert_eq!(u32::from_le_bytes([data[32], data[33], data[34], data[35]]), 10);
+
+        // Check step number (next 4 bytes)
+        assert_eq!(u32::from_le_bytes([data[36], data[37], data[38], data[39]]), 5);
+
+        // Check speed override value (last 4 bytes) - should be 8000 (80 * 100)
+        assert_eq!(u32::from_le_bytes([data[40], data[41], data[42], data[43]]), 8000);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_serialize_attribute() {
+        let job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        // Test job name serialization
+        let data = job_info.serialize(1, TextEncoding::Utf8).unwrap();
+        assert_eq!(data.len(), 32);
+        let name_str = String::from_utf8_lossy(&data[0..32]);
+        assert!(name_str.starts_with("TEST_JOB"));
+
+        // Test line number serialization
+        let data = job_info.serialize(2, TextEncoding::Utf8).unwrap();
+        assert_eq!(data.len(), 4);
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 10);
+
+        // Test step number serialization
+        let data = job_info.serialize(3, TextEncoding::Utf8).unwrap();
+        assert_eq!(data.len(), 4);
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 5);
+
+        // Test speed override value serialization
+        let data = job_info.serialize(4, TextEncoding::Utf8).unwrap();
+        assert_eq!(data.len(), 4);
+        assert_eq!(u32::from_le_bytes([data[0], data[1], data[2], data[3]]), 8000);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_serialize_invalid_attribute() {
+        let job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        let result = job_info.serialize(99, TextEncoding::Utf8);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ProtocolError::InvalidAttribute));
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_deserialize() {
+        let original_job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        let serialized = original_job_info.serialize_complete(TextEncoding::Utf8).unwrap();
+        let deserialized = ExecutingJobInfo::deserialize(&serialized, TextEncoding::Utf8).unwrap();
+
+        assert_eq!(deserialized.job_name, original_job_info.job_name);
+        assert_eq!(deserialized.line_number, original_job_info.line_number);
+        assert_eq!(deserialized.step_number, original_job_info.step_number);
+        assert_eq!(deserialized.speed_override_value, original_job_info.speed_override_value);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_deserialize_insufficient_data() {
+        let short_data = vec![0u8; 10]; // Less than 44 bytes
+        let result = ExecutingJobInfo::deserialize(&short_data, TextEncoding::Utf8);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), ProtocolError::Deserialization(_)));
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_deserialize_attribute() {
+        let original_job_info = ExecutingJobInfo::new("TEST_JOB".to_string(), 10, 5, 80);
+
+        // Test job name deserialization
+        let name_data = original_job_info.serialize(1, TextEncoding::Utf8).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize_attribute(&name_data, 1, TextEncoding::Utf8).unwrap();
+        assert_eq!(deserialized.job_name, "TEST_JOB");
+        assert_eq!(deserialized.line_number, 0);
+        assert_eq!(deserialized.step_number, 0);
+        assert_eq!(deserialized.speed_override_value, 0);
+
+        // Test line number deserialization
+        let line_data = original_job_info.serialize(2, TextEncoding::Utf8).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize_attribute(&line_data, 2, TextEncoding::Utf8).unwrap();
+        assert_eq!(deserialized.job_name, "");
+        assert_eq!(deserialized.line_number, 10);
+        assert_eq!(deserialized.step_number, 0);
+        assert_eq!(deserialized.speed_override_value, 0);
+
+        // Test step number deserialization
+        let step_data = original_job_info.serialize(3, TextEncoding::Utf8).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize_attribute(&step_data, 3, TextEncoding::Utf8).unwrap();
+        assert_eq!(deserialized.job_name, "");
+        assert_eq!(deserialized.line_number, 0);
+        assert_eq!(deserialized.step_number, 5);
+        assert_eq!(deserialized.speed_override_value, 0);
+
+        // Test speed override value deserialization
+        let speed_data = original_job_info.serialize(4, TextEncoding::Utf8).unwrap();
+        let deserialized =
+            ExecutingJobInfo::deserialize_attribute(&speed_data, 4, TextEncoding::Utf8).unwrap();
+        assert_eq!(deserialized.job_name, "");
+        assert_eq!(deserialized.line_number, 0);
+        assert_eq!(deserialized.step_number, 0);
+        assert_eq!(deserialized.speed_override_value, 80);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_encoding_shift_jis() {
+        // Create test job info with Japanese text
+        let japanese_job_name = "テストジョブ";
+        let job_info = ExecutingJobInfo::new(japanese_job_name.to_string(), 10, 5, 80);
+
+        // Serialize with Shift_JIS encoding
+        let data = job_info.serialize_complete(TextEncoding::ShiftJis).unwrap();
+
+        // Deserialize with Shift_JIS encoding
+        let deserialized_job_info =
+            ExecutingJobInfo::deserialize(&data, TextEncoding::ShiftJis).unwrap();
+
+        // Test Shift_JIS round-trip
+        assert_eq!(deserialized_job_info.job_name, japanese_job_name);
+        assert_eq!(deserialized_job_info.line_number, 10);
+        assert_eq!(deserialized_job_info.step_number, 5);
+        assert_eq!(deserialized_job_info.speed_override_value, 80);
+
+        // Deserialize with UTF-8 encoding (should produce garbled text)
+        let job_info_utf8 = ExecutingJobInfo::deserialize(&data, TextEncoding::Utf8).unwrap();
+
+        // The UTF-8 decoding should produce garbled text for Japanese job name
+        assert_ne!(job_info_utf8.job_name, japanese_job_name);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_executing_job_info_serialize_long_strings() {
+        let long_job_name = "This is a very long job name that exceeds 32 bytes limit"; // Longer than 32 bytes
+        let job_info = ExecutingJobInfo::new(long_job_name.to_string(), 10, 5, 80);
+
+        let data = job_info.serialize_complete(TextEncoding::Utf8).unwrap();
+
+        // Job name should be truncated to 32 bytes
+        let name_str = String::from_utf8_lossy(&data[0..32]);
+        assert!(name_str.len() <= 32);
+        assert!(name_str.starts_with("This is a very long job name"));
+    }
+}
