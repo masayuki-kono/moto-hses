@@ -3,25 +3,7 @@
 use super::CommandHandler;
 use crate::state::MockState;
 use moto_hses_proto as proto;
-
-/// Validate I/O number range according to HSES protocol specification
-const fn is_valid_io_number(io_number: u16) -> bool {
-    matches!(
-        io_number,
-        1..=128 |           // Robot user input
-        1001..=1128 |       // Robot user output
-        2001..=2127 |       // External input
-        2501..=2628 |       // Network input
-        3001..=3128 |       // External output
-        3501..=3628 |       // Network output
-        4001..=4160 |       // Robot system input
-        5001..=5200 |       // Robot system output
-        6001..=6064 |       // Interface panel input
-        7001..=7999 |       // Auxiliary relay
-        8001..=8064 |       // Robot control status signal
-        8201..=8220         // Pseudo input
-    )
-}
+use moto_hses_proto::commands::io::IoCategory;
 
 /// Handler for I/O operations (0x78)
 pub struct IoHandler;
@@ -36,25 +18,20 @@ impl CommandHandler for IoHandler {
         let service = message.sub_header.service;
 
         // Validate I/O number range
-        if !is_valid_io_number(io_number) {
+        if !IoCategory::is_valid_io_number(io_number) {
             return Err(proto::ProtocolError::InvalidCommand);
         }
 
         match service {
             0x0e => {
-                // Read
+                // Read - return 1 byte representing 8 I/O states
                 let value = u8::from(state.get_io_state(io_number));
-                Ok(vec![value, 0, 0, 0])
+                Ok(vec![value])
             }
             0x10 => {
-                // Write
-                if message.payload.len() >= 4 {
-                    let value = i32::from_le_bytes([
-                        message.payload[0],
-                        message.payload[1],
-                        message.payload[2],
-                        message.payload[3],
-                    ]);
+                // Write - accept 1 byte representing 8 I/O states
+                if !message.payload.is_empty() {
+                    let value = message.payload[0];
                     state.set_io_state(io_number, value != 0);
                 }
                 Ok(vec![])

@@ -19,20 +19,20 @@ test_with_logging!(test_read_io, {
     // Test reading robot user input I/O
     log::info!("Reading robot user input I/O #1...");
     let io1_state = client.read_io(1).await.expect("Failed to read I/O #1");
-    log::info!("I/O #1 state: {io1_state}");
-    assert!(io1_state, "I/O #1 should be ON (initial state)");
+    log::info!("I/O #1 state: 0b{io1_state:08b}");
+    assert_eq!(io1_state, 0b0000_0001, "I/O #1 should be ON (initial state)");
 
     // Test reading robot user output I/O
     log::info!("Reading robot user output I/O #1001...");
     let io1001_state = client.read_io(1001).await.expect("Failed to read I/O #1001");
-    log::info!("I/O #1001 state: {io1001_state}");
-    assert!(!io1001_state, "I/O #1001 should be OFF (initial state)");
+    log::info!("I/O #1001 state: 0b{io1001_state:08b}");
+    assert_eq!(io1001_state, 0b0000_0000, "I/O #1001 should be OFF (initial state)");
 
     // Test reading additional I/O as per legacy example
     log::info!("Reading robot user input I/O #2...");
     let io2_state = client.read_io(2).await.expect("Failed to read I/O #2");
-    log::info!("I/O #2 state: {io2_state}");
-    assert!(!io2_state, "I/O #2 should be OFF (initial state)");
+    log::info!("I/O #2 state: 0b{io2_state:08b}");
+    assert_eq!(io2_state, 0b0000_0000, "I/O #2 should be OFF (initial state)");
 
     log::info!("I/O state verification passed");
 });
@@ -44,7 +44,7 @@ test_with_logging!(test_write_io, {
 
     // Test writing to robot user output I/O (as per legacy example)
     log::info!("Writing to robot user output I/O #1001...");
-    client.write_io(1001, true).await.expect("Failed to write to I/O #1001");
+    client.write_io(1001, 0b0000_0001).await.expect("Failed to write to I/O #1001");
     log::info!("Successfully set I/O #1001 to ON");
 
     // Wait a moment and verify the change (as per legacy example)
@@ -53,12 +53,12 @@ test_with_logging!(test_write_io, {
     let io_state_after_write =
         client.read_io(1001).await.expect("Failed to read I/O #1001 after write");
 
-    log::info!("I/O #1001 state after write: {io_state_after_write}");
-    assert!(io_state_after_write, "I/O #1001 should be ON after write");
+    log::info!("I/O #1001 state after write: 0b{io_state_after_write:08b}");
+    assert_eq!(io_state_after_write, 0b0000_0001, "I/O #1001 should be ON after write");
 
     // Additional I/O operations (as per legacy example)
     log::info!("Writing to robot user output I/O #1002...");
-    client.write_io(1002, false).await.expect("Failed to write OFF to I/O #1002");
+    client.write_io(1002, 0b0000_0000).await.expect("Failed to write OFF to I/O #1002");
     log::info!("Successfully set I/O #1002 to OFF");
 
     // Wait a moment and verify the change
@@ -67,8 +67,8 @@ test_with_logging!(test_write_io, {
     let io1002_state_after_write =
         client.read_io(1002).await.expect("Failed to read I/O #1002 after write");
 
-    log::info!("I/O #1002 state after write: {io1002_state_after_write}");
-    assert!(!io1002_state_after_write, "I/O #1002 should be OFF after write");
+    log::info!("I/O #1002 state after write: 0b{io1002_state_after_write:08b}");
+    assert_eq!(io1002_state_after_write, 0b0000_0000, "I/O #1002 should be OFF after write");
 });
 
 test_with_logging!(test_read_and_write_io_with_invalid_number, {
@@ -91,7 +91,7 @@ test_with_logging!(test_read_and_write_io_with_invalid_number, {
 
     // Test invalid I/O number for write
     log::info!("Testing invalid I/O number write...");
-    match client.write_io(65535, true).await {
+    match client.write_io(65535, 0b0000_0001).await {
         Ok(()) => {
             log::error!("✗ Invalid I/O number write succeeded unexpectedly");
             unreachable!("Writing to invalid I/O number should return error");
