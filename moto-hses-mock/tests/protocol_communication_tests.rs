@@ -96,7 +96,7 @@ async fn test_variable_read_command() {
             proto::HsesResponseMessage::decode(&buf[..n]).expect("Failed to decode response");
         assert_eq!(response.header.ack, 1); // Should be ACK
         assert_eq!(response.sub_header.service, 0x8e); // 0x0e + 0x80
-        assert_eq!(response.payload.len(), 4); // Integer should be 4 bytes
+        assert_eq!(response.payload.len(), 2); // Integer should be 2 bytes (actual data type size)
     } else {
         // Socket might not have data yet
         // This is acceptable for this test

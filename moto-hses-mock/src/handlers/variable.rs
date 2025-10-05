@@ -28,16 +28,15 @@ impl CommandHandler for ByteVarHandler {
                 // Read
                 state.get_variable(var_index).map_or_else(
                     || {
-                        // Protocol specification compliant: 4 bytes (Byte 0: B variable, Byte 1-3: Reserved)
-                        Ok(vec![0, 0, 0, 0])
+                        // B variable: 1 byte (actual data type size)
+                        Ok(vec![0])
                     },
                     |value| {
                         if value.is_empty() {
-                            Ok(vec![0, 0, 0, 0])
+                            Ok(vec![0])
                         } else {
-                            let mut response = vec![0u8; 4];
-                            response[0] = value[0];
-                            Ok(response)
+                            // Return actual data type size (1 byte for B variable)
+                            Ok(vec![value[0]])
                         }
                     },
                 )
@@ -78,23 +77,22 @@ impl CommandHandler for IntegerVarHandler {
                 // Read
                 state.get_variable(var_index).map_or_else(
                     || {
-                        // Protocol specification compliant: 4 bytes (Byte 0-1: I variable, Byte 2-3: Reserved)
-                        Ok(vec![0, 0, 0, 0])
+                        // I variable: 2 bytes (actual data type size)
+                        Ok(vec![0, 0])
                     },
                     |value| {
                         if value.len() >= 2 {
-                            let mut response = vec![0u8; 4];
-                            response[0..2].copy_from_slice(&value[0..2]);
-                            Ok(response)
+                            // Return actual data type size (2 bytes for I variable)
+                            Ok(value[0..2].to_vec())
                         } else {
-                            Ok(vec![0, 0, 0, 0])
+                            Ok(vec![0, 0])
                         }
                     },
                 )
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 4 {
+                if !message.payload.is_empty() {
                     state.set_variable(var_index, message.payload.clone());
                 }
                 Ok(vec![])
@@ -143,7 +141,7 @@ impl CommandHandler for DoubleVarHandler {
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 4 {
+                if !message.payload.is_empty() {
                     state.set_variable(var_index, message.payload.clone());
                 }
                 Ok(vec![])
@@ -195,7 +193,7 @@ impl CommandHandler for RealVarHandler {
             }
             0x10 => {
                 // Write
-                if message.payload.len() >= 4 {
+                if !message.payload.is_empty() {
                     state.set_variable(var_index, message.payload.clone());
                 }
                 Ok(vec![])
