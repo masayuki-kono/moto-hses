@@ -1,8 +1,9 @@
 //! Example: Read executing job information using 0x73 command
 use log::info;
 
-use moto_hses_client::HsesClient;
-use moto_hses_proto::ROBOT_CONTROL_PORT;
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,9 +24,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    // Create custom configuration with Shift_JIS encoding
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
+
     let controller_addr = format!("{host}:{robot_port}");
     info!("Connecting to controller at {controller_addr}...");
-    let client = HsesClient::new(&controller_addr).await?;
+    let client = HsesClient::new_with_config(config).await?;
 
     info!("Reading executing job information...");
 
