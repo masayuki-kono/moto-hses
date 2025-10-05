@@ -1,6 +1,7 @@
 //! Mock server state management
 
 use moto_hses_proto as proto;
+use proto::commands::alarm::AlarmCategory;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -37,50 +38,46 @@ pub struct AlarmHistory {
 impl AlarmHistory {
     /// Get alarm by category and index
     #[must_use]
-    pub fn get_alarm(
-        &self,
-        category: proto::alarm::AlarmCategory,
-        index: usize,
-    ) -> Option<&proto::Alarm> {
+    pub fn get_alarm(&self, category: AlarmCategory, index: usize) -> Option<&proto::Alarm> {
         match category {
-            proto::alarm::AlarmCategory::MajorFailure => self.major_failure.get(index),
-            proto::alarm::AlarmCategory::MonitorAlarm => self.monitor_alarm.get(index),
-            proto::alarm::AlarmCategory::UserAlarmSystem => self.user_alarm_system.get(index),
-            proto::alarm::AlarmCategory::UserAlarmUser => self.user_alarm_user.get(index),
-            proto::alarm::AlarmCategory::OfflineAlarm => self.offline_alarm.get(index),
-            proto::alarm::AlarmCategory::Invalid => None,
+            AlarmCategory::MajorFailure => self.major_failure.get(index),
+            AlarmCategory::MonitorAlarm => self.monitor_alarm.get(index),
+            AlarmCategory::UserAlarmSystem => self.user_alarm_system.get(index),
+            AlarmCategory::UserAlarmUser => self.user_alarm_user.get(index),
+            AlarmCategory::OfflineAlarm => self.offline_alarm.get(index),
+            AlarmCategory::Invalid => None,
         }
     }
 
     /// Add alarm to specific category
-    pub fn add_alarm(&mut self, category: proto::alarm::AlarmCategory, alarm: proto::Alarm) {
+    pub fn add_alarm(&mut self, category: AlarmCategory, alarm: proto::Alarm) {
         match category {
-            proto::alarm::AlarmCategory::MajorFailure => {
+            AlarmCategory::MajorFailure => {
                 if self.major_failure.len() < 100 {
                     self.major_failure.push(alarm);
                 }
             }
-            proto::alarm::AlarmCategory::MonitorAlarm => {
+            AlarmCategory::MonitorAlarm => {
                 if self.monitor_alarm.len() < 100 {
                     self.monitor_alarm.push(alarm);
                 }
             }
-            proto::alarm::AlarmCategory::UserAlarmSystem => {
+            AlarmCategory::UserAlarmSystem => {
                 if self.user_alarm_system.len() < 100 {
                     self.user_alarm_system.push(alarm);
                 }
             }
-            proto::alarm::AlarmCategory::UserAlarmUser => {
+            AlarmCategory::UserAlarmUser => {
                 if self.user_alarm_user.len() < 100 {
                     self.user_alarm_user.push(alarm);
                 }
             }
-            proto::alarm::AlarmCategory::OfflineAlarm => {
+            AlarmCategory::OfflineAlarm => {
                 if self.offline_alarm.len() < 100 {
                     self.offline_alarm.push(alarm);
                 }
             }
-            proto::alarm::AlarmCategory::Invalid => {}
+            AlarmCategory::Invalid => {}
         }
     }
 
@@ -96,6 +93,14 @@ impl AlarmHistory {
 
 impl Default for MockState {
     fn default() -> Self {
+        Self::new_with_test_data()
+    }
+}
+
+impl MockState {
+    /// Create a new `MockState` with test data
+    #[allow(clippy::too_many_lines)]
+    fn new_with_test_data() -> Self {
         let variables = HashMap::new();
         // Note: Variables are initialized as needed, not pre-populated
         // This avoids conflicts between different variable types (B, I, D, R, S) using the same indices
@@ -113,10 +118,10 @@ impl Default for MockState {
 
         // Add test alarms (4 alarms for HSES specification: Instance 1-4)
         let alarms = vec![
-            proto::alarm::test_alarms::servo_error(), // Instance 1: Latest alarm
-            proto::alarm::test_alarms::emergency_stop(), // Instance 2: Second alarm
-            proto::alarm::test_alarms::safety_error(), // Instance 3: Third alarm
-            proto::alarm::test_alarms::communication_error(), // Instance 4: Fourth alarm
+            proto::payload::alarm::test_alarms::servo_error(), // Instance 1: Latest alarm
+            proto::payload::alarm::test_alarms::emergency_stop(), // Instance 2: Second alarm
+            proto::payload::alarm::test_alarms::safety_error(), // Instance 3: Third alarm
+            proto::payload::alarm::test_alarms::communication_error(), // Instance 4: Fourth alarm
         ];
 
         // Add test alarm history data
@@ -124,26 +129,26 @@ impl Default for MockState {
 
         // Add some major failure alarms (instances 1-3)
         alarm_history.add_alarm(
-            proto::alarm::AlarmCategory::MajorFailure,
-            proto::alarm::test_alarms::servo_error(),
+            proto::commands::alarm::AlarmCategory::MajorFailure,
+            proto::payload::alarm::test_alarms::servo_error(),
         );
         alarm_history.add_alarm(
-            proto::alarm::AlarmCategory::MajorFailure,
-            proto::alarm::test_alarms::emergency_stop(),
+            proto::commands::alarm::AlarmCategory::MajorFailure,
+            proto::payload::alarm::test_alarms::emergency_stop(),
         );
         alarm_history.add_alarm(
-            proto::alarm::AlarmCategory::MajorFailure,
-            proto::alarm::test_alarms::safety_error(),
+            proto::commands::alarm::AlarmCategory::MajorFailure,
+            proto::payload::alarm::test_alarms::safety_error(),
         );
 
         // Add some monitor alarms (instances 1001-1003)
         alarm_history.add_alarm(
-            proto::alarm::AlarmCategory::MonitorAlarm,
-            proto::alarm::test_alarms::communication_error(),
+            proto::commands::alarm::AlarmCategory::MonitorAlarm,
+            proto::payload::alarm::test_alarms::communication_error(),
         );
         alarm_history.add_alarm(
-            proto::alarm::AlarmCategory::MonitorAlarm,
-            proto::alarm::test_alarms::servo_error(),
+            proto::commands::alarm::AlarmCategory::MonitorAlarm,
+            proto::payload::alarm::test_alarms::servo_error(),
         );
 
         Self {
@@ -185,9 +190,6 @@ impl Default for MockState {
             files,
         }
     }
-}
-
-impl MockState {
     /// Get variable value
     #[must_use]
     pub fn get_variable(&self, index: u8) -> Option<&Vec<u8>> {

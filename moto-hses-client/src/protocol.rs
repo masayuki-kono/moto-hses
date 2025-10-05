@@ -1,11 +1,12 @@
 //! Protocol communication for HSES client
 
-use moto_hses_proto::alarm::{AlarmReset, ReadAlarmHistory};
 use moto_hses_proto::{
-    Alarm, Command, ControlGroupPositionType, DeleteFile, Division, ExecutingJobInfo,
-    HoldServoControl, Position, ReadAlarmData, ReadCurrentPosition, ReadExecutingJobInfo,
-    ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile,
-    SendFile, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
+    Alarm, AlarmAttribute, AlarmReset, Command, ControlGroupPositionType, DeleteFile, Division,
+    ExecutingJobInfo, HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory,
+    ReadCurrentPosition, ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1,
+    ReadStatusData2, ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2,
+    VariableCommandId, WriteIo, WriteVar,
+    commands::{parse_file_content, parse_file_list},
 };
 use moto_hses_proto::{parse_file_content, parse_file_list};
 use std::fmt::Write;
@@ -33,7 +34,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
     where
-        T: VariableType,
+        T: HsesPayload + VariableCommandId,
     {
         let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -45,7 +46,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
     where
-        T: VariableType,
+        T: HsesPayload + VariableCommandId,
     {
         let command = WriteVar::<T> { index, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -102,7 +103,7 @@ impl HsesClient {
     pub async fn read_alarm_data(
         &self,
         instance: u16,
-        attribute: u8,
+        attribute: AlarmAttribute,
     ) -> Result<Alarm, ClientError> {
         let command = ReadAlarmData::new(instance, attribute);
         self.read_alarm_attribute(command, attribute).await
@@ -114,7 +115,7 @@ impl HsesClient {
     pub async fn read_alarm_history(
         &self,
         instance: u16,
-        attribute: u8,
+        attribute: AlarmAttribute,
     ) -> Result<Alarm, ClientError> {
         let command = ReadAlarmHistory::new(instance, attribute);
         self.read_alarm_attribute(command, attribute).await
@@ -253,14 +254,14 @@ impl HsesClient {
     async fn read_alarm_attribute<C: Command + Send + Sync>(
         &self,
         command: C,
-        attribute: u8,
+        attribute: AlarmAttribute,
     ) -> Result<Alarm, ClientError>
     where
-        C::Response: VariableType + Into<Alarm>,
+        C::Response: HsesPayload + Into<Alarm>,
     {
         let response = self.send_command_with_retry(command, Division::Robot).await?;
 
-        if attribute == 0 {
+        if attribute == AlarmAttribute::All {
             // Service = 0x01 (Get_Attribute_All) - Return all data
             let deserialized: C::Response =
                 C::Response::deserialize(&response, self.config.text_encoding)
@@ -271,7 +272,7 @@ impl HsesClient {
 
             // Attribute-specific deserialization
             match attribute {
-                1 => {
+                AlarmAttribute::Code => {
                     // Alarm code (4 bytes)
                     if response.len() >= 4 {
                         let code = u32::from_le_bytes([
@@ -285,7 +286,7 @@ impl HsesClient {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
                 }
-                2 => {
+                AlarmAttribute::Data => {
                     // Alarm data (4 bytes)
                     if response.len() >= 4 {
                         let data = u32::from_le_bytes([
@@ -299,7 +300,7 @@ impl HsesClient {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
                 }
-                3 => {
+                AlarmAttribute::Type => {
                     // Alarm type (4 bytes)
                     if response.len() >= 4 {
                         let alarm_type = u32::from_le_bytes([
@@ -313,7 +314,7 @@ impl HsesClient {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
                 }
-                4 => {
+                AlarmAttribute::Time => {
                     // Alarm time (16 bytes)
                     if response.len() >= 16 {
                         let time_end = response.iter().position(|&b| b == 0).unwrap_or(16);
@@ -327,7 +328,7 @@ impl HsesClient {
                         Ok(Alarm::new(0, 0, 0, String::new(), String::new()))
                     }
                 }
-                5 => {
+                AlarmAttribute::Name => {
                     // Alarm name (32 bytes)
                     if response.len() >= 32 {
                         let name_end = response.iter().position(|&b| b == 0).unwrap_or(32);

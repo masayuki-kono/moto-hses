@@ -1,6 +1,6 @@
 //! Cycle mode switching command (0x84)
 
-use crate::commands::Command;
+use super::command_trait::Command;
 use crate::error::ProtocolError;
 
 /// Cycle mode switching command (0x84)

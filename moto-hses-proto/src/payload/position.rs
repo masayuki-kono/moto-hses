@@ -1,7 +1,7 @@
 //! Position data structures and operations
 
-use crate::commands::VariableType;
 use crate::error::ProtocolError;
+use crate::payload::HsesPayload;
 use bytes::Buf;
 
 // Coordinate system types
@@ -179,10 +179,7 @@ impl Position {
     }
 }
 
-impl VariableType for Position {
-    fn command_id() -> u16 {
-        0x7f
-    }
+impl HsesPayload for Position {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -282,7 +279,6 @@ mod tests {
     #[allow(clippy::unwrap_used)]
     fn test_position_variable_type_trait() {
         let position = Position::Pulse(PulsePosition::new([1000, 2000, 3000, 0, 0, 0, 0, 0], 1));
-        assert_eq!(Position::command_id(), 0x7f);
 
         let serialized = position.serialize().unwrap();
         let deserialized =

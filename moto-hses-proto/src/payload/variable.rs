@@ -1,14 +1,11 @@
 //! Variable type implementations
 
-use crate::commands::VariableType;
 use crate::error::ProtocolError;
+use crate::payload::HsesPayload;
 use bytes::Buf;
 
 // Implementations for basic variable types
-impl VariableType for u8 {
-    fn command_id() -> u16 {
-        0x7a
-    }
+impl HsesPayload for u8 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -28,10 +25,7 @@ impl VariableType for u8 {
     }
 }
 
-impl VariableType for i16 {
-    fn command_id() -> u16 {
-        0x7b
-    }
+impl HsesPayload for i16 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -54,10 +48,7 @@ impl VariableType for i16 {
     }
 }
 
-impl VariableType for i32 {
-    fn command_id() -> u16 {
-        0x7c
-    }
+impl HsesPayload for i32 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -76,10 +67,7 @@ impl VariableType for i32 {
     }
 }
 
-impl VariableType for f32 {
-    fn command_id() -> u16 {
-        0x7d
-    }
+impl HsesPayload for f32 {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,
@@ -98,11 +86,7 @@ impl VariableType for f32 {
     }
 }
 
-impl VariableType for Vec<u8> {
-    fn command_id() -> u16 {
-        0x7e // String variable command
-    }
-
+impl HsesPayload for Vec<u8> {
     fn serialize(
         &self,
         _encoding: crate::encoding::TextEncoding,

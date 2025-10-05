@@ -221,14 +221,14 @@ pub async fn create_alarm_test_server()
         .start_with_builder(|builder| {
             builder
                 // Add test alarms for instances 1-4
-                .with_alarm(moto_hses_proto::alarm::test_alarms::servo_error()) // Instance 1
-                .with_alarm(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Instance 2
-                .with_alarm(moto_hses_proto::alarm::test_alarms::safety_error()) // Instance 3
-                .with_alarm(moto_hses_proto::alarm::test_alarms::communication_error()) // Instance 4
+                .with_alarm(moto_hses_proto::payload::alarm::test_alarms::servo_error()) // Instance 1
+                .with_alarm(moto_hses_proto::payload::alarm::test_alarms::emergency_stop()) // Instance 2
+                .with_alarm(moto_hses_proto::payload::alarm::test_alarms::safety_error()) // Instance 3
+                .with_alarm(moto_hses_proto::payload::alarm::test_alarms::communication_error()) // Instance 4
                 // Add alarm history for testing
-                .with_alarm_history(moto_hses_proto::alarm::test_alarms::servo_error()) // Major failure #1
-                .with_alarm_history(moto_hses_proto::alarm::test_alarms::emergency_stop()) // Major failure #2
-                .with_alarm_history(moto_hses_proto::alarm::test_alarms::safety_error())
+                .with_alarm_history(moto_hses_proto::payload::alarm::test_alarms::servo_error()) // Major failure #1
+                .with_alarm_history(moto_hses_proto::payload::alarm::test_alarms::emergency_stop()) // Major failure #2
+                .with_alarm_history(moto_hses_proto::payload::alarm::test_alarms::safety_error())
             // Major failure #3
         })
         .await?;
@@ -272,7 +272,7 @@ pub async fn create_job_info_test_server()
     manager
         .start_with_builder(|builder| {
             // Set up job information with known values for testing
-            builder.with_executing_job(moto_hses_proto::job::ExecutingJobInfo::new(
+            builder.with_executing_job(moto_hses_proto::ExecutingJobInfo::new(
                 "TEST_JOB".to_string(),
                 2,
                 1,
