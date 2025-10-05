@@ -8,7 +8,6 @@ use moto_hses_proto::{
     VariableCommandId, WriteIo, WriteVar,
     commands::{parse_file_content, parse_file_list},
 };
-use moto_hses_proto::{parse_file_content, parse_file_list};
 use std::fmt::Write;
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
