@@ -352,16 +352,18 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_io(&self, io_number: u16) -> Result<bool, ClientError> {
+    pub async fn read_io(&self, io_number: u16) -> Result<u8, ClientError> {
         let command = ReadIo { io_number };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
 
-        if response.len() >= 4 {
-            let value = i32::from_le_bytes([response[0], response[1], response[2], response[3]]);
-            Ok(value != 0)
+        if response.len() == 1 {
+            Ok(response[0])
         } else {
             Err(ClientError::ProtocolError(moto_hses_proto::ProtocolError::Deserialization(
-                "Invalid response length for I/O read".to_string(),
+                format!(
+                    "Invalid response length for I/O read: expected 1 byte, got {}",
+                    response.len()
+                ),
             )))
         }
     }
@@ -369,7 +371,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_io(&self, io_number: u16, value: bool) -> Result<(), ClientError> {
+    pub async fn write_io(&self, io_number: u16, value: u8) -> Result<(), ClientError> {
         let command = WriteIo { io_number, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())

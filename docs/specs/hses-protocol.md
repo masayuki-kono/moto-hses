@@ -721,27 +721,27 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 - **Command**: 0x78
 - **Instance**: Logical number of the I/O data
-  - `1 to 128`: Robot user input
-  - `1001 to 1128`: Robot user output
-  - `2001 to 2127`: External input
-  - `2501 to 2628`: Network input
+  - `1 to 512`: Robot user input
+  - `1001 to 1512`: Robot user output
+  - `2001 to 2128`: External input
+  - `2701 to 2956`: Network input
   - `3001 to 3128`: External output
-  - `3501 to 3628`: Network output
-  - `4001 to 4160`: Robot system input
-  - `5001 to 5200`: Robot system output
+  - `3701 to 3956`: Network output
+  - `4001 to 4256`: Robot system input
+  - `5001 to 5512`: Robot system output
   - `6001 to 6064`: Interface panel input
   - `7001 to 7999`: Auxiliary relay
-  - `8001 to 8064`: Robot control status signal
-  - `8201 to 8220`: Pseudo input
+  - `8001 to 8512`: Robot control status signal
+  - `8701 to 8720`: Pseudo input
 - **Attribute**: Fixed to 1
 - **Service**:
   - `0x0E` (Get_Attribute_Single): Read out of all I/O data is enabled
   - `0x10` (Set_Attribute_Single): Only network input signal is writable
-- **Payload**: Data exists during writing operation only
-  - 32-bit integer (4 bytes): I/O data
-    - Byte 0 : IO Data
-    - Byte 1-3: Reserved
-  - Data exists during the writing operation only
+- **Payload**: Data exists during reading operation only
+  - 1 byte: I/O data (8 bits representing 8 I/O states)
+    - Bit 0-7: I/O states (0 = OFF, 1 = ON)
+    - Each bit represents one I/O state
+  - I/O data exists only when requested by the client
 
 **Response Structure:**
 
@@ -754,9 +754,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 32-bit integer (4 bytes): I/O data
-    - Byte 0 : IO Data
-    - Byte 1-3: Reserved
+  - 1 byte: I/O data (8 bits representing 8 I/O states)
+    - Bit 0-7: I/O states (0 = OFF, 1 = ON)
+    - Each bit represents one I/O state
   - I/O data exists only when requested by the client
 
 **Note**: For detailed specifications of all commands, refer to the official HSES manual. The above examples show the basic structure and common patterns used in robot control commands.
