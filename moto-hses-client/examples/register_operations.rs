@@ -1,17 +1,52 @@
 //! Register operations example for 0x79 register command
 
 use log::info;
-use moto_hses_client::HsesClient;
+
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
-    info!("Register operations example - 0x79 register command");
+    let args: Vec<String> = std::env::args().collect();
 
-    // Create client
-    let client =
-        HsesClient::new(&format!("127.0.0.1:{}", moto_hses_proto::ROBOT_CONTROL_PORT)).await?;
-    info!("Connected to mock server");
+    let (host, robot_port) = match args.as_slice() {
+        [_, host, robot_port] => {
+            // Format: [host] [robot_port]
+            let robot_port: u16 =
+                robot_port.parse().map_err(|_| format!("Invalid robot port: {robot_port}"))?;
+
+            (host.to_string(), robot_port)
+        }
+        _ => {
+            // Default: 127.0.0.1:DEFAULT_PORT
+            ("127.0.0.1".to_string(), ROBOT_CONTROL_PORT)
+        }
+    };
+
+    // Create custom configuration
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
+
+    // Connect to the controller
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            info!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            info!("✗ Failed to connect: {e}");
+            return Ok(());
+        }
+    };
 
     // Test reading a register
     info!("Reading register 0...");
@@ -19,53 +54,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Register 0 value: {value}");
 
     // Test writing to a register
-    info!("Writing value 42 to register 0...");
-    client.write_register(0, 42).await?;
+    info!("Writing value 150 to register 0...");
+    client.write_register(0, 150).await?;
     info!("Write successful");
 
     // Test reading the register again to verify the write
-    info!("Reading register 0 again...");
+    info!("Reading register 0 again to verify write...");
     let new_value = client.read_register(0).await?;
     info!("Register 0 value after write: {new_value}");
-
-    // Test with different register numbers
-    for i in 1..5 {
-        let test_value = i16::try_from(i * 10).map_err(|_| "Invalid value for i16")?;
-        info!("Writing {test_value} to register {i}...");
-        client.write_register(i, test_value).await?;
-
-        let read_value = client.read_register(i).await?;
-        info!("Register {i} value: {read_value}");
-
-        if read_value == test_value {
-            info!("✓ Register {i} test passed");
-        } else {
-            info!("✗ Register {i} test failed: expected {test_value}, got {read_value}");
-        }
-    }
-
-    // Test error handling
-    info!("\n--- Error Handling Tests ---");
-
-    // Test invalid register number
-    match client.read_register(65535).await {
-        Ok(value) => {
-            info!("✗ Invalid register number succeeded unexpectedly: {value}");
-        }
-        Err(e) => {
-            info!("✓ Invalid register number correctly failed: {e}");
-        }
-    }
-
-    // Test invalid register number for write
-    match client.write_register(65535, 42).await {
-        Ok(()) => {
-            info!("✗ Invalid register number write succeeded unexpectedly");
-        }
-        Err(e) => {
-            info!("✓ Invalid register number write correctly failed: {e}");
-        }
-    }
 
     info!("Register operations example completed!");
     Ok(())
