@@ -10,15 +10,14 @@ impl HsesPayload for u8 {
         &self,
         _encoding: crate::encoding::TextEncoding,
     ) -> Result<Vec<u8>, ProtocolError> {
-        let mut data = vec![0u8; 4];
-        data[0] = *self;
-        Ok(data)
+        // B variable: 1 byte (actual data type size)
+        Ok(vec![*self])
     }
     fn deserialize(
         data: &[u8],
         _encoding: crate::encoding::TextEncoding,
     ) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
+        if data.is_empty() {
             return Err(ProtocolError::Underflow);
         }
         Ok(data[0])
@@ -30,19 +29,16 @@ impl HsesPayload for i16 {
         &self,
         _encoding: crate::encoding::TextEncoding,
     ) -> Result<Vec<u8>, ProtocolError> {
-        // Protocol specification: 4 bytes (Byte 0-1: I variable, Byte 2-3: Reserved)
-        let mut data = vec![0u8; 4];
-        data[0..2].copy_from_slice(&self.to_le_bytes());
-        Ok(data)
+        // I variable: 2 bytes (actual data type size)
+        Ok(self.to_le_bytes().to_vec())
     }
     fn deserialize(
         data: &[u8],
         _encoding: crate::encoding::TextEncoding,
     ) -> Result<Self, ProtocolError> {
-        if data.len() < 4 {
+        if data.len() < 2 {
             return Err(ProtocolError::Underflow);
         }
-        // Protocol specification: Byte 0-1: I variable, Byte 2-3: Reserved
         let mut buf = data;
         Ok(buf.get_i16_le())
     }
