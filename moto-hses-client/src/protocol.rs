@@ -8,6 +8,7 @@ use moto_hses_proto::{
     SendFile, Status, StatusData1, StatusData2, VariableType, WriteIo, WriteVar,
 };
 use moto_hses_proto::{parse_file_content, parse_file_list};
+use std::fmt::Write;
 use std::sync::atomic::Ordering;
 use tokio::time::{sleep, timeout};
 
@@ -648,11 +649,9 @@ impl HsesClient {
             if response_data.len() >= 26 {
                 let status = response_data[25];
                 if status != 0x00 {
-                    // Non-zero status indicates an error
+                    let error_message = Self::build_error_message(status, response_data);
                     return Err(ClientError::ProtocolError(
-                        moto_hses_proto::ProtocolError::InvalidMessage(format!(
-                            "Server returned error status: 0x{status:02x}"
-                        )),
+                        moto_hses_proto::ProtocolError::ServerError(error_message),
                     ));
                 }
             }
@@ -669,6 +668,55 @@ impl HsesClient {
             let payload = response_data[32..32 + payload_size].to_vec();
 
             return Ok(payload);
+        }
+    }
+
+    /// Build error message with added status information
+    fn build_error_message(status: u8, response_data: &[u8]) -> String {
+        let mut error_message = format!("Server returned error status: 0x{status:02x}");
+
+        if let Some(added_status) = Self::read_added_status(response_data) {
+            let _ = write!(error_message, " (added status: 0x{added_status:X})");
+        }
+
+        error_message
+    }
+
+    /// Read added status from response data
+    fn read_added_status(response_data: &[u8]) -> Option<u32> {
+        // Check if we have enough data for added status size (byte 26)
+        if response_data.len() < 27 {
+            return None;
+        }
+
+        let added_status_size = response_data[26];
+        if added_status_size == 0 {
+            return None;
+        }
+
+        match added_status_size {
+            1 => {
+                // 1 WORD data (2 bytes) - added status is at bytes 28-29
+                if response_data.len() >= 30 {
+                    Some(u32::from(u16::from_le_bytes([response_data[28], response_data[29]])))
+                } else {
+                    None
+                }
+            }
+            2 => {
+                // 2 WORD data (4 bytes) - added status is at bytes 28-31
+                if response_data.len() >= 32 {
+                    Some(u32::from_le_bytes([
+                        response_data[28],
+                        response_data[29],
+                        response_data[30],
+                        response_data[31],
+                    ]))
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 }
