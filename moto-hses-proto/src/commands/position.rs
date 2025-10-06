@@ -2,19 +2,17 @@
 
 use super::command_trait::Command;
 use crate::error::ProtocolError;
-use crate::payload::position::ControlGroupPositionType;
 
 /// Read current position command (0x75)
 #[derive(Debug, Clone)]
 pub struct ReadCurrentPosition {
     pub control_group: u8,
-    pub coordinate_system: ControlGroupPositionType,
 }
 
 impl ReadCurrentPosition {
     #[must_use]
-    pub const fn new(control_group: u8, coordinate_system: ControlGroupPositionType) -> Self {
-        Self { control_group, coordinate_system }
+    pub const fn new(control_group: u8) -> Self {
+        Self { control_group }
     }
 }
 
@@ -34,10 +32,10 @@ impl Command for ReadCurrentPosition {
     }
 
     fn attribute(&self) -> u8 {
-        1 // Data type (default)
+        0
     }
 
     fn service(&self) -> u8 {
-        0x0e // Get_Attribute_Single
+        0x01 // Get_Attribute_All
     }
 }

@@ -11,7 +11,5 @@ pub mod variable;
 pub use alarm::Alarm;
 pub use job::ExecutingJobInfo;
 pub use payload_trait::HsesPayload;
-pub use position::{
-    CartesianPosition, ControlGroupPositionType, CoordinateSystemType, Position, PulsePosition,
-};
+pub use position::{CartesianPosition, Position, PulsePosition};
 pub use status::{Status, StatusData1, StatusData2};

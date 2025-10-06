@@ -12,6 +12,4 @@ pub mod types;
 pub use types::{ClientConfig, ClientError, HsesClient};
 
 // Re-export protocol types that are commonly used
-pub use moto_hses_proto::{
-    Alarm, ControlGroupPositionType, ExecutingJobInfo, HsesPayload, Position, Status, TextEncoding,
-};
+pub use moto_hses_proto::{Alarm, ExecutingJobInfo, HsesPayload, Position, Status, TextEncoding};
