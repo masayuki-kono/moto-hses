@@ -250,8 +250,7 @@ pub async fn create_position_test_server()
             // Set up position data with known values for testing
             let test_position =
                 moto_hses_proto::Position::Pulse(moto_hses_proto::PulsePosition::new(
-                    [100, 200, 300, 400, 500, 600, 700, 800], // Known test values
-                    1,                                        // control_group = 1
+                    vec![100, 200, 300, 400, 500, 600, 700, 800], // Known test values
                 ));
             builder.with_position(test_position)
         })

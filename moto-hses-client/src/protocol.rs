@@ -1,11 +1,11 @@
 //! Protocol communication for HSES client
 
 use moto_hses_proto::{
-    Alarm, AlarmAttribute, AlarmReset, Command, ControlGroupPositionType, DeleteFile, Division,
-    ExecutingJobInfo, HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory,
-    ReadCurrentPosition, ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1,
-    ReadStatusData2, ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2,
-    VariableCommandId, WriteIo, WriteVar,
+    Alarm, AlarmAttribute, AlarmReset, Command, DeleteFile, Division, ExecutingJobInfo,
+    HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory, ReadCurrentPosition,
+    ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
+    ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
+    WriteVar,
     commands::{parse_file_content, parse_file_list},
 };
 use std::fmt::Write;
@@ -92,12 +92,8 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_position(
-        &self,
-        control_group: u8,
-        coord_system: ControlGroupPositionType,
-    ) -> Result<Position, ClientError> {
-        let command = ReadCurrentPosition { control_group, coordinate_system: coord_system };
+    pub async fn read_position(&self, control_group: u8) -> Result<Position, ClientError> {
+        let command = ReadCurrentPosition { control_group };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
         Position::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }

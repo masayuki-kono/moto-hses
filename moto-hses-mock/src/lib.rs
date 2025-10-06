@@ -77,10 +77,9 @@ impl MockConfig {
                     servo_on: true,
                 },
             ),
-            default_position: proto::Position::Pulse(proto::PulsePosition::new(
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                1,
-            )),
+            default_position: proto::Position::Pulse(proto::PulsePosition::new(vec![
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ])),
             registers,
             variables,
             io_states,

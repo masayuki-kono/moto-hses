@@ -173,10 +173,9 @@ impl MockState {
                     servo_on: true,
                 },
             ),
-            position: proto::Position::Pulse(proto::PulsePosition::new(
-                [0, 0, 0, 0, 0, 0, 0, 0],
-                1,
-            )),
+            position: proto::Position::Pulse(proto::PulsePosition::new(vec![
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ])),
             variables,
             io_states,
             registers,
@@ -265,7 +264,7 @@ impl MockState {
     }
 
     /// Update position
-    pub const fn update_position(&mut self, position: proto::Position) {
+    pub fn update_position(&mut self, position: proto::Position) {
         self.position = position;
     }
 

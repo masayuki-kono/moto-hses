@@ -415,7 +415,7 @@ impl MockServerBuilder {
     }
 
     #[must_use]
-    pub const fn with_position(mut self, position: proto::Position) -> Self {
+    pub fn with_position(mut self, position: proto::Position) -> Self {
         self.config.default_position = position;
         self
     }

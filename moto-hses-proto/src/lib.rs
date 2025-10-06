@@ -24,6 +24,6 @@ pub use message::{
     HsesResponseSubHeader,
 };
 pub use payload::{
-    Alarm, CartesianPosition, ControlGroupPositionType, CoordinateSystemType, ExecutingJobInfo,
-    HsesPayload, Position, PulsePosition, Status, StatusData1, StatusData2,
+    Alarm, CartesianPosition, ExecutingJobInfo, HsesPayload, Position, PulsePosition, Status,
+    StatusData1, StatusData2,
 };

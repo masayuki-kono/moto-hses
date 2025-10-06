@@ -17,10 +17,7 @@ test_with_logging!(test_read_robot_pulse_position, {
     let client = create_test_client().await.expect("Failed to create client");
     log::debug!("Client created successfully");
 
-    let position = client
-        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse)
-        .await
-        .expect("Failed to read robot pulse position");
+    let position = client.read_position(1).await.expect("Failed to read position");
 
     // Verify position data matches expected values
     match position {
@@ -35,8 +32,6 @@ test_with_logging!(test_read_robot_pulse_position, {
                     "Position value at axis {i} should be {expected}"
                 );
             }
-
-            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         moto_hses_proto::Position::Cartesian(_) => {
             unreachable!("Expected pulse position type");
@@ -50,10 +45,7 @@ test_with_logging!(test_read_base_pulse_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(1, moto_hses_proto::ControlGroupPositionType::BasePulse)
-        .await
-        .expect("Failed to read base pulse position");
+    let position = client.read_position(1).await.expect("Failed to read base pulse position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -67,8 +59,6 @@ test_with_logging!(test_read_base_pulse_position, {
                     "Base pulse position value at axis {i} should be {expected}"
                 );
             }
-
-            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         moto_hses_proto::Position::Cartesian(_) => {
             unreachable!("Expected pulse position type");
@@ -82,10 +72,7 @@ test_with_logging!(test_read_station_pulse_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(1, moto_hses_proto::ControlGroupPositionType::StationPulse)
-        .await
-        .expect("Failed to read station pulse position");
+    let position = client.read_position(1).await.expect("Failed to read station pulse position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -99,8 +86,6 @@ test_with_logging!(test_read_station_pulse_position, {
                     "Station pulse position value at axis {i} should be {expected}"
                 );
             }
-
-            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         moto_hses_proto::Position::Cartesian(_) => {
             unreachable!("Expected pulse position type");
@@ -114,10 +99,7 @@ test_with_logging!(test_read_robot_cartesian_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotCartesian)
-        .await
-        .expect("Failed to read robot cartesian position");
+    let position = client.read_position(1).await.expect("Failed to read robot cartesian position");
 
     match position {
         moto_hses_proto::Position::Cartesian(cart_pos) => {
@@ -151,10 +133,7 @@ test_with_logging!(test_read_r1_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse)
-        .await
-        .expect("Failed to read R1 position");
+    let position = client.read_position(1).await.expect("Failed to read R1 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -179,10 +158,7 @@ test_with_logging!(test_read_r2_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(2, moto_hses_proto::ControlGroupPositionType::RobotPulse)
-        .await
-        .expect("Failed to read R2 position");
+    let position = client.read_position(2).await.expect("Failed to read R2 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -207,10 +183,7 @@ test_with_logging!(test_read_b1_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(11, moto_hses_proto::ControlGroupPositionType::RobotPulse)
-        .await
-        .expect("Failed to read B1 position");
+    let position = client.read_position(11).await.expect("Failed to read B1 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -224,8 +197,6 @@ test_with_logging!(test_read_b1_position, {
                     "B1 position value at axis {i} should be {expected}"
                 );
             }
-
-            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         moto_hses_proto::Position::Cartesian(_) => {
             unreachable!("Expected pulse position type");
@@ -239,10 +210,7 @@ test_with_logging!(test_read_b2_position, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    let position = client
-        .read_position(12, moto_hses_proto::ControlGroupPositionType::RobotPulse)
-        .await
-        .expect("Failed to read B2 position");
+    let position = client.read_position(12).await.expect("Failed to read B2 position");
 
     match position {
         moto_hses_proto::Position::Pulse(pulse_pos) => {
@@ -256,8 +224,6 @@ test_with_logging!(test_read_b2_position, {
                     "B2 position value at axis {i} should be {expected}"
                 );
             }
-
-            assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
         }
         moto_hses_proto::Position::Cartesian(_) => {
             unreachable!("Expected pulse position type");
@@ -274,7 +240,7 @@ test_with_logging!(test_continuous_position_monitoring, {
     // Test position monitoring for 5 seconds (as per legacy example)
     log::debug!("Monitoring position for 5 seconds...");
     for i in 1..=5 {
-        match client.read_position(1, moto_hses_proto::ControlGroupPositionType::RobotPulse).await {
+        match client.read_position(1).await {
             Ok(position) => {
                 log::debug!("  [{i}s] Position: {position:?}");
 
@@ -291,8 +257,6 @@ test_with_logging!(test_continuous_position_monitoring, {
                                 "Position value at axis {i} should be {expected}"
                             );
                         }
-
-                        assert_eq!(pulse_pos.control_group, 1, "Control group should be 1");
                     }
                     moto_hses_proto::Position::Cartesian(_) => {
                         unreachable!("Expected pulse position type");
