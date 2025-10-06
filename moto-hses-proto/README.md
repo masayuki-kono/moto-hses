@@ -12,6 +12,48 @@ Protocol definitions and serialization for Yaskawa High-Speed Ethernet Server (H
 
 This crate provides the core protocol definitions and serialization/deserialization functionality for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol over UDP.
 
+## Verified Robot Models
+
+The following robot models have been tested and verified for compatibility:
+
+| Robot Model | Status |
+|-------------|--------|
+| DX100 | ❌ Not verified |
+| FS100 | ❌ Not verified |
+| DX200 | ❌ Not verified |
+| YRC1000 | ❌ Not verified |
+| YRC1000micro | ✅ Verified |
+
+## Supported Commands
+
+### Robot Control Commands
+
+| Command No | Command Name |
+|------------|--------------|
+| 0x70 | Alarm Data Reading Command |
+| 0x71 | Alarm History Reading Command |
+| 0x72 | Read Status Information |
+| 0x73 | Executing Job Information Reading Command |
+| 0x75 | Robot Position Data Reading Command |
+| 0x78 | I/O Data Reading / Writing Command |
+| 0x79 | Register Data Reading / Writing Command |
+| 0x7A | Byte Variable (B) Reading / Writing Command |
+| 0x7B | Integer Type Variable (I) Reading / Writing Command |
+| 0x7C | Double Precision Integer Type Variable (D) Reading / Writing Command |
+| 0x7D | Real Type Variable (R) Reading / Writing Command |
+| 0x7E | Character Type Variable (S) Reading / Writing Command |
+| 0x82 | Alarm Reset / Error Cancel Command |
+| 0x83 | Hold / Servo On/off Command |
+| 0x84 | Step / Cycle / Continuous Switching Command |
+
+### File Control Commands
+
+| Service | Command Name |
+|---------|--------------|
+| 0x09 | File Delete |
+| 0x16 | File saving command (Controller to the PC) |
+| 0x32 | File list acquiring |
+
 ## Features
 
 - **Type-safe protocol definitions**: Rust structs and enums for all HSES message types
@@ -58,31 +100,6 @@ let alarm = Alarm::new(
     "2024-01-01 12:00:00".to_string(), // time
     "Test alarm".to_string()           // name
 );
-```
-
-## Protocol Support
-
-This crate implements the HSES protocol as specified in the official Yaskawa documentation:
-
-- **Variable operations**: Read/write integer, real, string, and position variables
-- **I/O operations**: Digital and analog I/O control
-- **File operations**: File transfer and management
-- **Status monitoring**: Robot status and alarm information
-- **Position control**: Cartesian and joint position data
-
-## Error Handling
-
-The crate provides comprehensive error handling through the `HsesError` type:
-
-```rust
-use moto_hses_proto::HsesError;
-
-match result {
-    Ok(data) => println!("Success: {:?}", data),
-    Err(HsesError::InvalidMessage) => println!("Invalid message format"),
-    Err(HsesError::UnsupportedCommand) => println!("Command not supported"),
-    Err(e) => println!("Other error: {}", e),
-}
 ```
 
 ## License
