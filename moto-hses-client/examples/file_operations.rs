@@ -4,8 +4,9 @@
 
 use log::info;
 
-use moto_hses_client::HsesClient;
-use moto_hses_proto::FILE_CONTROL_PORT;
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{FILE_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,11 +27,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    info!("HSES Client File Operations Example");
-    info!("File Control: {host}:{file_port}");
+    // Create custom configuration for file operations with ShiftJIS encoding
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: file_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis, // 重要: ShiftJISエンコーディングを設定
+    };
 
     // Create HsesClient for file operations
-    let client = match HsesClient::new(&format!("{host}:{file_port}")).await {
+    let client = match HsesClient::new_with_config(config).await {
         Ok(client) => {
             info!("✓ Successfully created HsesClient");
             client
@@ -41,12 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    // File operations demonstration
-    info!("\n--- File Operations Test ---");
-
-    // Step 1: Get file list
-    info!("1. Getting file list...");
-    let files = match client.read_file_list().await {
+    // Step 1: Get file list with pattern
+    info!("1. Getting file list with pattern '*.JBI'...");
+    let files = match client.read_file_list("*.JBI").await {
         Ok(files) => {
             info!("✓ File list retrieved successfully");
             for file in &files {
@@ -129,7 +135,7 @@ async fn verify_file_creation_and_content(
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Get updated file list
     info!("\n4. Getting updated file list...");
-    let updated_files = match client.read_file_list().await {
+    let updated_files = match client.read_file_list("*.JBI").await {
         Ok(files) => {
             info!("✓ Updated file list retrieved successfully");
             for file in &files {
@@ -190,7 +196,7 @@ async fn create_and_cleanup_test_file(
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!("\n2. No files found, creating a test file...");
     let test_content = "This is a test file content";
-    let test_filename = "TEST.JOB";
+    let test_filename = "TEST.JBI";
 
     info!("  Creating file: {test_filename}");
     info!("  Content: {test_content}");
@@ -203,7 +209,7 @@ async fn create_and_cleanup_test_file(
 
     // Verify the file was created
     info!("\n3. Verifying test file creation...");
-    let updated_files = match client.read_file_list().await {
+    let updated_files = match client.read_file_list("*.JBI").await {
         Ok(files) => {
             info!("✓ Updated file list retrieved successfully");
             for file in &files {
@@ -244,7 +250,7 @@ async fn cleanup_file(
 
     // Verify the file was deleted
     info!("\n7. Verifying cleanup...");
-    let final_files = match client.read_file_list().await {
+    let final_files = match client.read_file_list("*.JBI").await {
         Ok(files) => {
             info!("✓ Final file list retrieved successfully");
             for file in &files {

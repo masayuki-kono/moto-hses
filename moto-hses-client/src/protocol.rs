@@ -433,13 +433,16 @@ impl HsesClient {
 
     /// Get file list from controller
     ///
-    /// Returns a list of filenames available on the controller.
+    /// # Arguments
+    /// * `pattern` - File name pattern to filter results (e.g., "*.JBI", "*.DAT")
+    ///
+    /// Returns a list of filenames matching the pattern available on the controller.
     ///
     /// # Errors
     ///
     /// Returns an error if the file list request fails
-    pub async fn read_file_list(&self) -> Result<Vec<String>, ClientError> {
-        let command = ReadFileList;
+    pub async fn read_file_list(&self, pattern: &str) -> Result<Vec<String>, ClientError> {
+        let command = ReadFileList::new(pattern.to_string(), self.config.text_encoding);
         let response = self.send_command_with_retry(command, Division::File).await?;
         parse_file_list(&response, self.config.text_encoding).map_err(ClientError::from)
     }
@@ -537,6 +540,7 @@ impl HsesClient {
         };
         let message = Self::create_message(params)?;
         debug!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
+        debug!("Message bytes: {:02X?}", message);
         self.inner.socket.send_to(&message, self.inner.remote_addr).await?;
 
         // Wait for response

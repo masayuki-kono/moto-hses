@@ -5,7 +5,17 @@ use crate::error::ProtocolError;
 
 /// File list request command
 #[derive(Debug, Clone)]
-pub struct ReadFileList;
+pub struct ReadFileList {
+    pub pattern: String,
+    pub encoding: crate::encoding::TextEncoding,
+}
+
+impl ReadFileList {
+    #[must_use]
+    pub const fn new(pattern: String, encoding: crate::encoding::TextEncoding) -> Self {
+        Self { pattern, encoding }
+    }
+}
 
 impl Command for ReadFileList {
     type Response = Vec<String>;
@@ -27,7 +37,8 @@ impl Command for ReadFileList {
     }
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        Ok(vec![])
+        let pattern_bytes = crate::encoding_utils::encode_string(&self.pattern, self.encoding);
+        Ok(pattern_bytes)
     }
 }
 
@@ -207,9 +218,9 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_read_file_list_serialization() {
-        let cmd = ReadFileList;
+        let cmd = ReadFileList::new("*.JBI".to_string(), crate::encoding::TextEncoding::Utf8);
         let data = cmd.serialize().unwrap();
-        assert_eq!(data, vec![]);
+        assert_eq!(data, b"*.JBI");
     }
 
     #[test]

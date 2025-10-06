@@ -88,14 +88,23 @@ impl CommandHandler for FileControlHandler {
             }
             0x32 => {
                 // Get file list (Python client uses this)
-                // Return actual file list from state
-                let files = state.get_file_list("*");
+                // Parse pattern from payload
+                let pattern = if message.payload.is_empty() {
+                    "*".to_string()
+                } else {
+                    moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload,
+                        state.text_encoding,
+                    )
+                };
+
+                let files = state.get_file_list(&pattern);
                 let mut file_list = String::new();
                 for file in files {
                     file_list.push_str(&file);
                     file_list.push('\0');
                 }
-                debug!("File list requested, returning: {file_list:?}");
+                debug!("File list requested with pattern '{}', returning: {file_list:?}", pattern);
                 let file_list_bytes =
                     moto_hses_proto::encoding_utils::encode_string(&file_list, state.text_encoding);
                 Ok(file_list_bytes)
