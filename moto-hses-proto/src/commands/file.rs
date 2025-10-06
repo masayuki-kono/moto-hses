@@ -163,9 +163,7 @@ impl Command for DeleteFile {
 
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let filename_bytes = crate::encoding_utils::encode_string(&self.filename, self.encoding);
-        let mut payload = filename_bytes;
-        payload.push(0); // Null terminator
-        Ok(payload)
+        Ok(filename_bytes)
     }
 }
 
@@ -264,7 +262,7 @@ mod tests {
     fn test_delete_file_serialization() {
         let cmd = DeleteFile::new("test.job".to_string(), crate::encoding::TextEncoding::Utf8);
         let data = cmd.serialize().unwrap();
-        let expected = b"test.job\0".to_vec();
+        let expected = b"test.job".to_vec();
         assert_eq!(data, expected);
     }
 }

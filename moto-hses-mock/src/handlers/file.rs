@@ -61,13 +61,12 @@ impl CommandHandler for FileControlHandler {
             0x04 => {
                 // Delete file
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    state.delete_file(&filename);
-                }
+                let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                    &message.payload,
+                    state.text_encoding,
+                );
+                let deleted = state.delete_file(&filename);
+                debug!("File deletion requested: {filename} (deleted: {deleted})");
                 Ok(vec![])
             }
             0x15 => {
