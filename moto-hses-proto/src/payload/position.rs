@@ -4,7 +4,7 @@ use crate::error::ProtocolError;
 use crate::payload::HsesPayload;
 use bytes::Buf;
 
-// Form bit field definitions
+// Configuration bit field definitions
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum J1Placement {
     Front,
@@ -43,50 +43,49 @@ pub enum J1TurnNum {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RedundantJ1Placement {
-    RedundantFront,
-    RedundantBack,
+    Front,
+    Back,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReverseConversion {
-    PreviousStepRegarded,
-    FormRegarded,
+pub enum IkSolutionBasis {
+    PreviousStep,
+    Configuration,
 }
 
-// Extended form bit field definitions
+// Extended configuration bit field definitions
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ2TurnNum {
+pub enum J2TurnNum {
     Single,
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ3TurnNum {
+pub enum J3TurnNum {
     Single,
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ5TurnNum {
+pub enum J5TurnNum {
     Single,
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedEAxisTurnNum {
+pub enum EAxisTurnNum {
     Single,
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedWAxisTurnNum {
+pub enum WAxisTurnNum {
     Single,
     Double,
 }
 
-// Form structure
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Form {
+pub struct Configuration {
     pub j1_placement: J1Placement,
     pub j3_placement: J3Placement,
     pub j5_placement: J5Placement,
@@ -94,24 +93,23 @@ pub struct Form {
     pub j6_turn_num: J6TurnNum,
     pub j1_turn_num: J1TurnNum,
     pub redundant_j1_placement: RedundantJ1Placement,
-    pub reverse_conversion_select: ReverseConversion,
+    pub ik_solution_basis: IkSolutionBasis,
 }
 
-// Extended form structure
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExtendedForm {
-    pub bit0: ExtendedJ2TurnNum,
-    pub bit1: ExtendedJ3TurnNum,
-    pub bit2: ExtendedJ5TurnNum,
-    pub bit3: ExtendedEAxisTurnNum,
-    pub bit4: ExtendedWAxisTurnNum,
+pub struct ExtendedConfiguration {
+    pub bit0: J2TurnNum,
+    pub bit1: J3TurnNum,
+    pub bit2: J5TurnNum,
+    pub bit3: EAxisTurnNum,
+    pub bit4: WAxisTurnNum,
     pub bit5: bool, // Reserve
     pub bit6: bool, // Reserve
     pub bit7: bool, // Reserve
 }
 
-impl Form {
-    /// Create Form from raw u8 value
+impl Configuration {
+    /// Create configuration from raw u8 value
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
@@ -122,19 +120,19 @@ impl Form {
             j6_turn_num: if value & 0x10 == 0 { J6TurnNum::Single } else { J6TurnNum::Double },
             j1_turn_num: if value & 0x20 == 0 { J1TurnNum::Single } else { J1TurnNum::Double },
             redundant_j1_placement: if value & 0x40 == 0 {
-                RedundantJ1Placement::RedundantFront
+                RedundantJ1Placement::Front
             } else {
-                RedundantJ1Placement::RedundantBack
+                RedundantJ1Placement::Back
             },
-            reverse_conversion_select: if value & 0x80 == 0 {
-                ReverseConversion::PreviousStepRegarded
+            ik_solution_basis: if value & 0x80 == 0 {
+                IkSolutionBasis::PreviousStep
             } else {
-                ReverseConversion::FormRegarded
+                IkSolutionBasis::Configuration
             },
         }
     }
 
-    /// Convert Form to raw u8 value
+    /// Convert configuration to raw u8 value
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
@@ -156,69 +154,49 @@ impl Form {
         if matches!(self.j1_turn_num, J1TurnNum::Double) {
             value |= 0x20;
         }
-        if matches!(self.redundant_j1_placement, RedundantJ1Placement::RedundantBack) {
+        if matches!(self.redundant_j1_placement, RedundantJ1Placement::Back) {
             value |= 0x40;
         }
-        if matches!(self.reverse_conversion_select, ReverseConversion::FormRegarded) {
+        if matches!(self.ik_solution_basis, IkSolutionBasis::Configuration) {
             value |= 0x80;
         }
         value
     }
 }
 
-impl ExtendedForm {
-    /// Create `ExtendedForm` from raw u8 value
+impl ExtendedConfiguration {
+    /// Create `ExtendedConfiguration` from raw u8 value
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
-            bit0: if value & 0x01 == 0 {
-                ExtendedJ2TurnNum::Single
-            } else {
-                ExtendedJ2TurnNum::Double
-            },
-            bit1: if value & 0x02 == 0 {
-                ExtendedJ3TurnNum::Single
-            } else {
-                ExtendedJ3TurnNum::Double
-            },
-            bit2: if value & 0x04 == 0 {
-                ExtendedJ5TurnNum::Single
-            } else {
-                ExtendedJ5TurnNum::Double
-            },
-            bit3: if value & 0x08 == 0 {
-                ExtendedEAxisTurnNum::Single
-            } else {
-                ExtendedEAxisTurnNum::Double
-            },
-            bit4: if value & 0x10 == 0 {
-                ExtendedWAxisTurnNum::Single
-            } else {
-                ExtendedWAxisTurnNum::Double
-            },
+            bit0: if value & 0x01 == 0 { J2TurnNum::Single } else { J2TurnNum::Double },
+            bit1: if value & 0x02 == 0 { J3TurnNum::Single } else { J3TurnNum::Double },
+            bit2: if value & 0x04 == 0 { J5TurnNum::Single } else { J5TurnNum::Double },
+            bit3: if value & 0x08 == 0 { EAxisTurnNum::Single } else { EAxisTurnNum::Double },
+            bit4: if value & 0x10 == 0 { WAxisTurnNum::Single } else { WAxisTurnNum::Double },
             bit5: value & 0x20 != 0, // Reserve
             bit6: value & 0x40 != 0, // Reserve
             bit7: value & 0x80 != 0, // Reserve
         }
     }
 
-    /// Convert `ExtendedForm` to raw u8 value
+    /// Convert `ExtendedConfiguration` to raw u8 value
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
-        if matches!(self.bit0, ExtendedJ2TurnNum::Double) {
+        if matches!(self.bit0, J2TurnNum::Double) {
             value |= 0x01;
         }
-        if matches!(self.bit1, ExtendedJ3TurnNum::Double) {
+        if matches!(self.bit1, J3TurnNum::Double) {
             value |= 0x02;
         }
-        if matches!(self.bit2, ExtendedJ5TurnNum::Double) {
+        if matches!(self.bit2, J5TurnNum::Double) {
             value |= 0x04;
         }
-        if matches!(self.bit3, ExtendedEAxisTurnNum::Double) {
+        if matches!(self.bit3, EAxisTurnNum::Double) {
             value |= 0x08;
         }
-        if matches!(self.bit4, ExtendedWAxisTurnNum::Double) {
+        if matches!(self.bit4, WAxisTurnNum::Double) {
             value |= 0x10;
         }
         if self.bit5 {
@@ -258,8 +236,8 @@ pub struct CartesianPosition {
     pub rz: f32,
     pub tool_no: u8,
     pub user_coord_no: u8,
-    pub form: Form,
-    pub extended_form: ExtendedForm,
+    pub configuration: Configuration,
+    pub extended_configuration: ExtendedConfiguration,
 }
 
 impl CartesianPosition {
@@ -274,10 +252,10 @@ impl CartesianPosition {
         rz: f32,
         tool_no: u8,
         user_coord_no: u8,
-        form: Form,
-        extended_form: ExtendedForm,
+        configuration: Configuration,
+        extended_configuration: ExtendedConfiguration,
     ) -> Self {
-        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, form, extended_form }
+        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, configuration, extended_configuration }
     }
 }
 
@@ -309,12 +287,14 @@ impl Position {
             Self::Cartesian(cart) => {
                 data.extend_from_slice(&16u32.to_le_bytes());
 
-                // Use the form from the CartesianPosition
-                data.extend_from_slice(&u32::from(cart.form.to_raw()).to_le_bytes());
+                // Use the configuration from the CartesianPosition
+                data.extend_from_slice(&u32::from(cart.configuration.to_raw()).to_le_bytes());
 
                 data.extend_from_slice(&u32::from(cart.tool_no).to_le_bytes());
                 data.extend_from_slice(&u32::from(cart.user_coord_no).to_le_bytes());
-                data.extend_from_slice(&u32::from(cart.extended_form.to_raw()).to_le_bytes());
+                data.extend_from_slice(
+                    &u32::from(cart.extended_configuration.to_raw()).to_le_bytes(),
+                );
 
                 // Convert coordinates to proper units
                 #[allow(clippy::cast_possible_truncation)]
@@ -357,13 +337,13 @@ impl Position {
 
                 let mut buf = data;
                 let _position_type = buf.get_u32_le(); // Already read above
-                let _form = buf.get_u32_le();
+                let _configuration = buf.get_u32_le();
                 #[allow(clippy::cast_possible_truncation)]
                 let _tool_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let _user_coord_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
-                let _extended_form_raw = buf.get_u32_le() as u8;
+                let _extended_configuration_raw = buf.get_u32_le() as u8;
 
                 // Read joints - determine the number of joints based on remaining data
                 let mut joints = Vec::new();
@@ -390,17 +370,18 @@ impl Position {
 
                 // Read header fields (4 bytes each)
                 #[allow(clippy::cast_possible_truncation)]
-                let form_raw = buf.get_u32_le() as u8;
+                let configuration_raw = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let tool_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let user_coord_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
-                let extended_form_raw = buf.get_u32_le() as u8;
+                let extended_configuration_raw = buf.get_u32_le() as u8;
 
-                // Parse form and extended form
-                let form = Form::from_raw(form_raw);
-                let extended_form = ExtendedForm::from_raw(extended_form_raw);
+                // Parse configuration and extended configuration
+                let configuration = Configuration::from_raw(configuration_raw);
+                let extended_configuration =
+                    ExtendedConfiguration::from_raw(extended_configuration_raw);
 
                 // Read coordinate data from the remaining bytes (24 bytes for 6 coordinates)
                 let coord_data = &data[20..44];
@@ -428,8 +409,8 @@ impl Position {
                     rz,
                     tool_no,
                     user_coord_no,
-                    form,
-                    extended_form,
+                    configuration,
+                    extended_configuration,
                 )))
             }
             _ => {
@@ -468,10 +449,20 @@ mod tests {
     #[test]
     #[allow(clippy::float_cmp)]
     fn test_cartesian_position_creation() {
-        let form = Form::from_raw(0);
-        let extended_form = ExtendedForm::from_raw(0);
-        let position =
-            CartesianPosition::new(100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, form, extended_form);
+        let configuration = Configuration::from_raw(0);
+        let extended_configuration = ExtendedConfiguration::from_raw(0);
+        let position = CartesianPosition::new(
+            100.0,
+            200.0,
+            300.0,
+            0.0,
+            0.0,
+            0.0,
+            1,
+            0,
+            configuration,
+            extended_configuration,
+        );
         assert_eq!(position.x, 100.0);
         assert_eq!(position.y, 200.0);
         assert_eq!(position.z, 300.0);
@@ -492,8 +483,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_cartesian_position_serialization() {
-        let form = Form::from_raw(0);
-        let extended_form = ExtendedForm::from_raw(0);
+        let configuration = Configuration::from_raw(0);
+        let extended_configuration = ExtendedConfiguration::from_raw(0);
         let position = Position::Cartesian(CartesianPosition::new(
             100.0,
             200.0,
@@ -503,8 +494,8 @@ mod tests {
             0.0,
             1,
             0,
-            form,
-            extended_form,
+            configuration,
+            extended_configuration,
         ));
         let serialized = position.serialize().unwrap();
         let deserialized =
@@ -524,34 +515,34 @@ mod tests {
     }
 
     #[test]
-    fn test_form_serialization() {
-        let form = Form::from_raw(0x55); // 01010101
-        assert_eq!(form.j1_placement, J1Placement::Back);
-        assert_eq!(form.j3_placement, J3Placement::Up);
-        assert_eq!(form.j5_placement, J5Placement::NoFlip);
-        assert_eq!(form.j4_turn_num, J4TurnNum::Single);
-        assert_eq!(form.j6_turn_num, J6TurnNum::Double);
-        assert_eq!(form.j1_turn_num, J1TurnNum::Single);
-        assert_eq!(form.redundant_j1_placement, RedundantJ1Placement::RedundantBack);
-        assert_eq!(form.reverse_conversion_select, ReverseConversion::PreviousStepRegarded);
+    fn test_configuration_serialization() {
+        let configuration = Configuration::from_raw(0x55); // 01010101
+        assert_eq!(configuration.j1_placement, J1Placement::Back);
+        assert_eq!(configuration.j3_placement, J3Placement::Up);
+        assert_eq!(configuration.j5_placement, J5Placement::NoFlip);
+        assert_eq!(configuration.j4_turn_num, J4TurnNum::Single);
+        assert_eq!(configuration.j6_turn_num, J6TurnNum::Double);
+        assert_eq!(configuration.j1_turn_num, J1TurnNum::Single);
+        assert_eq!(configuration.redundant_j1_placement, RedundantJ1Placement::Back);
+        assert_eq!(configuration.ik_solution_basis, IkSolutionBasis::PreviousStep);
 
-        let raw = form.to_raw();
+        let raw = configuration.to_raw();
         assert_eq!(raw, 0x55);
     }
 
     #[test]
-    fn test_extended_form_serialization() {
-        let extended_form = ExtendedForm::from_raw(0x1F); // 00011111
-        assert_eq!(extended_form.bit0, ExtendedJ2TurnNum::Double);
-        assert_eq!(extended_form.bit1, ExtendedJ3TurnNum::Double);
-        assert_eq!(extended_form.bit2, ExtendedJ5TurnNum::Double);
-        assert_eq!(extended_form.bit3, ExtendedEAxisTurnNum::Double);
-        assert_eq!(extended_form.bit4, ExtendedWAxisTurnNum::Double);
-        assert!(!extended_form.bit5);
-        assert!(!extended_form.bit6);
-        assert!(!extended_form.bit7);
+    fn test_extended_configuration_serialization() {
+        let extended_configuration = ExtendedConfiguration::from_raw(0x1F); // 00011111
+        assert_eq!(extended_configuration.bit0, J2TurnNum::Double);
+        assert_eq!(extended_configuration.bit1, J3TurnNum::Double);
+        assert_eq!(extended_configuration.bit2, J5TurnNum::Double);
+        assert_eq!(extended_configuration.bit3, EAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit4, WAxisTurnNum::Double);
+        assert!(!extended_configuration.bit5);
+        assert!(!extended_configuration.bit6);
+        assert!(!extended_configuration.bit7);
 
-        let raw = extended_form.to_raw();
+        let raw = extended_configuration.to_raw();
         assert_eq!(raw, 0x1F);
     }
 }
