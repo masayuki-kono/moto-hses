@@ -436,7 +436,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-client"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "env_logger",
@@ -451,7 +451,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-mock"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "env_logger",
  "log",
@@ -462,7 +462,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-proto"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "bytes",
  "encoding_rs",
