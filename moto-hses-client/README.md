@@ -12,6 +12,48 @@ Async UDP client for Yaskawa High-Speed Ethernet Server (HSES) communication.
 
 This crate provides a high-level, type-safe, asynchronous Rust client for communicating with Yaskawa robots using the HSES (High Speed Ethernet Server) protocol over UDP. It's built on top of Tokio and provides a modern async/await API.
 
+## Verified Robot Models
+
+The following robot models have been tested and verified for compatibility:
+
+| Robot Model | Status |
+|-------------|--------|
+| DX100 | ❌ Not verified |
+| FS100 | ❌ Not verified |
+| DX200 | ❌ Not verified |
+| YRC1000 | ❌ Not verified |
+| YRC1000micro | ✅ Verified |
+
+## Supported Commands
+
+### Robot Control Commands
+
+| Command No | Command Name |
+|------------|--------------|
+| 0x70 | Alarm Data Reading Command |
+| 0x71 | Alarm History Reading Command |
+| 0x72 | Read Status Information |
+| 0x73 | Executing Job Information Reading Command |
+| 0x75 | Robot Position Data Reading Command |
+| 0x78 | I/O Data Reading / Writing Command |
+| 0x79 | Register Data Reading / Writing Command |
+| 0x7A | Byte Variable (B) Reading / Writing Command |
+| 0x7B | Integer Type Variable (I) Reading / Writing Command |
+| 0x7C | Double Precision Integer Type Variable (D) Reading / Writing Command |
+| 0x7D | Real Type Variable (R) Reading / Writing Command |
+| 0x7E | Character Type Variable (S) Reading / Writing Command |
+| 0x82 | Alarm Reset / Error Cancel Command |
+| 0x83 | Hold / Servo On/off Command |
+| 0x84 | Step / Cycle / Continuous Switching Command |
+
+### File Control Commands
+
+| Service | Command Name |
+|---------|--------------|
+| 0x09 | File Delete |
+| 0x16 | File saving command (Controller to the PC) |
+| 0x32 | File list acquiring |
+
 ## Features
 
 - **Async/await support**: Built on Tokio for high-performance async I/O
@@ -24,7 +66,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-moto-hses-client = "0.0.2"
+moto-hses-client = "0.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
@@ -50,38 +92,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
-
-## Supported Operations
-
-### Variable Operations
-- Read/write integer, real, string, and position variables
-- Batch operations for efficiency
-- Type-safe variable access
-
-### I/O Operations
-- Digital I/O control
-- Analog I/O operations
-- I/O status monitoring
-
-### File Operations
-- File upload/download
-- File management (list, delete, etc.)
-- Directory operations
-
-### Status Monitoring
-- Robot status information
-- Alarm data retrieval
-- System information
-
-### Position Control
-- Cartesian position data
-- Joint position data
-- Position monitoring
-
-### Cycle Mode Control
-- Step mode switching
-- One cycle mode switching
-- Continuous mode switching
 
 ## Examples
 
@@ -112,7 +122,7 @@ The crate can be tested using the separate `moto-hses-mock` crate:
 
 ```toml
 [dev-dependencies]
-moto-hses-mock = "0.0.2"
+moto-hses-mock = "0.1"
 ```
 
 ```rust

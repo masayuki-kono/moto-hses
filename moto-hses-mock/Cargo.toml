@@ -1,6 +1,6 @@
 [package]
 name = "moto-hses-mock"
-version = "0.0.2"
+version = "0.1.1"
 edition = "2024"
 license = "Apache-2.0"
 description = "Mock HSES UDP server for testing and development"
@@ -13,7 +13,7 @@ categories = ["development-tools", "network-programming"]
 readme = "README.md"
 
 [dependencies]
-moto-hses-proto = { version = "0.0.2", path = "../moto-hses-proto" }
+moto-hses-proto = { version = "0.1.1", path = "../moto-hses-proto" }
 tokio = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
