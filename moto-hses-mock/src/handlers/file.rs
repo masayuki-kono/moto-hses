@@ -58,7 +58,7 @@ impl CommandHandler for FileControlHandler {
                 }
                 Ok(vec![])
             }
-            0x04 => {
+            0x09 => {
                 // Delete file
                 // Parse filename from payload
                 let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
@@ -120,19 +120,6 @@ impl CommandHandler for FileControlHandler {
                     return Ok(content.clone());
                 }
                 debug!("File not found: {filename}");
-                Ok(vec![])
-            }
-            0x09 => {
-                // Delete file (Python client uses this)
-                // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    let deleted = state.delete_file(&filename);
-                    debug!("File deletion requested: {filename} (deleted: {deleted})");
-                }
                 Ok(vec![])
             }
             _ => Err(proto::ProtocolError::InvalidService),
