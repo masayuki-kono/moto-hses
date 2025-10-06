@@ -28,7 +28,7 @@ impl HsesCommonHeader {
             division,
             ack,
             request_id,
-            block_number: if ack == 0x01 { 0x8000_0000 } else { 0 },
+            block_number: if ack == 0x01 { 0x8000_0000 } else { 0 }, // Single response: 0x8000_0000, Request: 0
             reserved: *b"99999999",
         }
     }

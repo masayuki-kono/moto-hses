@@ -29,8 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = ClientConfig {
         host: host.to_string(),
         port: robot_port,
-        timeout: Duration::from_millis(500),
-        retry_count: 5,
+        timeout: Duration::from_millis(3000),
+        retry_count: 0,
         retry_delay: Duration::from_millis(200),
         buffer_size: 8192,
         text_encoding: TextEncoding::ShiftJis,

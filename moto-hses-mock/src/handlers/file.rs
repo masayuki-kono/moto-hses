@@ -102,9 +102,9 @@ impl CommandHandler for FileControlHandler {
                 let mut file_list = String::new();
                 for file in files {
                     file_list.push_str(&file);
-                    file_list.push('\0');
+                    file_list.push_str("\r\n");
                 }
-                debug!("File list requested with pattern '{}', returning: {file_list:?}", pattern);
+                debug!("File list requested with pattern '{pattern}', returning: {file_list:?}");
                 let file_list_bytes =
                     moto_hses_proto::encoding_utils::encode_string(&file_list, state.text_encoding);
                 Ok(file_list_bytes)
@@ -112,23 +112,15 @@ impl CommandHandler for FileControlHandler {
             0x16 => {
                 // Receive file (Python client uses this)
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    if let Some(content) = state.get_file(&filename) {
-                        let mut response = moto_hses_proto::encoding_utils::encode_string(
-                            &filename,
-                            state.text_encoding,
-                        );
-                        response.push(0);
-                        response.extend(content);
-                        debug!("File requested: {} ({} bytes)", filename, content.len());
-                        return Ok(response);
-                    }
-                    debug!("File not found: {filename}");
+                let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                    &message.payload,
+                    state.text_encoding,
+                );
+                if let Some(content) = state.get_file(&filename) {
+                    debug!("File requested: {} ({} bytes)", filename, content.len());
+                    return Ok(content.clone());
                 }
+                debug!("File not found: {filename}");
                 Ok(vec![])
             }
             0x09 => {

@@ -31,11 +31,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = ClientConfig {
         host: host.to_string(),
         port: file_port,
-        timeout: Duration::from_millis(500),
-        retry_count: 5,
+        timeout: Duration::from_millis(3000),
+        retry_count: 0,
         retry_delay: Duration::from_millis(200),
         buffer_size: 8192,
-        text_encoding: TextEncoding::ShiftJis, // 重要: ShiftJISエンコーディングを設定
+        text_encoding: TextEncoding::ShiftJis, // Important: Set ShiftJIS encoding
     };
 
     // Create HsesClient for file operations
@@ -84,24 +84,17 @@ async fn process_existing_file(
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!("\n2. Getting content of file: {first_file}");
 
-    let content = match client.receive_file(first_file).await {
+    let content_str = match client.receive_file(first_file).await {
         Ok(content) => {
             info!("✓ File content retrieved successfully");
-            info!("  Content length: {} bytes", content.len());
+            info!("  Content length: {} characters", content.len());
+            info!("  Original content: {content}");
             content
         }
         Err(e) => {
             info!("✗ Failed to get file content: {e}");
             return Ok(());
         }
-    };
-
-    let content_str = if let Ok(s) = String::from_utf8(content.clone()) {
-        info!("  Original content: {s}");
-        s
-    } else {
-        info!("✗ Failed to decode original content as UTF-8");
-        return Ok(());
     };
 
     // Step 3: Modify content and create new file
@@ -158,23 +151,16 @@ async fn verify_file_creation_and_content(
 
     // Get content of new file and verify
     info!("\n5. Verifying new file content...");
-    let received_content = match client.receive_file(filename).await {
+    let received_str = match client.receive_file(filename).await {
         Ok(content) => {
             info!("✓ New file content retrieved successfully");
+            info!("  Received content: {content}");
             content
         }
         Err(e) => {
             info!("✗ Failed to get new file content: {e}");
             return Ok(());
         }
-    };
-
-    let received_str = if let Ok(s) = String::from_utf8(received_content) {
-        info!("  Received content: {s}");
-        s
-    } else {
-        info!("✗ Failed to decode received content as UTF-8");
-        return Ok(());
     };
 
     // Compare content

@@ -4,8 +4,24 @@
 
 use crate::common::mock_server_setup::MockServerManager;
 use crate::test_with_logging;
-use moto_hses_client::HsesClient;
-use moto_hses_proto::FILE_CONTROL_PORT;
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{FILE_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
+
+// Helper function to create client with ShiftJIS encoding
+async fn create_file_client() -> HsesClient {
+    let config = ClientConfig {
+        host: "127.0.0.1".to_string(),
+        port: FILE_CONTROL_PORT,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
+
+    HsesClient::new_with_config(config).await.expect("Failed to create client")
+}
 
 // Tests using HsesClient API
 
@@ -14,9 +30,7 @@ test_with_logging!(test_file_list_initial_state, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
-        .await
-        .expect("Failed to create client");
+    let client = create_file_client().await;
 
     // Test file list retrieval and verify initial state
     let files = client.read_file_list("*.JBI").await.expect("Failed to get file list");
@@ -33,9 +47,7 @@ test_with_logging!(test_file_send_receive_operations, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
-        .await
-        .expect("Failed to create client");
+    let client = create_file_client().await;
 
     // Test file send operation
     let test_filename = "API_TEST.JBI";
@@ -53,10 +65,8 @@ test_with_logging!(test_file_send_receive_operations, {
     assert_eq!(files_after_send.len(), 2, "Should have 2 files after adding one");
 
     // Test file receive operation
-    let received_content =
-        client.receive_file(test_filename).await.expect("Failed to receive file");
+    let received_str = client.receive_file(test_filename).await.expect("Failed to receive file");
 
-    let received_str = String::from_utf8_lossy(&received_content);
     assert_eq!(received_str, test_content, "Received content should match sent content");
 
     log::info!("✓ File send/receive operations verified successfully");
@@ -67,9 +77,7 @@ test_with_logging!(test_file_delete_operations, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
-        .await
-        .expect("Failed to create client");
+    let client = create_file_client().await;
 
     // Verify initial state
     let initial_files =
@@ -100,9 +108,7 @@ test_with_logging!(test_file_operations_comprehensive, {
     server.start().await.expect("Failed to start mock server");
 
     // Create client for file operations
-    let client = HsesClient::new(&format!("127.0.0.1:{FILE_CONTROL_PORT}"))
-        .await
-        .expect("Failed to create client");
+    let client = create_file_client().await;
 
     // 1. Verify initial state (TEST.JBI should exist)
     let initial_files =
@@ -136,10 +142,8 @@ test_with_logging!(test_file_operations_comprehensive, {
     );
 
     // 4. Retrieve and verify file content
-    let received_content =
-        client.receive_file(test_filename).await.expect("Failed to receive file");
+    let received_str = client.receive_file(test_filename).await.expect("Failed to receive file");
 
-    let received_str = String::from_utf8_lossy(&received_content);
     assert_eq!(received_str, test_content, "Received content should match sent content");
 
     // 5. Delete the new test file
