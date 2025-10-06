@@ -49,7 +49,9 @@ pub enum RedundantJ1Placement {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IkSolutionBasis {
+    // Select configuration that minimizes joint angle changes from the previous step
     PreviousStep,
+    // Prioritize the configuration attached to the position
     Configuration,
 }
 
