@@ -1,6 +1,6 @@
 [package]
 name = "moto-hses-client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "Apache-2.0"
 description = "Async UDP client for Yaskawa High-Speed Ethernet Server (HSES) communication"
@@ -13,8 +13,8 @@ categories = ["network-programming", "asynchronous", "hardware-support"]
 readme = "README.md"
 
 [dependencies]
-moto-hses-proto = { version = "0.1.0", path = "../moto-hses-proto" }
-moto-hses-mock = { version = "0.1.0", path = "../moto-hses-mock" }
+moto-hses-proto = { version = "0.1.1", path = "../moto-hses-proto" }
+moto-hses-mock = { version = "0.1.1", path = "../moto-hses-mock" }
 tokio = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
