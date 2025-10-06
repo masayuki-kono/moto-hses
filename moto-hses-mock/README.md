@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dev-dependencies]
-moto-hses-mock = "0.1.0"
+moto-hses-mock = "0.1"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
