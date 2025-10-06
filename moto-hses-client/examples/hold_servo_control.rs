@@ -17,47 +17,47 @@ where
     F: Fn(bool) -> Fut,
     Fut: std::future::Future<Output = Result<(), moto_hses_client::ClientError>>,
 {
-    info!("Setting {} to ON", command_name);
+    info!("Setting {command_name} to ON");
     match command_func(true).await {
-        Ok(_) => {
-            info!("✓ Successfully set {} to ON", command_name);
+        Ok(()) => {
+            info!("✓ Successfully set {command_name} to ON");
         }
         Err(e) => {
-            info!("✗ Failed to set {}: {}", command_name, e);
+            info!("✗ Failed to set {command_name}: {e}");
             return Err(Box::new(e));
         }
     }
 
     // Read and log system status after ON command
     if let Ok(data2) = client.read_status_data2().await {
-        info!("System status after {} ON:", command_name);
+        info!("System status after {command_name} ON:");
         info!("  Command hold: {}", data2.command_hold);
         info!("  Servo on: {}", data2.servo_on);
     } else {
-        info!("✗ Failed to read system status after {} ON", command_name);
+        info!("✗ Failed to read system status after {command_name} ON");
     }
 
     // Wait for 3 seconds
     tokio::time::sleep(Duration::from_secs(3)).await;
 
-    info!("Setting {} to OFF", command_name);
+    info!("Setting {command_name} to OFF");
     match command_func(false).await {
-        Ok(_) => {
-            info!("✓ Successfully set {} to OFF", command_name);
+        Ok(()) => {
+            info!("✓ Successfully set {command_name} to OFF");
         }
         Err(e) => {
-            info!("✗ Failed to set {}: {}", command_name, e);
+            info!("✗ Failed to set {command_name}: {e}");
             return Err(Box::new(e));
         }
     }
 
     // Read and log system status after OFF command
     if let Ok(data2) = client.read_status_data2().await {
-        info!("System status after {} OFF:", command_name);
+        info!("System status after {command_name} OFF:");
         info!("  Command hold: {}", data2.command_hold);
         info!("  Servo on: {}", data2.servo_on);
     } else {
-        info!("✗ Failed to read system status after {} OFF", command_name);
+        info!("✗ Failed to read system status after {command_name} OFF");
     }
 
     Ok(())
@@ -109,25 +109,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "servo" => {
             if let Err(e) = execute_control(&client, "servo", |value| client.set_servo(value)).await
             {
-                info!("✗ Failed to execute servo command: {}", e);
+                info!("✗ Failed to execute servo command: {e}");
                 return Ok(());
             }
         }
         "hold" => {
             if let Err(e) = execute_control(&client, "hold", |value| client.set_hold(value)).await {
-                info!("✗ Failed to execute hold command: {}", e);
+                info!("✗ Failed to execute hold command: {e}");
                 return Ok(());
             }
         }
         "hlock" => {
             if let Err(e) = execute_control(&client, "hlock", |value| client.set_hlock(value)).await
             {
-                info!("✗ Failed to execute hlock command: {}", e);
+                info!("✗ Failed to execute hlock command: {e}");
                 return Ok(());
             }
         }
         _ => {
-            info!("✗ Invalid command: {}. Valid command: servo, hold, hlock", COMMAND_NAME);
+            info!("✗ Invalid command: {COMMAND_NAME}. Valid command: servo, hold, hlock");
             return Ok(());
         }
     }
