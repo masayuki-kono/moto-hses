@@ -529,10 +529,10 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - _Note: Cartesian value can select the base coordinate only. (It cannot select the robot, user and tool coordinates.)_
 - **Attribute**: Specifies the position information data number
   - `1`: Data type (0: pulse value / 16: base coordinate value)
-  - `2`: Form (refer to "Details of data")
+  - `2`: Configuration (refer to "Details of data")
   - `3`: Tool number
   - `4`: User coordinate number
-  - `5`: Extended form (refer to "Details of data")
+  - `5`: Extended configuration (refer to "Details of data")
   - `6`: First axis data
   - `7`: Second axis data
   - `8`: Third axis data
@@ -566,7 +566,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - `0`: Pulse value
 - `16`: Base coordinate value
 
-**Form (32-bit integer 2):**
+**Configuration (32-bit integer 2):**
 
 - 8 bits (bit0 to bit7):
   - `bit0`: 0: Front, 1: Back
@@ -576,7 +576,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `bit4`: 0: θT < 180, 1: θT ≥ 180
   - `bit5`: 0: θS < 180, 1: θS ≥ 180
   - `bit6`: 0: Redundant front, 1: Redundant back
-  - `bit7`: 0: Previous step regarded reverse conversion specified, 1: Form regarded reverse conversion specified
+  - `bit7`: 0: Previous step regarded inverse kinematics specified, 1: Configuration regarded inverse kinematics specified
 
 **Tool Number (32-bit integer 3):**
 
@@ -586,7 +586,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 - User coordinate number
 
-**Extended Form (32-bit integer 5):**
+**Extended Configuration (32-bit integer 5):**
 
 - 8 bits (bit0 to bit7):
   - `bit0`: 0: θL < 180, 1: θL ≥ 180
@@ -972,10 +972,10 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - Note: Since the extended variable is an optional function, follow the numbers of the variables specified by the parameter when specifying the number
 - **Attribute**: Axis information data number
   - `1`: Data type
-  - `2`: Form
+  - `2`: Configuration
   - `3`: Tool number
   - `4`: User coordinate number
-  - `5`: Extended form
+  - `5`: Extended configuration
   - `6`: Coordinated data of the first axis
   - `7`: Coordinated data of the second axis
   - `8`: Coordinated data of the third axis
@@ -995,10 +995,10 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
       - `17`: Robot coordinated value
       - `18`: Tool coordinated value
       - `19`: User coordinated value
-    - Integer 2: Form (see Details of data)
+    - Integer 2: Configuration (see Details of data)
     - Integer 3: Tool number
     - Integer 4: User coordinate number
-    - Integer 5: Extended form (see Details of data)
+    - Integer 5: Extended configuration (see Details of data)
     - Integers 6-13: Coordinate data (1st to 8th axis)
 
 **Response Structure:**
@@ -1018,7 +1018,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 **Details of Data:**
 
-**Form (8 bits):**
+**Configuration (8 bits):**
 
 - `bit0`: 0: Front, 1: Back
 - `bit1`: 0: Upper arm, 1: Lower arm
@@ -1027,9 +1027,9 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - `bit4`: 0: θT < 180, 1: θT ≥ 180
 - `bit5`: 0: θS < 180, 1: θS ≥ 180
 - `bit6`: 0: Redundant front, 1: Redundant back
-- `bit7`: 0: Previous step regarded reverse conversion specified, 1: Form regarded reverse conversion specified
+- `bit7`: 0: Previous step regarded inverse kinematics specified, 1: Configuration regarded inverse kinematics specified
 
-**Extended form (8 bits):**
+**Extended configuration (8 bits):**
 
 - `bit0`: 0: θL < 180, 1: θL ≥ 180
 - `bit1`: 0: θU < 180, 1: θU ≥ 180
@@ -1038,7 +1038,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 - `bit4`: 0: θW < 180, 1: θW ≥ 180
 - `bit5-7`: Reserve
 
-**Note**: For detailed form specifications, refer to "3.9.4 Flip/ No flip" in "FS100 OPERATOR'S MANUAL" prepared for each application.
+**Note**: For detailed configuration specifications, refer to "3.9.4 Flip/ No flip" in "FS100 OPERATOR'S MANUAL" prepared for each application.
 
 #### Base Position Type Variable (Bp) Reading / Writing Command (Command 0x80)
 
@@ -1667,7 +1667,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
     - Integer 1: Number (Maximum: 9)
     - Integers 2-118: P variable data
       - Data type: 0 (Pulse value), 16 (Base coordinated value), 17 (Robot coordinated value), 18 (Tool coordinated value), 19 (User coordinated value)
-      - Form, Tool number, User coordinate number, Extended form
+      - Configuration, Tool number, User coordinate number, Extended configuration
       - First to Eighth coordinate data
       - Variable data part is valid only when writing
       - When reading, only the number of data is valid

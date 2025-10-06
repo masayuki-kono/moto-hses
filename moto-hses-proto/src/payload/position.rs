@@ -4,221 +4,237 @@ use crate::error::ProtocolError;
 use crate::payload::HsesPayload;
 use bytes::Buf;
 
-// Form bit field definitions
+// Configuration bit field definitions
+// S(Swing,J1) Axis Placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J1Placement {
+pub enum SAxisPlacement {
+    Front,
+    Back,
+}
+
+// U(Upper arm,J3) Axis Placement
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UAxisPlacement {
+    Up,
+    Down,
+}
+
+// B(Bend,J5) Axis Placement
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BAxisPlacement {
+    Flip,
+    NoFlip,
+}
+
+// R(Rotate,J4) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RAxisTurnNum {
+    // R < 180
+    Single,
+    // R ≥ 180
+    Double,
+}
+
+// T(Twist,J6) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TAxisTurnNum {
+    // T < 180
+    Single,
+    // T ≥ 180
+    Double,
+}
+
+// S(Swing,J1) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SAxisTurnNum {
+    // S < 180
+    Single,
+    // S ≥ 180
+    Double,
+}
+
+// Redundant S Axis Placement
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RedundantSAxisPlacement {
     Front,
     Back,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J3Placement {
-    Up,
-    Down,
+pub enum IkSolutionBasis {
+    // Select configuration that minimizes joint angle changes from the previous step
+    PreviousStep,
+    // Prioritize the configuration attached to the position
+    Configuration,
 }
 
+// Extended configuration bit field definitions
+// L(Lower arm,J2) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J5Placement {
-    Flip,
-    NoFlip,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J4TurnNum {
+pub enum LAxisTurnNum {
+    // L < 180
     Single,
+    // L ≥ 180
+    Double,
+}
+
+// U(Upper arm,J3) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UAxisTurnNum {
+    // U < 180
+    Single,
+    // U ≥ 180
+    Double,
+}
+
+// B(Bend,J5) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BAxisTurnNum {
+    // B < 180
+    Single,
+    // B ≥ 180
+    Double,
+}
+
+// E(External axis) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EAxisTurnNum {
+    // E < 180
+    Single,
+    // E ≥ 180
+    Double,
+}
+
+// W(Wrist-extension axis) Axis Turn Number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WAxisTurnNum {
+    // W < 180
+    Single,
+    // W ≥ 180
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J6TurnNum {
-    Single,
-    Double,
+pub struct Configuration {
+    pub s_placement: SAxisPlacement,
+    pub u_placement: UAxisPlacement,
+    pub b_placement: BAxisPlacement,
+    pub r_turn_num: RAxisTurnNum,
+    pub t_turn_num: TAxisTurnNum,
+    pub s_turn_num: SAxisTurnNum,
+    pub redundant_s_placement: RedundantSAxisPlacement,
+    pub ik_solution_basis: IkSolutionBasis,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J1TurnNum {
-    Single,
-    Double,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RedundantJ1Placement {
-    RedundantFront,
-    RedundantBack,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReverseConversion {
-    PreviousStepRegarded,
-    FormRegarded,
-}
-
-// Extended form bit field definitions
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ2TurnNum {
-    Single,
-    Double,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ3TurnNum {
-    Single,
-    Double,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedJ5TurnNum {
-    Single,
-    Double,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedEAxisTurnNum {
-    Single,
-    Double,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ExtendedWAxisTurnNum {
-    Single,
-    Double,
-}
-
-// Form structure
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Form {
-    pub j1_placement: J1Placement,
-    pub j3_placement: J3Placement,
-    pub j5_placement: J5Placement,
-    pub j4_turn_num: J4TurnNum,
-    pub j6_turn_num: J6TurnNum,
-    pub j1_turn_num: J1TurnNum,
-    pub redundant_j1_placement: RedundantJ1Placement,
-    pub reverse_conversion_select: ReverseConversion,
-}
-
-// Extended form structure
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExtendedForm {
-    pub bit0: ExtendedJ2TurnNum,
-    pub bit1: ExtendedJ3TurnNum,
-    pub bit2: ExtendedJ5TurnNum,
-    pub bit3: ExtendedEAxisTurnNum,
-    pub bit4: ExtendedWAxisTurnNum,
+pub struct ExtendedConfiguration {
+    pub bit0: LAxisTurnNum,
+    pub bit1: UAxisTurnNum,
+    pub bit2: BAxisTurnNum,
+    pub bit3: EAxisTurnNum,
+    pub bit4: WAxisTurnNum,
     pub bit5: bool, // Reserve
     pub bit6: bool, // Reserve
     pub bit7: bool, // Reserve
 }
 
-impl Form {
-    /// Create Form from raw u8 value
+impl Configuration {
+    /// Create configuration from raw u8 value
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
-            j1_placement: if value & 0x01 == 0 { J1Placement::Front } else { J1Placement::Back },
-            j3_placement: if value & 0x02 == 0 { J3Placement::Up } else { J3Placement::Down },
-            j5_placement: if value & 0x04 == 0 { J5Placement::Flip } else { J5Placement::NoFlip },
-            j4_turn_num: if value & 0x08 == 0 { J4TurnNum::Single } else { J4TurnNum::Double },
-            j6_turn_num: if value & 0x10 == 0 { J6TurnNum::Single } else { J6TurnNum::Double },
-            j1_turn_num: if value & 0x20 == 0 { J1TurnNum::Single } else { J1TurnNum::Double },
-            redundant_j1_placement: if value & 0x40 == 0 {
-                RedundantJ1Placement::RedundantFront
+            s_placement: if value & 0x01 == 0 {
+                SAxisPlacement::Front
             } else {
-                RedundantJ1Placement::RedundantBack
+                SAxisPlacement::Back
             },
-            reverse_conversion_select: if value & 0x80 == 0 {
-                ReverseConversion::PreviousStepRegarded
+            u_placement: if value & 0x02 == 0 { UAxisPlacement::Up } else { UAxisPlacement::Down },
+            b_placement: if value & 0x04 == 0 {
+                BAxisPlacement::Flip
             } else {
-                ReverseConversion::FormRegarded
+                BAxisPlacement::NoFlip
+            },
+            r_turn_num: if value & 0x08 == 0 { RAxisTurnNum::Single } else { RAxisTurnNum::Double },
+            t_turn_num: if value & 0x10 == 0 { TAxisTurnNum::Single } else { TAxisTurnNum::Double },
+            s_turn_num: if value & 0x20 == 0 { SAxisTurnNum::Single } else { SAxisTurnNum::Double },
+            redundant_s_placement: if value & 0x40 == 0 {
+                RedundantSAxisPlacement::Front
+            } else {
+                RedundantSAxisPlacement::Back
+            },
+            ik_solution_basis: if value & 0x80 == 0 {
+                IkSolutionBasis::PreviousStep
+            } else {
+                IkSolutionBasis::Configuration
             },
         }
     }
 
-    /// Convert Form to raw u8 value
+    /// Convert configuration to raw u8 value
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
-        if matches!(self.j1_placement, J1Placement::Back) {
+        if matches!(self.s_placement, SAxisPlacement::Back) {
             value |= 0x01;
         }
-        if matches!(self.j3_placement, J3Placement::Down) {
+        if matches!(self.u_placement, UAxisPlacement::Down) {
             value |= 0x02;
         }
-        if matches!(self.j5_placement, J5Placement::NoFlip) {
+        if matches!(self.b_placement, BAxisPlacement::NoFlip) {
             value |= 0x04;
         }
-        if matches!(self.j4_turn_num, J4TurnNum::Double) {
+        if matches!(self.r_turn_num, RAxisTurnNum::Double) {
             value |= 0x08;
         }
-        if matches!(self.j6_turn_num, J6TurnNum::Double) {
+        if matches!(self.t_turn_num, TAxisTurnNum::Double) {
             value |= 0x10;
         }
-        if matches!(self.j1_turn_num, J1TurnNum::Double) {
+        if matches!(self.s_turn_num, SAxisTurnNum::Double) {
             value |= 0x20;
         }
-        if matches!(self.redundant_j1_placement, RedundantJ1Placement::RedundantBack) {
+        if matches!(self.redundant_s_placement, RedundantSAxisPlacement::Back) {
             value |= 0x40;
         }
-        if matches!(self.reverse_conversion_select, ReverseConversion::FormRegarded) {
+        if matches!(self.ik_solution_basis, IkSolutionBasis::Configuration) {
             value |= 0x80;
         }
         value
     }
 }
 
-impl ExtendedForm {
-    /// Create `ExtendedForm` from raw u8 value
+impl ExtendedConfiguration {
+    /// Create `ExtendedConfiguration` from raw u8 value
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
-            bit0: if value & 0x01 == 0 {
-                ExtendedJ2TurnNum::Single
-            } else {
-                ExtendedJ2TurnNum::Double
-            },
-            bit1: if value & 0x02 == 0 {
-                ExtendedJ3TurnNum::Single
-            } else {
-                ExtendedJ3TurnNum::Double
-            },
-            bit2: if value & 0x04 == 0 {
-                ExtendedJ5TurnNum::Single
-            } else {
-                ExtendedJ5TurnNum::Double
-            },
-            bit3: if value & 0x08 == 0 {
-                ExtendedEAxisTurnNum::Single
-            } else {
-                ExtendedEAxisTurnNum::Double
-            },
-            bit4: if value & 0x10 == 0 {
-                ExtendedWAxisTurnNum::Single
-            } else {
-                ExtendedWAxisTurnNum::Double
-            },
+            bit0: if value & 0x01 == 0 { LAxisTurnNum::Single } else { LAxisTurnNum::Double },
+            bit1: if value & 0x02 == 0 { UAxisTurnNum::Single } else { UAxisTurnNum::Double },
+            bit2: if value & 0x04 == 0 { BAxisTurnNum::Single } else { BAxisTurnNum::Double },
+            bit3: if value & 0x08 == 0 { EAxisTurnNum::Single } else { EAxisTurnNum::Double },
+            bit4: if value & 0x10 == 0 { WAxisTurnNum::Single } else { WAxisTurnNum::Double },
             bit5: value & 0x20 != 0, // Reserve
             bit6: value & 0x40 != 0, // Reserve
             bit7: value & 0x80 != 0, // Reserve
         }
     }
 
-    /// Convert `ExtendedForm` to raw u8 value
+    /// Convert `ExtendedConfiguration` to raw u8 value
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
-        if matches!(self.bit0, ExtendedJ2TurnNum::Double) {
+        if matches!(self.bit0, LAxisTurnNum::Double) {
             value |= 0x01;
         }
-        if matches!(self.bit1, ExtendedJ3TurnNum::Double) {
+        if matches!(self.bit1, UAxisTurnNum::Double) {
             value |= 0x02;
         }
-        if matches!(self.bit2, ExtendedJ5TurnNum::Double) {
+        if matches!(self.bit2, BAxisTurnNum::Double) {
             value |= 0x04;
         }
-        if matches!(self.bit3, ExtendedEAxisTurnNum::Double) {
+        if matches!(self.bit3, EAxisTurnNum::Double) {
             value |= 0x08;
         }
-        if matches!(self.bit4, ExtendedWAxisTurnNum::Double) {
+        if matches!(self.bit4, WAxisTurnNum::Double) {
             value |= 0x10;
         }
         if self.bit5 {
@@ -250,16 +266,26 @@ impl PulsePosition {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CartesianPosition {
+    // X [mm]
     pub x: f32,
+    // Y [mm]
     pub y: f32,
+    // Z [mm]
     pub z: f32,
+    // RX [deg]
     pub rx: f32,
+    // RY [deg]
     pub ry: f32,
+    // RZ [deg]
     pub rz: f32,
+    // Tool number
     pub tool_no: u8,
+    // User coordinate number
     pub user_coord_no: u8,
-    pub form: Form,
-    pub extended_form: ExtendedForm,
+    // Configuration
+    pub configuration: Configuration,
+    // Extended configuration
+    pub extended_configuration: ExtendedConfiguration,
 }
 
 impl CartesianPosition {
@@ -274,10 +300,10 @@ impl CartesianPosition {
         rz: f32,
         tool_no: u8,
         user_coord_no: u8,
-        form: Form,
-        extended_form: ExtendedForm,
+        configuration: Configuration,
+        extended_configuration: ExtendedConfiguration,
     ) -> Self {
-        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, form, extended_form }
+        Self { x, y, z, rx, ry, rz, tool_no, user_coord_no, configuration, extended_configuration }
     }
 }
 
@@ -309,12 +335,14 @@ impl Position {
             Self::Cartesian(cart) => {
                 data.extend_from_slice(&16u32.to_le_bytes());
 
-                // Use the form from the CartesianPosition
-                data.extend_from_slice(&u32::from(cart.form.to_raw()).to_le_bytes());
+                // Use the configuration from the CartesianPosition
+                data.extend_from_slice(&u32::from(cart.configuration.to_raw()).to_le_bytes());
 
                 data.extend_from_slice(&u32::from(cart.tool_no).to_le_bytes());
                 data.extend_from_slice(&u32::from(cart.user_coord_no).to_le_bytes());
-                data.extend_from_slice(&u32::from(cart.extended_form.to_raw()).to_le_bytes());
+                data.extend_from_slice(
+                    &u32::from(cart.extended_configuration.to_raw()).to_le_bytes(),
+                );
 
                 // Convert coordinates to proper units
                 #[allow(clippy::cast_possible_truncation)]
@@ -357,13 +385,13 @@ impl Position {
 
                 let mut buf = data;
                 let _position_type = buf.get_u32_le(); // Already read above
-                let _form = buf.get_u32_le();
+                let _configuration = buf.get_u32_le();
                 #[allow(clippy::cast_possible_truncation)]
                 let _tool_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let _user_coord_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
-                let _extended_form_raw = buf.get_u32_le() as u8;
+                let _extended_configuration_raw = buf.get_u32_le() as u8;
 
                 // Read joints - determine the number of joints based on remaining data
                 let mut joints = Vec::new();
@@ -390,17 +418,18 @@ impl Position {
 
                 // Read header fields (4 bytes each)
                 #[allow(clippy::cast_possible_truncation)]
-                let form_raw = buf.get_u32_le() as u8;
+                let configuration_raw = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let tool_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
                 let user_coord_no = buf.get_u32_le() as u8;
                 #[allow(clippy::cast_possible_truncation)]
-                let extended_form_raw = buf.get_u32_le() as u8;
+                let extended_configuration_raw = buf.get_u32_le() as u8;
 
-                // Parse form and extended form
-                let form = Form::from_raw(form_raw);
-                let extended_form = ExtendedForm::from_raw(extended_form_raw);
+                // Parse configuration and extended configuration
+                let configuration = Configuration::from_raw(configuration_raw);
+                let extended_configuration =
+                    ExtendedConfiguration::from_raw(extended_configuration_raw);
 
                 // Read coordinate data from the remaining bytes (24 bytes for 6 coordinates)
                 let coord_data = &data[20..44];
@@ -428,8 +457,8 @@ impl Position {
                     rz,
                     tool_no,
                     user_coord_no,
-                    form,
-                    extended_form,
+                    configuration,
+                    extended_configuration,
                 )))
             }
             _ => {
@@ -468,10 +497,20 @@ mod tests {
     #[test]
     #[allow(clippy::float_cmp)]
     fn test_cartesian_position_creation() {
-        let form = Form::from_raw(0);
-        let extended_form = ExtendedForm::from_raw(0);
-        let position =
-            CartesianPosition::new(100.0, 200.0, 300.0, 0.0, 0.0, 0.0, 1, 0, form, extended_form);
+        let configuration = Configuration::from_raw(0);
+        let extended_configuration = ExtendedConfiguration::from_raw(0);
+        let position = CartesianPosition::new(
+            100.0,
+            200.0,
+            300.0,
+            0.0,
+            0.0,
+            0.0,
+            1,
+            0,
+            configuration,
+            extended_configuration,
+        );
         assert_eq!(position.x, 100.0);
         assert_eq!(position.y, 200.0);
         assert_eq!(position.z, 300.0);
@@ -492,8 +531,8 @@ mod tests {
     #[test]
     #[allow(clippy::unwrap_used)]
     fn test_cartesian_position_serialization() {
-        let form = Form::from_raw(0);
-        let extended_form = ExtendedForm::from_raw(0);
+        let configuration = Configuration::from_raw(0);
+        let extended_configuration = ExtendedConfiguration::from_raw(0);
         let position = Position::Cartesian(CartesianPosition::new(
             100.0,
             200.0,
@@ -503,8 +542,8 @@ mod tests {
             0.0,
             1,
             0,
-            form,
-            extended_form,
+            configuration,
+            extended_configuration,
         ));
         let serialized = position.serialize().unwrap();
         let deserialized =
@@ -524,34 +563,34 @@ mod tests {
     }
 
     #[test]
-    fn test_form_serialization() {
-        let form = Form::from_raw(0x55); // 01010101
-        assert_eq!(form.j1_placement, J1Placement::Back);
-        assert_eq!(form.j3_placement, J3Placement::Up);
-        assert_eq!(form.j5_placement, J5Placement::NoFlip);
-        assert_eq!(form.j4_turn_num, J4TurnNum::Single);
-        assert_eq!(form.j6_turn_num, J6TurnNum::Double);
-        assert_eq!(form.j1_turn_num, J1TurnNum::Single);
-        assert_eq!(form.redundant_j1_placement, RedundantJ1Placement::RedundantBack);
-        assert_eq!(form.reverse_conversion_select, ReverseConversion::PreviousStepRegarded);
+    fn test_configuration_serialization() {
+        let configuration = Configuration::from_raw(0x55); // 01010101
+        assert_eq!(configuration.s_placement, SAxisPlacement::Back);
+        assert_eq!(configuration.u_placement, UAxisPlacement::Up);
+        assert_eq!(configuration.b_placement, BAxisPlacement::NoFlip);
+        assert_eq!(configuration.r_turn_num, RAxisTurnNum::Single);
+        assert_eq!(configuration.t_turn_num, TAxisTurnNum::Double);
+        assert_eq!(configuration.s_turn_num, SAxisTurnNum::Single);
+        assert_eq!(configuration.redundant_s_placement, RedundantSAxisPlacement::Back);
+        assert_eq!(configuration.ik_solution_basis, IkSolutionBasis::PreviousStep);
 
-        let raw = form.to_raw();
+        let raw = configuration.to_raw();
         assert_eq!(raw, 0x55);
     }
 
     #[test]
-    fn test_extended_form_serialization() {
-        let extended_form = ExtendedForm::from_raw(0x1F); // 00011111
-        assert_eq!(extended_form.bit0, ExtendedJ2TurnNum::Double);
-        assert_eq!(extended_form.bit1, ExtendedJ3TurnNum::Double);
-        assert_eq!(extended_form.bit2, ExtendedJ5TurnNum::Double);
-        assert_eq!(extended_form.bit3, ExtendedEAxisTurnNum::Double);
-        assert_eq!(extended_form.bit4, ExtendedWAxisTurnNum::Double);
-        assert!(!extended_form.bit5);
-        assert!(!extended_form.bit6);
-        assert!(!extended_form.bit7);
+    fn test_extended_configuration_serialization() {
+        let extended_configuration = ExtendedConfiguration::from_raw(0x1F); // 00011111
+        assert_eq!(extended_configuration.bit0, LAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit1, UAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit2, BAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit3, EAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit4, WAxisTurnNum::Double);
+        assert!(!extended_configuration.bit5);
+        assert!(!extended_configuration.bit6);
+        assert!(!extended_configuration.bit7);
 
-        let raw = extended_form.to_raw();
+        let raw = extended_configuration.to_raw();
         assert_eq!(raw, 0x1F);
     }
 }
