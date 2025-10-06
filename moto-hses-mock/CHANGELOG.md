@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.1] - 2025-01-27
+## [0.1.2] - 2025-10-07
+
+### Changed
+- Update moto-hses-proto dependency to version 0.1
+
+## [0.1.1] - 2025-10-07
 
 ### Documentation
 - Add verified robot models and supported commands sections to README
