@@ -5,44 +5,57 @@ use crate::payload::HsesPayload;
 use bytes::Buf;
 
 // Configuration bit field definitions
+// S(Swing,J1) Axis Placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J1Placement {
+pub enum SAxisPlacement {
     Front,
     Back,
 }
 
+// U(Upper arm,J3) Axis Placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J3Placement {
+pub enum UAxisPlacement {
     Up,
     Down,
 }
 
+// B(Bend,J5) Axis Placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J5Placement {
+pub enum BAxisPlacement {
     Flip,
     NoFlip,
 }
 
+// R(Rotate,J4) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J4TurnNum {
+pub enum RAxisTurnNum {
+    // R < 180
     Single,
+    // R ≥ 180
     Double,
 }
 
+// T(Twist,J6) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J6TurnNum {
+pub enum TAxisTurnNum {
+    // T < 180
     Single,
+    // T ≥ 180
     Double,
 }
 
+// S(Swing,J1) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J1TurnNum {
+pub enum SAxisTurnNum {
+    // S < 180
     Single,
+    // S ≥ 180
     Double,
 }
 
+// Redundant S Axis Placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RedundantJ1Placement {
+pub enum RedundantSAxisPlacement {
     Front,
     Back,
 }
@@ -56,53 +69,68 @@ pub enum IkSolutionBasis {
 }
 
 // Extended configuration bit field definitions
+// L(Lower arm,J2) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J2TurnNum {
+pub enum LAxisTurnNum {
+    // L < 180
     Single,
+    // L ≥ 180
     Double,
 }
 
+// U(Upper arm,J3) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J3TurnNum {
+pub enum UAxisTurnNum {
+    // U < 180
     Single,
+    // U ≥ 180
     Double,
 }
 
+// B(Bend,J5) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum J5TurnNum {
+pub enum BAxisTurnNum {
+    // B < 180
     Single,
+    // B ≥ 180
     Double,
 }
 
+// E(External axis) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EAxisTurnNum {
+    // E < 180
     Single,
+    // E ≥ 180
     Double,
 }
 
+// W(Wrist-extension axis) Axis Turn Number
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WAxisTurnNum {
+    // W < 180
     Single,
+    // W ≥ 180
     Double,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Configuration {
-    pub j1_placement: J1Placement,
-    pub j3_placement: J3Placement,
-    pub j5_placement: J5Placement,
-    pub j4_turn_num: J4TurnNum,
-    pub j6_turn_num: J6TurnNum,
-    pub j1_turn_num: J1TurnNum,
-    pub redundant_j1_placement: RedundantJ1Placement,
+    pub s_placement: SAxisPlacement,
+    pub u_placement: UAxisPlacement,
+    pub b_placement: BAxisPlacement,
+    pub r_turn_num: RAxisTurnNum,
+    pub t_turn_num: TAxisTurnNum,
+    pub s_turn_num: SAxisTurnNum,
+    pub redundant_s_placement: RedundantSAxisPlacement,
     pub ik_solution_basis: IkSolutionBasis,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExtendedConfiguration {
-    pub bit0: J2TurnNum,
-    pub bit1: J3TurnNum,
-    pub bit2: J5TurnNum,
+    pub bit0: LAxisTurnNum,
+    pub bit1: UAxisTurnNum,
+    pub bit2: BAxisTurnNum,
     pub bit3: EAxisTurnNum,
     pub bit4: WAxisTurnNum,
     pub bit5: bool, // Reserve
@@ -115,16 +143,24 @@ impl Configuration {
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
-            j1_placement: if value & 0x01 == 0 { J1Placement::Front } else { J1Placement::Back },
-            j3_placement: if value & 0x02 == 0 { J3Placement::Up } else { J3Placement::Down },
-            j5_placement: if value & 0x04 == 0 { J5Placement::Flip } else { J5Placement::NoFlip },
-            j4_turn_num: if value & 0x08 == 0 { J4TurnNum::Single } else { J4TurnNum::Double },
-            j6_turn_num: if value & 0x10 == 0 { J6TurnNum::Single } else { J6TurnNum::Double },
-            j1_turn_num: if value & 0x20 == 0 { J1TurnNum::Single } else { J1TurnNum::Double },
-            redundant_j1_placement: if value & 0x40 == 0 {
-                RedundantJ1Placement::Front
+            s_placement: if value & 0x01 == 0 {
+                SAxisPlacement::Front
             } else {
-                RedundantJ1Placement::Back
+                SAxisPlacement::Back
+            },
+            u_placement: if value & 0x02 == 0 { UAxisPlacement::Up } else { UAxisPlacement::Down },
+            b_placement: if value & 0x04 == 0 {
+                BAxisPlacement::Flip
+            } else {
+                BAxisPlacement::NoFlip
+            },
+            r_turn_num: if value & 0x08 == 0 { RAxisTurnNum::Single } else { RAxisTurnNum::Double },
+            t_turn_num: if value & 0x10 == 0 { TAxisTurnNum::Single } else { TAxisTurnNum::Double },
+            s_turn_num: if value & 0x20 == 0 { SAxisTurnNum::Single } else { SAxisTurnNum::Double },
+            redundant_s_placement: if value & 0x40 == 0 {
+                RedundantSAxisPlacement::Front
+            } else {
+                RedundantSAxisPlacement::Back
             },
             ik_solution_basis: if value & 0x80 == 0 {
                 IkSolutionBasis::PreviousStep
@@ -138,25 +174,25 @@ impl Configuration {
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
-        if matches!(self.j1_placement, J1Placement::Back) {
+        if matches!(self.s_placement, SAxisPlacement::Back) {
             value |= 0x01;
         }
-        if matches!(self.j3_placement, J3Placement::Down) {
+        if matches!(self.u_placement, UAxisPlacement::Down) {
             value |= 0x02;
         }
-        if matches!(self.j5_placement, J5Placement::NoFlip) {
+        if matches!(self.b_placement, BAxisPlacement::NoFlip) {
             value |= 0x04;
         }
-        if matches!(self.j4_turn_num, J4TurnNum::Double) {
+        if matches!(self.r_turn_num, RAxisTurnNum::Double) {
             value |= 0x08;
         }
-        if matches!(self.j6_turn_num, J6TurnNum::Double) {
+        if matches!(self.t_turn_num, TAxisTurnNum::Double) {
             value |= 0x10;
         }
-        if matches!(self.j1_turn_num, J1TurnNum::Double) {
+        if matches!(self.s_turn_num, SAxisTurnNum::Double) {
             value |= 0x20;
         }
-        if matches!(self.redundant_j1_placement, RedundantJ1Placement::Back) {
+        if matches!(self.redundant_s_placement, RedundantSAxisPlacement::Back) {
             value |= 0x40;
         }
         if matches!(self.ik_solution_basis, IkSolutionBasis::Configuration) {
@@ -171,9 +207,9 @@ impl ExtendedConfiguration {
     #[must_use]
     pub const fn from_raw(value: u8) -> Self {
         Self {
-            bit0: if value & 0x01 == 0 { J2TurnNum::Single } else { J2TurnNum::Double },
-            bit1: if value & 0x02 == 0 { J3TurnNum::Single } else { J3TurnNum::Double },
-            bit2: if value & 0x04 == 0 { J5TurnNum::Single } else { J5TurnNum::Double },
+            bit0: if value & 0x01 == 0 { LAxisTurnNum::Single } else { LAxisTurnNum::Double },
+            bit1: if value & 0x02 == 0 { UAxisTurnNum::Single } else { UAxisTurnNum::Double },
+            bit2: if value & 0x04 == 0 { BAxisTurnNum::Single } else { BAxisTurnNum::Double },
             bit3: if value & 0x08 == 0 { EAxisTurnNum::Single } else { EAxisTurnNum::Double },
             bit4: if value & 0x10 == 0 { WAxisTurnNum::Single } else { WAxisTurnNum::Double },
             bit5: value & 0x20 != 0, // Reserve
@@ -186,13 +222,13 @@ impl ExtendedConfiguration {
     #[must_use]
     pub const fn to_raw(self) -> u8 {
         let mut value = 0u8;
-        if matches!(self.bit0, J2TurnNum::Double) {
+        if matches!(self.bit0, LAxisTurnNum::Double) {
             value |= 0x01;
         }
-        if matches!(self.bit1, J3TurnNum::Double) {
+        if matches!(self.bit1, UAxisTurnNum::Double) {
             value |= 0x02;
         }
-        if matches!(self.bit2, J5TurnNum::Double) {
+        if matches!(self.bit2, BAxisTurnNum::Double) {
             value |= 0x04;
         }
         if matches!(self.bit3, EAxisTurnNum::Double) {
@@ -230,15 +266,25 @@ impl PulsePosition {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CartesianPosition {
+    // X [mm]
     pub x: f32,
+    // Y [mm]
     pub y: f32,
+    // Z [mm]
     pub z: f32,
+    // RX [deg]
     pub rx: f32,
+    // RY [deg]
     pub ry: f32,
+    // RZ [deg]
     pub rz: f32,
+    // Tool number
     pub tool_no: u8,
+    // User coordinate number
     pub user_coord_no: u8,
+    // Configuration
     pub configuration: Configuration,
+    // Extended configuration
     pub extended_configuration: ExtendedConfiguration,
 }
 
@@ -519,13 +565,13 @@ mod tests {
     #[test]
     fn test_configuration_serialization() {
         let configuration = Configuration::from_raw(0x55); // 01010101
-        assert_eq!(configuration.j1_placement, J1Placement::Back);
-        assert_eq!(configuration.j3_placement, J3Placement::Up);
-        assert_eq!(configuration.j5_placement, J5Placement::NoFlip);
-        assert_eq!(configuration.j4_turn_num, J4TurnNum::Single);
-        assert_eq!(configuration.j6_turn_num, J6TurnNum::Double);
-        assert_eq!(configuration.j1_turn_num, J1TurnNum::Single);
-        assert_eq!(configuration.redundant_j1_placement, RedundantJ1Placement::Back);
+        assert_eq!(configuration.s_placement, SAxisPlacement::Back);
+        assert_eq!(configuration.u_placement, UAxisPlacement::Up);
+        assert_eq!(configuration.b_placement, BAxisPlacement::NoFlip);
+        assert_eq!(configuration.r_turn_num, RAxisTurnNum::Single);
+        assert_eq!(configuration.t_turn_num, TAxisTurnNum::Double);
+        assert_eq!(configuration.s_turn_num, SAxisTurnNum::Single);
+        assert_eq!(configuration.redundant_s_placement, RedundantSAxisPlacement::Back);
         assert_eq!(configuration.ik_solution_basis, IkSolutionBasis::PreviousStep);
 
         let raw = configuration.to_raw();
@@ -535,9 +581,9 @@ mod tests {
     #[test]
     fn test_extended_configuration_serialization() {
         let extended_configuration = ExtendedConfiguration::from_raw(0x1F); // 00011111
-        assert_eq!(extended_configuration.bit0, J2TurnNum::Double);
-        assert_eq!(extended_configuration.bit1, J3TurnNum::Double);
-        assert_eq!(extended_configuration.bit2, J5TurnNum::Double);
+        assert_eq!(extended_configuration.bit0, LAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit1, UAxisTurnNum::Double);
+        assert_eq!(extended_configuration.bit2, BAxisTurnNum::Double);
         assert_eq!(extended_configuration.bit3, EAxisTurnNum::Double);
         assert_eq!(extended_configuration.bit4, WAxisTurnNum::Double);
         assert!(!extended_configuration.bit5);
