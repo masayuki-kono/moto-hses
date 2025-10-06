@@ -58,16 +58,15 @@ impl CommandHandler for FileControlHandler {
                 }
                 Ok(vec![])
             }
-            0x04 => {
+            0x09 => {
                 // Delete file
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    state.delete_file(&filename);
-                }
+                let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                    &message.payload,
+                    state.text_encoding,
+                );
+                let deleted = state.delete_file(&filename);
+                debug!("File deletion requested: {filename} (deleted: {deleted})");
                 Ok(vec![])
             }
             0x15 => {
@@ -88,14 +87,23 @@ impl CommandHandler for FileControlHandler {
             }
             0x32 => {
                 // Get file list (Python client uses this)
-                // Return actual file list from state
-                let files = state.get_file_list("*");
+                // Parse pattern from payload
+                let pattern = if message.payload.is_empty() {
+                    "*".to_string()
+                } else {
+                    moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                        &message.payload,
+                        state.text_encoding,
+                    )
+                };
+
+                let files = state.get_file_list(&pattern);
                 let mut file_list = String::new();
                 for file in files {
                     file_list.push_str(&file);
-                    file_list.push('\0');
+                    file_list.push_str("\r\n");
                 }
-                debug!("File list requested, returning: {file_list:?}");
+                debug!("File list requested with pattern '{pattern}', returning: {file_list:?}");
                 let file_list_bytes =
                     moto_hses_proto::encoding_utils::encode_string(&file_list, state.text_encoding);
                 Ok(file_list_bytes)
@@ -103,36 +111,15 @@ impl CommandHandler for FileControlHandler {
             0x16 => {
                 // Receive file (Python client uses this)
                 // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    if let Some(content) = state.get_file(&filename) {
-                        let mut response = moto_hses_proto::encoding_utils::encode_string(
-                            &filename,
-                            state.text_encoding,
-                        );
-                        response.push(0);
-                        response.extend(content);
-                        debug!("File requested: {} ({} bytes)", filename, content.len());
-                        return Ok(response);
-                    }
-                    debug!("File not found: {filename}");
+                let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                    &message.payload,
+                    state.text_encoding,
+                );
+                if let Some(content) = state.get_file(&filename) {
+                    debug!("File requested: {} ({} bytes)", filename, content.len());
+                    return Ok(content.clone());
                 }
-                Ok(vec![])
-            }
-            0x09 => {
-                // Delete file (Python client uses this)
-                // Parse filename from payload
-                if let Some(filename_pos) = message.payload.iter().position(|&b| b == 0) {
-                    let filename = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                        &message.payload[..filename_pos],
-                        state.text_encoding,
-                    );
-                    let deleted = state.delete_file(&filename);
-                    debug!("File deletion requested: {filename} (deleted: {deleted})");
-                }
+                debug!("File not found: {filename}");
                 Ok(vec![])
             }
             _ => Err(proto::ProtocolError::InvalidService),

@@ -14,16 +14,22 @@ use tokio::time::{sleep, timeout};
 
 use crate::types::{ClientError, HsesClient};
 
-/// Parameters for creating HSES messages
+/// Sequence control parameters
 #[derive(Debug, Clone)]
-struct MessageParams {
-    command: u16,
+struct SequenceParams {
     request_id: u8,
-    payload: Vec<u8>,
+    block_number: u32,
+    ack: u8,
+}
+
+/// Request-specific parameters
+#[derive(Debug, Clone)]
+struct RequestParams {
+    division: Division,
+    command: u16,
     instance: u16,
     attribute: u8,
     service: u8,
-    division: Division,
 }
 
 impl HsesClient {
@@ -433,13 +439,16 @@ impl HsesClient {
 
     /// Get file list from controller
     ///
-    /// Returns a list of filenames available on the controller.
+    /// # Arguments
+    /// * `pattern` - File name pattern to filter results (e.g., "*.JBI", "*.DAT")
+    ///
+    /// Returns a list of filenames matching the pattern available on the controller.
     ///
     /// # Errors
     ///
     /// Returns an error if the file list request fails
-    pub async fn read_file_list(&self) -> Result<Vec<String>, ClientError> {
-        let command = ReadFileList;
+    pub async fn read_file_list(&self, pattern: &str) -> Result<Vec<String>, ClientError> {
+        let command = ReadFileList::new(pattern.to_string(), self.config.text_encoding);
         let response = self.send_command_with_retry(command, Division::File).await?;
         parse_file_list(&response, self.config.text_encoding).map_err(ClientError::from)
     }
@@ -465,15 +474,23 @@ impl HsesClient {
     /// # Arguments
     /// * `filename` - Name of the file to receive
     ///
-    /// Returns the file content as bytes.
+    /// Returns the file content as a string decoded with the client's text encoding.
     ///
     /// # Errors
     ///
     /// Returns an error if the file receive request fails
-    pub async fn receive_file(&self, filename: &str) -> Result<Vec<u8>, ClientError> {
+    pub async fn receive_file(&self, filename: &str) -> Result<String, ClientError> {
         let command = ReceiveFile::new(filename.to_string(), self.config.text_encoding);
         let response = self.send_command_with_retry(command, Division::File).await?;
-        parse_file_content(&response).map_err(ClientError::from)
+        let content_bytes = parse_file_content(&response).map_err(ClientError::from)?;
+
+        // Decode bytes to string using client's text encoding
+        let content_string = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+            &content_bytes,
+            self.config.text_encoding,
+        );
+
+        Ok(content_string)
     }
 
     /// Delete file from controller
@@ -498,15 +515,16 @@ impl HsesClient {
     ) -> Result<Vec<u8>, ClientError> {
         let mut last_error = None;
         let mut attempts = 0;
+        let max_attempts = self.config.retry_count + 1; // Initial attempt + retries
 
-        while attempts < self.config.retry_count {
+        while attempts < max_attempts {
             match self.send_command_once(&command, division).await {
                 Ok(response) => return Ok(response),
                 Err(e) => {
                     last_error = Some(e);
                     attempts += 1;
 
-                    if attempts < self.config.retry_count {
+                    if attempts < max_attempts {
                         sleep(self.config.retry_delay).await;
                     }
                 }
@@ -526,27 +544,43 @@ impl HsesClient {
         let payload = command.serialize()?;
 
         // Create and send message
-        let params = MessageParams {
+        let request = RequestParams {
+            division,
             command: C::command_id(),
-            request_id,
-            payload,
             instance: command.instance(),
             attribute: command.attribute(),
             service: command.service(),
-            division,
         };
-        let message = Self::create_message(params)?;
+        let sequence = SequenceParams {
+            request_id,
+            block_number: 0u32, // Block number (0 for requests)
+            ack: 0x00,          // ACK (Request)
+        };
+        let message = Self::create_message(&request, &sequence, payload)?;
         debug!("Sending message to {}: {} bytes", self.inner.remote_addr, message.len());
+        debug!("Message bytes: {message:02X?}");
         self.inner.socket.send_to(&message, self.inner.remote_addr).await?;
 
         // Wait for response
-        let response = self.wait_for_response(request_id).await?;
+        let response = self.wait_for_response(request_id, division, command.service()).await?;
 
         // Return raw response payload
         Ok(response)
     }
 
-    fn create_message(params: MessageParams) -> Result<Vec<u8>, ClientError> {
+    fn create_message(
+        request: &RequestParams,
+        sequence: &SequenceParams,
+        payload: Vec<u8>,
+    ) -> Result<Vec<u8>, ClientError> {
+        Self::create_message_common(sequence, request, payload)
+    }
+
+    fn create_message_common(
+        sequence: &SequenceParams,
+        request: &RequestParams,
+        payload: Vec<u8>,
+    ) -> Result<Vec<u8>, ClientError> {
         let mut message = Vec::new();
 
         // Magic bytes "YERC"
@@ -556,7 +590,7 @@ impl HsesClient {
         message.extend_from_slice(&0x20u16.to_le_bytes());
 
         // Payload size
-        let payload_len = u16::try_from(params.payload.len()).map_err(|_| {
+        let payload_len = u16::try_from(payload.len()).map_err(|_| {
             ClientError::ProtocolError(moto_hses_proto::ProtocolError::InvalidMessage(
                 "Payload too large for protocol".to_string(),
             ))
@@ -567,43 +601,50 @@ impl HsesClient {
         message.push(0x03);
 
         // Division (Robot or File)
-        message.push(params.division as u8);
+        message.push(request.division as u8);
 
-        // ACK (Request)
-        message.push(0x00);
+        // ACK
+        message.push(sequence.ack);
 
         // Request ID
-        message.push(params.request_id);
+        message.push(sequence.request_id);
 
-        // Block number (0 for requests)
-        message.extend_from_slice(&0u32.to_le_bytes());
+        // Block number
+        message.extend_from_slice(&sequence.block_number.to_le_bytes());
 
         // Reserved (8 bytes of '9')
         message.extend_from_slice(b"99999999");
 
         // Command
-        message.extend_from_slice(&params.command.to_le_bytes());
+        message.extend_from_slice(&request.command.to_le_bytes());
 
         // Instance
-        message.extend_from_slice(&params.instance.to_le_bytes());
+        message.extend_from_slice(&request.instance.to_le_bytes());
 
         // Attribute
-        message.push(params.attribute);
+        message.push(request.attribute);
 
         // Service
-        message.push(params.service);
+        message.push(request.service);
 
         // Padding
         message.extend_from_slice(&0u16.to_le_bytes());
 
         // Payload
-        message.extend(params.payload);
+        message.extend(payload);
 
         Ok(message)
     }
 
-    async fn wait_for_response(&self, request_id: u8) -> Result<Vec<u8>, ClientError> {
+    async fn wait_for_response(
+        &self,
+        request_id: u8,
+        division: Division,
+        service: u8,
+    ) -> Result<Vec<u8>, ClientError> {
         let mut buffer = vec![0u8; self.config.buffer_size];
+        let mut all_payload = Vec::new();
+        let mut expected_block_number = 1u32;
 
         loop {
             let (len, _addr) =
@@ -615,6 +656,7 @@ impl HsesClient {
 
             // Debug: Log received data
             debug!("Received response: {len} bytes");
+            debug!("Response data: {response_data:02X?}");
             if len >= 4 {
                 debug!("Magic bytes: {:?}", &response_data[0..4]);
             }
@@ -669,7 +711,61 @@ impl HsesClient {
             // Extract payload (starting from byte 32)
             let payload = response_data[32..32 + payload_size].to_vec();
 
-            return Ok(payload);
+            // Extract block number (bytes 12-15)
+            let block_number = u32::from_le_bytes([
+                response_data[12],
+                response_data[13],
+                response_data[14],
+                response_data[15],
+            ]);
+
+            // Check if this is a single-block response (block_number == 0x8000_0000)
+            if block_number == 0x8000_0000 {
+                debug!("Received single-block response");
+                return Ok(payload);
+            }
+
+            // Multi-block response handling for file control commands
+            // Only read_file_list (0x32) and receive_file (0x16) use multi-block responses
+            if service == 0x32 || service == 0x16 {
+                // Check if this is the final block (0x8000_0000 flag)
+                let is_final_block = (block_number & 0x8000_0000) != 0;
+                let actual_block_number = block_number & 0x7FFF_FFFF;
+
+                debug!("Received block {actual_block_number} (final: {is_final_block})");
+
+                // Validate block number sequence
+                if actual_block_number != expected_block_number {
+                    debug!(
+                        "Unexpected block number: expected {expected_block_number}, got {actual_block_number}"
+                    );
+                    continue;
+                }
+
+                // Accumulate payload
+                all_payload.extend_from_slice(&payload);
+
+                // Send ACK packet for this block
+                if let Err(e) =
+                    self.send_ack_packet(request_id, block_number, division, service).await
+                {
+                    debug!("Failed to send ACK packet: {e}");
+                    // Continue anyway, as the main response was received
+                }
+
+                // If this is the final block, we're done
+                if is_final_block {
+                    debug!("Received final block, total payload size: {} bytes", all_payload.len());
+                    return Ok(all_payload);
+                }
+
+                // Prepare for next block
+                expected_block_number += 1;
+            } else {
+                // For other commands, treat as single-block response
+                debug!("Received single-block response for service 0x{service:02x}");
+                return Ok(payload);
+            }
         }
     }
 
@@ -682,6 +778,39 @@ impl HsesClient {
         }
 
         error_message
+    }
+
+    /// Send ACK packet for file operations
+    async fn send_ack_packet(
+        &self,
+        request_id: u8,
+        block_number: u32,
+        division: Division,
+        service: u8,
+    ) -> Result<(), ClientError> {
+        let sequence = SequenceParams {
+            request_id,
+            block_number,
+            ack: 0x01, // ACK (Response)
+        };
+        let request = RequestParams {
+            division,
+            command: 0x0000,  // Command (0x0000 for ACK)
+            instance: 0x0000, // Instance (0x0000 for ACK)
+            attribute: 0x00,  // Attribute (0x00 for ACK)
+            service,          // Service (same as original request service)
+        };
+        let ack_message = Self::create_message_common(
+            &sequence,
+            &request,
+            Vec::new(), // Empty payload for ACK
+        )?;
+
+        debug!("Sending ACK packet: {} bytes", ack_message.len());
+        debug!("ACK message bytes: {ack_message:02X?}");
+
+        self.inner.socket.send_to(&ack_message, self.inner.remote_addr).await?;
+        Ok(())
     }
 
     /// Read added status from response data

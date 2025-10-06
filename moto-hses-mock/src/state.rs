@@ -114,7 +114,7 @@ impl MockState {
         registers.insert(1, 100);
 
         let mut files = HashMap::new();
-        files.insert("TEST.JOB".to_string(), b"/JOB\r\n//NAME TEST.JOB\r\n//POS\r\n///NPOS 0,0,0,0,0,0\r\n//INST\r\n///DATE 2022/12/23 15:58\r\n///ATTR SC,RW\r\n///GROUP1 RB1\r\nNOP\r\nEND\r\n".to_vec());
+        files.insert("TEST.JBI".to_string(), b"/JOB\r\n//NAME TEST.JBI\r\n//POS\r\n///NPOS 0,0,0,0,0,0\r\n//INST\r\n///DATE 2022/12/23 15:58\r\n///ATTR SC,RW\r\n///GROUP1 RB1\r\nNOP\r\nEND\r\n".to_vec());
 
         // Add test alarms (4 alarms for HSES specification: Instance 1-4)
         let alarms = vec![
@@ -272,7 +272,21 @@ impl MockState {
     /// Get file list
     #[must_use]
     pub fn get_file_list(&self, pattern: &str) -> Vec<String> {
-        self.files.keys().filter(|name| name.contains(pattern.trim_matches('*'))).cloned().collect()
+        if pattern == "*" || pattern.is_empty() {
+            // Return all files
+            self.files.keys().cloned().collect()
+        } else if pattern.starts_with("*.") {
+            // Pattern like "*.JBI" - match by extension
+            let extension = &pattern[1..]; // Remove the "*"
+            self.files.keys().filter(|name| name.ends_with(extension)).cloned().collect()
+        } else {
+            // Exact match or other patterns
+            self.files
+                .keys()
+                .filter(|name| name.contains(pattern.trim_matches('*')))
+                .cloned()
+                .collect()
+        }
     }
 
     /// Get file content
