@@ -1,6 +1,10 @@
 use log::info;
-use moto_hses_client::HsesClient;
-use moto_hses_proto::{CycleMode, ROBOT_CONTROL_PORT};
+
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{CycleMode, ROBOT_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
+
+const TARGET_CYCLE_MODE: CycleMode = CycleMode::Step;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,50 +25,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let controller_addr = format!("{host}:{robot_port}");
-    info!("Connecting to controller at {controller_addr}...");
-    let client = HsesClient::new(&controller_addr).await?;
+    // Create custom configuration
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
 
-    info!("Successfully connected to controller");
+    // Connect to the controller
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            info!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            info!("✗ Failed to connect: {e}");
+            return Ok(());
+        }
+    };
 
-    info!("=== 0x84 Command (Cycle Mode Switching) Usage Example ===\n");
-
-    // 1. Test STEP mode
-    info!("1. Setting cycle mode to STEP:");
-    client.set_cycle_mode(CycleMode::Step).await?;
-    info!("✓ STEP mode command sent");
-
-    // 2. Test ONE CYCLE mode
-    info!("2. Setting cycle mode to ONE CYCLE:");
-    client.set_cycle_mode(CycleMode::OneCycle).await?;
-    info!("✓ ONE CYCLE mode command sent");
-
-    // 3. Test CONTINUOUS mode
-    info!("3. Setting cycle mode to CONTINUOUS:");
-    client.set_cycle_mode(CycleMode::Continuous).await?;
-    info!("✓ CONTINUOUS mode command sent");
-
-    // 4. Test mode sequence
-    info!("4. Testing mode sequence:");
-    let modes = [CycleMode::Step, CycleMode::OneCycle, CycleMode::Continuous];
-    for (i, mode) in modes.iter().enumerate() {
-        client.set_cycle_mode(*mode).await?;
-        info!("  {}. Set to {:?} mode", i + 1, mode);
+    info!("Setting cycle mode to: {TARGET_CYCLE_MODE:?}");
+    match client.set_cycle_mode(TARGET_CYCLE_MODE).await {
+        Ok(()) => {
+            info!("✓ Successfully set cycle mode to {TARGET_CYCLE_MODE:?}");
+        }
+        Err(e) => {
+            info!("✗ Failed to set cycle mode to {TARGET_CYCLE_MODE:?}: {e}");
+            return Ok(());
+        }
     }
 
-    // 5. Test rapid mode changes
-    info!("5. Testing rapid mode changes:");
-    for i in 0..3 {
-        client.set_cycle_mode(CycleMode::Step).await?;
-        client.set_cycle_mode(CycleMode::OneCycle).await?;
-        client.set_cycle_mode(CycleMode::Continuous).await?;
-        info!("  Cycle {} completed", i + 1);
-    }
-
-    info!("\n✓ All cycle mode operations completed successfully");
-    info!("Example usage:");
-    info!("  cargo run --example cycle_mode_control");
-    info!("  cargo run --example cycle_mode_control 192.168.1.100 10040");
+    let data1 = client.read_status_data1().await?;
+    info!(
+        "Status:(step:{},one cycle:{},continuous:{})",
+        data1.step, data1.one_cycle, data1.continuous
+    );
 
     Ok(())
 }
