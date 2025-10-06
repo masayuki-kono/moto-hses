@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2025-01-27
+
+### Documentation
+- Add verified robot models and supported commands sections to README
+
 ## [0.1.0] - 2025-10-07
 
 ### Features
