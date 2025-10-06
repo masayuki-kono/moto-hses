@@ -1,6 +1,67 @@
 use log::info;
-use moto_hses_client::HsesClient;
-use moto_hses_proto::ROBOT_CONTROL_PORT;
+
+use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use std::time::Duration;
+
+// Specify the command to execute
+const COMMAND_NAME: &str = "servo"; // "servo", "hold", "hlock"
+
+// Control command execution function
+async fn execute_control<F, Fut>(
+    client: &HsesClient,
+    command_name: &str,
+    command_func: F,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: Fn(bool) -> Fut,
+    Fut: std::future::Future<Output = Result<(), moto_hses_client::ClientError>>,
+{
+    info!("Setting {} to ON", command_name);
+    match command_func(true).await {
+        Ok(_) => {
+            info!("✓ Successfully set {} to ON", command_name);
+        }
+        Err(e) => {
+            info!("✗ Failed to set {}: {}", command_name, e);
+            return Err(Box::new(e));
+        }
+    }
+
+    // Read and log system status after ON command
+    if let Ok(data2) = client.read_status_data2().await {
+        info!("System status after {} ON:", command_name);
+        info!("  Command hold: {}", data2.command_hold);
+        info!("  Servo on: {}", data2.servo_on);
+    } else {
+        info!("✗ Failed to read system status after {} ON", command_name);
+    }
+
+    // Wait for 3 seconds
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    info!("Setting {} to OFF", command_name);
+    match command_func(false).await {
+        Ok(_) => {
+            info!("✓ Successfully set {} to OFF", command_name);
+        }
+        Err(e) => {
+            info!("✗ Failed to set {}: {}", command_name, e);
+            return Err(Box::new(e));
+        }
+    }
+
+    // Read and log system status after OFF command
+    if let Ok(data2) = client.read_status_data2().await {
+        info!("System status after {} OFF:", command_name);
+        info!("  Command hold: {}", data2.command_hold);
+        info!("  Servo on: {}", data2.servo_on);
+    } else {
+        info!("✗ Failed to read system status after {} OFF", command_name);
+    }
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,95 +82,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let controller_addr = format!("{host}:{robot_port}");
-    info!("Connecting to controller at {controller_addr}...");
-    let client = HsesClient::new(&controller_addr).await?;
+    // Create custom configuration
+    let config = ClientConfig {
+        host: host.to_string(),
+        port: robot_port,
+        timeout: Duration::from_millis(500),
+        retry_count: 5,
+        retry_delay: Duration::from_millis(200),
+        buffer_size: 8192,
+        text_encoding: TextEncoding::ShiftJis,
+    };
 
-    info!("Successfully connected to controller");
+    // Connect to the controller
+    let client = match HsesClient::new_with_config(config).await {
+        Ok(client) => {
+            info!("✓ Successfully connected to controller");
+            client
+        }
+        Err(e) => {
+            info!("✗ Failed to connect: {e}");
+            return Ok(());
+        }
+    };
 
-    info!("=== 0x83 Command (Hold/Servo On/off) Usage Example ===\n");
-
-    // 1. Read and save initial status
-    info!("1. Read and save initial status:");
-    let initial_status = client.read_status().await?;
-    info!("✓ Initial status retrieved and saved");
-    info!("  Servo on: {}", initial_status.is_servo_on());
-    info!("  Running: {}", initial_status.is_running());
-
-    // 2. HOLD control examples
-    info!("2. HOLD control examples:");
-
-    // Set HOLD to opposite of initial state
-    let initial_hold_state = !initial_status.data1.running; // If running, HOLD is OFF
-    let opposite_hold_state = !initial_hold_state;
-    info!(
-        "  Initial HOLD state: {} (running: {})",
-        initial_hold_state, initial_status.data1.running
-    );
-    info!("  Setting HOLD to opposite state: {opposite_hold_state}...");
-    client.set_hold(opposite_hold_state).await?;
-    info!("  ✓ HOLD {} command sent", if opposite_hold_state { "ON" } else { "OFF" });
-
-    // Wait a moment and verify the change
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    let hold_test_status = client.read_status().await?;
-    let expected_running = !opposite_hold_state; // If HOLD is ON, running should be false
-    info!(
-        "  ✓ HOLD state verification: Running = {} (expected: {})",
-        hold_test_status.is_running(),
-        expected_running
-    );
-
-    // Set HOLD back to initial state
-    info!("  Setting HOLD back to initial state: {initial_hold_state}...");
-    client.set_hold(initial_hold_state).await?;
-    info!("  ✓ HOLD {} command sent", if initial_hold_state { "ON" } else { "OFF" });
-
-    // 3. Servo control examples
-    info!("3. Servo control examples:");
-
-    // Set Servo to opposite of initial state
-    let initial_servo_state = initial_status.data2.servo_on;
-    let opposite_servo_state = !initial_servo_state;
-    info!("  Initial Servo state: {initial_servo_state}");
-    info!("  Setting Servo to opposite state: {opposite_servo_state}...");
-    client.set_servo(opposite_servo_state).await?;
-    info!("  ✓ Servo {} command sent", if opposite_servo_state { "ON" } else { "OFF" });
-
-    // Wait a moment and verify the change
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    let servo_test_status = client.read_status().await?;
-    info!(
-        "  ✓ Servo state verification: Servo ON = {} (expected: {})",
-        servo_test_status.is_servo_on(),
-        opposite_servo_state
-    );
-
-    // Set Servo back to initial state
-    info!("  Setting Servo back to initial state: {initial_servo_state}...");
-    client.set_servo(initial_servo_state).await?;
-    info!("  ✓ Servo {} command sent", if initial_servo_state { "ON" } else { "OFF" });
-
-    // 4. HLOCK control examples
-    info!("4. HLOCK control examples:");
-
-    // Set HLOCK
-    let initial_hlock_state = false;
-    let opposite_hlock_state = !initial_hlock_state;
-    info!("  Initial HLOCK state: {initial_hlock_state}");
-    info!("  Setting HLOCK to opposite state: {opposite_hlock_state}...");
-    client.set_hlock(opposite_hlock_state).await?;
-    info!("  ✓ HLOCK {} command sent", if opposite_hlock_state { "ON" } else { "OFF" });
-
-    // Wait a moment and verify the change
-    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-    let _hlock_test_status = client.read_status().await?;
-    info!("  ✓ HLOCK state verification: HLOCK set to {opposite_hlock_state} (command executed)");
-
-    // Set HLOCK back to initial state
-    info!("  Setting HLOCK back to initial state: {initial_hlock_state}...");
-    client.set_hlock(initial_hlock_state).await?;
-    info!("  ✓ HLOCK {} command sent", if initial_hlock_state { "ON" } else { "OFF" });
+    match COMMAND_NAME {
+        "servo" => {
+            if let Err(e) = execute_control(&client, "servo", |value| client.set_servo(value)).await
+            {
+                info!("✗ Failed to execute servo command: {}", e);
+                return Ok(());
+            }
+        }
+        "hold" => {
+            if let Err(e) = execute_control(&client, "hold", |value| client.set_hold(value)).await {
+                info!("✗ Failed to execute hold command: {}", e);
+                return Ok(());
+            }
+        }
+        "hlock" => {
+            if let Err(e) = execute_control(&client, "hlock", |value| client.set_hlock(value)).await
+            {
+                info!("✗ Failed to execute hlock command: {}", e);
+                return Ok(());
+            }
+        }
+        _ => {
+            info!("✗ Invalid command: {}. Valid command: servo, hold, hlock", COMMAND_NAME);
+            return Ok(());
+        }
+    }
 
     Ok(())
 }
