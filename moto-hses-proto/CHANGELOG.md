@@ -2,7 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.1] - 2025-01-27
+## [0.1.2] - 2025-10-07
+
+### Refactored
+- Rename form variables to configuration and improve axis naming for better robotics terminology
+
+## [0.1.1] - 2025-10-07
 
 ### Documentation
 - Add verified robot models and supported commands sections to README
