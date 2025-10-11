@@ -73,24 +73,28 @@ moto-hses-proto = "0.1"
 ## Usage
 
 ```rust
-use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, Service, Division, ReadAlarmData, Alarm};
+use moto_hses_proto::{HsesRequestMessage, HsesResponseMessage, Service, Division, ReadAlarmData, Alarm, AlarmAttribute};
 
 // Create a read alarm command
-let read_alarm = ReadAlarmData::new();
+let read_alarm = ReadAlarmData::new(1, AlarmAttribute::All);
 
 // Create HSES request message
 let request = HsesRequestMessage::new(
-    Service::Control,
-    read_alarm,
-    Division::Robot,
-    vec![], // No additional data needed for read commands
-);
+    Division::Robot as u8,  // division
+    0,                      // ack (request)
+    1,                      // request_id
+    ReadAlarmData::command_id(), // command
+    read_alarm.instance(),  // instance
+    read_alarm.attribute(), // attribute
+    read_alarm.service(),   // service
+    vec![],                 // payload
+)?;
 
 // Serialize to bytes
-let request_bytes: Vec<u8> = request.try_into()?;
+let request_bytes = request.encode();
 
 // Deserialize from bytes
-let parsed_request = HsesRequestMessage::try_from(request_bytes.as_slice())?;
+let parsed_request = HsesRequestMessage::decode(&request_bytes)?;
 
 // Example: Create an alarm for testing
 let alarm = Alarm::new(

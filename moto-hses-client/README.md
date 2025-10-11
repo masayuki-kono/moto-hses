@@ -74,6 +74,7 @@ tokio = { version = "1.0", features = ["full"] }
 
 ```rust
 use moto_hses_client::HsesClient;
+use moto_hses_proto::AlarmAttribute;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
