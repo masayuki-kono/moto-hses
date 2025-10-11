@@ -1,20 +1,20 @@
----
-description: "Commit message rules. USE WHEN: writing commits, naming branches, or creating PRs."
-globs: "**/*"
-alwaysApply: true
----
+# Create Commit
 
-# Commit Message Rules
+## Overview
 
-## Language Requirement
+This document outlines the procedures for creating commits in the Moto-HSES project. It covers commit message formatting and conventional commit standards to ensure consistent, high-quality commit messages.
+
+## Commit Message Rules
+
+### Language Requirement
 
 - **All commit messages must be written in English**
 - Ensure clarity for international contributors and reviewers
 - Use concise and descriptive English that follows the _Conventional Commits_ specification
 
-## Conventional Commit Format
+### Conventional Commit Format
 
-### Basic Structure
+#### Basic Structure
 
 ```
 type: description
@@ -25,7 +25,7 @@ Detailed changes (if necessary)
 - Reference issues when applicable
 ```
 
-### Commit Types
+#### Commit Types
 
 - `feat`: Introduce a new feature
 - `fix`: Resolve a bug
@@ -38,7 +38,7 @@ Detailed changes (if necessary)
 - `ci`: CI/CD pipeline changes
 - `build`: Build system or dependency changes
 
-### Guidelines
+#### Guidelines
 
 - Keep the first line ≤ 50 characters (recommended max: 72 for body lines)
 - Use **imperative mood** ("Add", not "Added" or "Adds")
