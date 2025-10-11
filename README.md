@@ -82,6 +82,7 @@ The following robot models have been tested and verified for compatibility:
 
 ```rust
 use moto_hses_client::HsesClient;
+use moto_hses_proto::AlarmAttribute;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -89,7 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = HsesClient::new("192.168.0.3:10040").await?;
 
     // Read alarm data
-    let alarm = client.read_alarm_data(1, 0).await?;
+    let alarm = client.read_alarm_data(1, AlarmAttribute::All).await?;
     println!("Alarm Code: {}", alarm.code);
     println!("Alarm Name: {}", alarm.name);
 
