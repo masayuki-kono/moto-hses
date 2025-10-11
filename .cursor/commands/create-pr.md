@@ -1,72 +1,10 @@
----
-description: "Pre-push / PR checklist. Apply when committing, pushing, or creating a pull request."
-globs: "**/*"
-alwaysApply: true
----
+# Create Pull Request
 
-# Pre-Push and Pull Request Rules
+## Overview
 
-## Pre-Push Checklist
+This document outlines the comprehensive procedures for creating and managing pull requests in the Moto-HSES project. It covers title formatting, description templates, and CLI-based PR creation to ensure consistent, high-quality pull requests that follow project standards and facilitate effective code review processes.
 
-Before pushing code to any branch, especially before creating pull requests, ensure all local checks pass:
-
-> **Note**: Execute checks in order for efficiency. Fast checks (formatting, clippy) run first, followed by slower checks (tests, docs, security).
-
-### 1. Code Formatting
-
-```bash
-cargo fmt --all -- --check
-```
-
-- **Required**: All code must be properly formatted
-- **Fix if needed**: `cargo fmt --all`
-
-### 2. Static Analysis
-
-```bash
-cargo clippy --all-targets --all-features -- -D warnings
-```
-
-- **Required**: No Clippy warnings or errors
-- **Fix if needed**: Address all warnings before pushing
-
-### 3. Tests
-
-```bash
-cargo test --all-features --workspace
-```
-
-- **Required**: All tests must pass
-- **Coverage**: Ensure new functionality has appropriate test coverage
-
-### 4. Documentation Build
-
-```bash
-cargo doc --all-features --no-deps
-```
-
-- **Required**: Documentation must build without warnings
-- **Fix if needed**: Address rustdoc warnings in code comments
-
-### 5. Security Audit
-
-```bash
-cargo audit
-```
-
-- **Required**: No known security vulnerabilities
-- **Action**: Update dependencies if vulnerabilities are found
-
-### 6. Dependency Check
-
-```bash
-cargo outdated
-```
-
-- **Recommended**: Check for outdated dependencies
-- **Action**: Update dependencies when safe to do so
-
-## Pull Request Requirements
+## Procedures
 
 ### Title Format
 
