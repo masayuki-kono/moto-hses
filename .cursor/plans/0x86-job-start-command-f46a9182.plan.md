@@ -108,7 +108,6 @@ impl CommandHandler for JobStartHandler {
 }
 ```
 
-
 ### 5. Unit Tests
 
 **File**: `moto-hses-proto/src/commands/job.rs`
@@ -193,7 +192,6 @@ wait_for_operation().await;
 let is_running = server.get_running().await;
 assert_eq!(is_running, true);
 ```
-
 
 ## Implementation Feedback & Lessons Learned
 

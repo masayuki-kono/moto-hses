@@ -1285,21 +1285,18 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 
 - **Command**: 0x87
 - **Instance**: Type of job to select
-  - `1`: Set the job in execution
+  - `1`: Set the executing job
   - `10`: Set master job (Task 0)
   - `11`: Set master job (Task 1)
   - `12`: Set master job (Task 2)
   - `13`: Set master job (Task 3)
   - `14`: Set master job (Task 4)
   - `15`: Set master job (Task 5)
-- **Attribute**: Setting content
-  - `1`: Job name
-  - `2`: Line number (Valid only when job setting is executed)
-- **Service**:
-  - `0x02` (Set_Attribute_All): Read out data of all the element number (In this case, specify 0 to the element number)
-- **Payload**: Data exists during writing operation only
+- **Attribute**: Fixed to 1
+- **Service**: 0x02 (Set_Attribute_All)
+- **Payload**:
   - 9 × 32-bit integers (36 bytes): Job selection data
-    - Integers 1-8: Job name (Character strings: 32 characters)
+    - Integers 1-8: Job name
       - Half-width character: 32 characters
       - Full-width character: 16 characters
     - Integer 9: Line number (0 to 9999)

@@ -47,6 +47,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x83 | Hold / Servo On/off Command |
 | 0x84 | Step / Cycle / Continuous Switching Command |
 | 0x86 | Start-up (Job Start) Command |
+| 0x87 | Job Select Command |
 
 ### File Control Commands
 
@@ -104,6 +105,7 @@ The crate includes comprehensive examples in the `examples/` directory:
 - `cycle_mode_control.rs` - Cycle mode switching operations
 - `io_operations.rs` - I/O operations
 - `job_start.rs` - Job start operations
+- `job_select.rs` - Job selection operations
 - `position_operations.rs` - Position data operations
 - `variable_operations.rs` - Variable read/write operations
 - `file_operations.rs` - File transfer operations

@@ -6,6 +6,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+/// Selected job information
+#[derive(Debug, Clone)]
+pub struct SelectedJobInfo {
+    pub job_name: String,
+    pub line_number: u32,
+    pub select_type: u16, // Instance value
+}
+
 /// Mock server state
 #[derive(Debug, Clone)]
 pub struct MockState {
@@ -18,6 +26,7 @@ pub struct MockState {
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: AlarmHistory,
     pub executing_job: Option<proto::ExecutingJobInfo>,
+    pub selected_job: Option<SelectedJobInfo>,
     pub servo_on: bool,
     pub hold_state: bool,
     pub hlock_state: bool,
@@ -182,6 +191,7 @@ impl MockState {
             alarms,
             alarm_history,
             executing_job: Some(proto::ExecutingJobInfo::new("TEST.JOB".to_string(), 2, 1, 100)),
+            selected_job: None,
             servo_on: true,
             hold_state: false,
             hlock_state: false,
@@ -267,6 +277,17 @@ impl MockState {
     /// Set executing job
     pub fn set_executing_job(&mut self, job: Option<proto::ExecutingJobInfo>) {
         self.executing_job = job;
+    }
+
+    /// Set selected job
+    pub fn set_selected_job(&mut self, job_name: String, line_number: u32, select_type: u16) {
+        self.selected_job = Some(SelectedJobInfo { job_name, line_number, select_type });
+    }
+
+    /// Get selected job
+    #[must_use]
+    pub const fn get_selected_job(&self) -> Option<&SelectedJobInfo> {
+        self.selected_job.as_ref()
     }
 
     /// Update position
