@@ -57,7 +57,7 @@ impl CommandHandler for JobStartHandler {
             return Err(proto::ProtocolError::InvalidCommand);
         }
         if message.sub_header.attribute != 1 {
-            return Err(proto::ProtocolError::InvalidService);
+            return Err(proto::ProtocolError::InvalidAttribute);
         }
         if message.sub_header.service != 0x10 {
             return Err(proto::ProtocolError::InvalidService);
