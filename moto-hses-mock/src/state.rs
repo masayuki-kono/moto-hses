@@ -158,7 +158,7 @@ impl MockState {
                     step: false,
                     one_cycle: false,
                     continuous: true,
-                    running: true,
+                    running: false,
                     speed_limited: false,
                     teach: false,
                     play: true,
@@ -256,6 +256,12 @@ impl MockState {
     /// Set running state
     pub const fn set_running(&mut self, running: bool) {
         self.status.data1.running = running;
+    }
+
+    /// Get running state
+    #[must_use]
+    pub const fn get_running(&self) -> bool {
+        self.status.data1.running
     }
 
     /// Set executing job

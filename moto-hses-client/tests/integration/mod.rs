@@ -7,6 +7,7 @@ pub mod cycle_mode_control;
 pub mod file_operations;
 pub mod hold_servo_control;
 pub mod io_operations;
+pub mod job_control;
 pub mod position_operations;
 pub mod read_executing_job_info;
 pub mod read_status;

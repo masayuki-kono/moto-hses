@@ -359,6 +359,12 @@ impl MockServer {
         let state = self.state.read().await;
         state.get_cycle_mode()
     }
+
+    /// Get the current running state
+    pub async fn get_running(&self) -> bool {
+        let state = self.state.read().await;
+        state.get_running()
+    }
 }
 
 /// Server builder for easy configuration

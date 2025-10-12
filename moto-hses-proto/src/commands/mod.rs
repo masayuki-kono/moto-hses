@@ -21,7 +21,7 @@ pub use cycle_mode::{CycleMode, CycleModeSwitchingCommand};
 pub use file::response::{parse_file_content, parse_file_list};
 pub use file::{DeleteFile, ReadFileList, ReceiveFile, SendFile};
 pub use io::{ReadIo, WriteIo};
-pub use job::{ReadExecutingJobInfo, TaskType};
+pub use job::{JobStartCommand, ReadExecutingJobInfo, TaskType};
 pub use position::ReadCurrentPosition;
 pub use register::{ReadRegister, WriteRegister};
 pub use servo::{HoldServoControl, HoldServoType, HoldServoValue};

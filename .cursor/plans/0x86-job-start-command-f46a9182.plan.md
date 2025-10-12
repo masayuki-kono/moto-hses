@@ -144,7 +144,10 @@ impl CommandHandler for JobStartHandler {
 
 - Add new feature to supported operations list
 - Add new example to examples list
-- Add example execution commands
+- **⚠️ IMPORTANT**: Do NOT add example execution commands to "Running Examples" section
+  - The "Running Examples" section should only contain `alarm_operations` example
+  - Adding other example execution commands (like `job_start`) is not needed and should be avoided
+  - This prevents README.md from becoming cluttered with unnecessary example calls
 
 ### 9. Quality Checks
 
@@ -191,14 +194,56 @@ let is_running = server.get_running().await;
 assert_eq!(is_running, true);
 ```
 
+
+## Implementation Feedback & Lessons Learned
+
+### Issues Encountered During Implementation
+
+1. **README.md Example Commands Issue**
+
+   - **Problem**: Accidentally added `job_start` example execution command to "Running Examples" section
+   - **Solution**: Only `alarm_operations` should be in "Running Examples" section
+   - **Prevention**: Added explicit warning in Documentation Updates section
+
+2. **Handler Validation Complexity**
+
+   - **Problem**: Initial handler implementation was too simple and didn't validate all required fields
+   - **Solution**: Need comprehensive validation for Instance, Attribute, Service, and Payload
+   - **Lesson**: Always validate all protocol fields, not just the command ID
+
+3. **MockState Integration**
+
+   - **Problem**: MockState methods for running state were already implemented but needed verification
+   - **Solution**: Verify existing MockState methods before implementing new ones
+   - **Lesson**: Check existing MockState implementation before adding new methods
+
+4. **Integration Test State Verification**
+
+   - **Problem**: State verification pattern needed refinement for reliable testing
+   - **Solution**: Use `Arc<MockServer>` with proper async handling and wait patterns
+   - **Lesson**: State verification tests need careful timing and proper async patterns
+
+5. **Unnecessary Unit Tests**
+
+   - **Problem**: Created tests for trivial functionality that is guaranteed at compile time
+   - **Solution**: Removed `test_job_start_command_new` and `test_job_start_command_response_type`
+   - **Lesson**: Only test actual logic and behavior, not compile-time guarantees
+   - **Keep**: Tests for command trait values and serialization are valuable
+
+6. **README.md Update Oversight**
+
+   - **Problem**: Forgot to update README.md files in moto-hses-proto, moto-hses-mock, and root repository
+   - **Solution**: Added 0x86 command to "Supported Commands" section in all README.md files
+   - **Lesson**: Always update ALL README.md files when adding new commands
+   - **Files to update**: moto-hses-client/README.md, moto-hses-proto/README.md, moto-hses-mock/README.md, and root README.md
+
 ### To-dos
 
-- [ ] Protocol layer implementation - JobStartCommand in job.rs
-- [ ] Export JobStartCommand in commands/mod.rs
-- [ ] Client API implementation - start_job() method in protocol.rs
-- [ ] Improve JobStartHandler with proper validation and error handling
-- [ ] Create unit tests for JobStartCommand
-- [ ] Create integration tests in job_control.rs with state verification
-- [ ] Create example code in examples/job_start.rs
-- [ ] Update README.md with new feature and example
-- [ ] Run quality checks (fmt, clippy, test, doc)
+- [x] Protocol layer implementation - JobStartCommand in job.rs
+- [x] Export JobStartCommand in commands/mod.rs
+- [x] Client API implementation - start_job() method in protocol.rs
+- [x] Improve JobStartHandler with proper validation and error handling
+- [x] Create unit tests for JobStartCommand
+- [x] Create integration tests in job_control.rs with state verification
+- [x] Create example code in examples/job_start.rs
+- [x] Run quality checks (fmt, clippy, test, doc)

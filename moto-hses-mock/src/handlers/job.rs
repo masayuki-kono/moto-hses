@@ -49,9 +49,32 @@ pub struct JobStartHandler;
 impl CommandHandler for JobStartHandler {
     fn handle(
         &self,
-        _message: &proto::HsesRequestMessage,
+        message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
+        // Validate instance, attribute, service
+        if message.sub_header.instance != 1 {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+        if message.sub_header.attribute != 1 {
+            return Err(proto::ProtocolError::InvalidService);
+        }
+        if message.sub_header.service != 0x10 {
+            return Err(proto::ProtocolError::InvalidService);
+        }
+
+        // Validate payload (should be 4 bytes with value 1)
+        if message.payload.len() != 4 {
+            return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+        }
+
+        // Validate payload content (should be [1, 0, 0, 0])
+        if message.payload != [1, 0, 0, 0] {
+            return Err(proto::ProtocolError::InvalidMessage(
+                "Invalid payload content".to_string(),
+            ));
+        }
+
         state.set_running(true);
         Ok(vec![])
     }

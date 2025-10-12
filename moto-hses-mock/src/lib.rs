@@ -62,7 +62,7 @@ impl MockConfig {
                     step: false,
                     one_cycle: false,
                     continuous: true,
-                    running: true,
+                    running: false,
                     speed_limited: false,
                     teach: false,
                     play: true,
