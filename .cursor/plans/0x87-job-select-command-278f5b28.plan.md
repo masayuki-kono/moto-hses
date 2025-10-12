@@ -310,49 +310,9 @@ assert_eq!(selected_job.unwrap().job_name, "TEST.JOB");
 assert_eq!(selected_job.unwrap().line_number, 0);
 ```
 
-
 ## Implementation Feedback & Lessons Learned
 
-### Issues Encountered During Implementation
-
-*This section will be updated during and after implementation with:*
-
-- Problems encountered
-- Solutions applied
-- Prevention strategies for future implementations
-- Best practices discovered
-- Common pitfalls to avoid
-
-### Common Pitfalls to Watch For
-
-1. **String Encoding/Decoding**
-
-   - Job name is 32 bytes fixed length (no null termination required)
-   - Handle both ASCII and multi-byte characters correctly
-   - Use client's text_encoding setting (SJIS for Japanese, UTF-8 for English)
-
-2. **Payload Structure**
-
-   - 36 bytes total: 32 bytes job name + 4 bytes line number
-   - Use little-endian for line number
-   - Job name is fixed 32 bytes (pad with spaces or zeros if shorter)
-
-3. **Validation**
-
-   - Job name length must not exceed 32 characters
-   - Line number must be in range 0-9999
-   - Instance must be valid (1 or 10-15)
-
-4. **State Management**
-
-   - Selected job is different from executing job
-   - Need separate state tracking for selected vs executing jobs
-   - Consider task-specific job selection
-
-5. **README.md Updates**
-
-   - Update ALL README.md files (client, proto, mock, root)
-   - Don't add example execution commands except for alarm_operations
+None
 
 ### To-dos
 
