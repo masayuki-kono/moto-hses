@@ -356,14 +356,14 @@ assert_eq!(selected_job.unwrap().line_number, 0);
 
 ### To-dos
 
-- [ ] Protocol layer implementation - JobSelectCommand, JobSelectType, and JobSelectAttribute in job.rs
-- [ ] Export JobSelectCommand and related types in commands/mod.rs
-- [ ] Client API implementation - select_job() method in protocol.rs with validation
-- [ ] MockState extension - add SelectedJobInfo struct and selected job management methods
-- [ ] Improve JobSelectHandler with proper validation, payload parsing, and error handling
-- [ ] Create unit tests for JobSelectCommand including serialization and validation
-- [ ] Add integration tests in job_control.rs with state verification using Arc<MockServer>
-- [ ] Create example code in examples/job_select.rs demonstrating various job selection scenarios
-- [ ] Update README.md files in all crates (client, proto, mock, root) with 0x87 command
-- [ ] Run quality checks (fmt, clippy, test, doc)
-- [ ] Update Implementation Feedback section with lessons learned during and after implementation
+- [x] Protocol layer implementation - JobSelectCommand, JobSelectType, and JobSelectAttribute in job.rs
+- [x] Export JobSelectCommand and related types in commands/mod.rs
+- [x] Client API implementation - select_job() method in protocol.rs with validation
+- [x] MockState extension - add SelectedJobInfo struct and selected job management methods
+- [x] Improve JobSelectHandler with proper validation, payload parsing, and error handling
+- [x] Create unit tests for JobSelectCommand including serialization and validation
+- [x] Add integration tests in job_control.rs with state verification using Arc<MockServer>
+- [x] Create example code in examples/job_select.rs demonstrating various job selection scenarios
+- [x] Update README.md files in all crates (client, proto, mock, root) with 0x87 command
+- [x] Run quality checks (fmt, clippy, test, doc)
+- [x] Update Implementation Feedback section with lessons learned during and after implementation

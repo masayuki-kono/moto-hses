@@ -6,7 +6,9 @@ use moto_hses_proto::{
     ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
     ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
     WriteVar,
-    commands::{JobStartCommand, parse_file_content, parse_file_list},
+    commands::{
+        JobSelectCommand, JobSelectType, JobStartCommand, parse_file_content, parse_file_list,
+    },
 };
 use std::fmt::Write;
 use std::sync::atomic::Ordering;
@@ -215,6 +217,41 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn start_job(&self) -> Result<(), ClientError> {
         let command = JobStartCommand::new();
+        let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Select job for execution (0x87 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `select_type` - Type of job to select
+    /// * `job_name` - Name of the job to select (max 32 characters)
+    /// * `line_number` - Starting line number (0 to 9999)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn select_job(
+        &self,
+        select_type: JobSelectType,
+        job_name: impl Into<String>,
+        line_number: u32,
+    ) -> Result<(), ClientError> {
+        let job_name = job_name.into();
+
+        // Validate job name length (max 32 characters)
+        if job_name.len() > 32 {
+            return Err(ClientError::SystemError("Job name exceeds 32 characters".to_string()));
+        }
+
+        // Validate line number (0 to 9999)
+        if line_number > 9999 {
+            return Err(ClientError::SystemError("Line number must be 0-9999".to_string()));
+        }
+
+        let command =
+            JobSelectCommand::new(select_type, job_name, line_number, self.config.text_encoding);
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

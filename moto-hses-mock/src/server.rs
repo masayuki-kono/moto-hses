@@ -365,6 +365,12 @@ impl MockServer {
         let state = self.state.read().await;
         state.get_running()
     }
+
+    /// Get the current selected job
+    pub async fn get_selected_job(&self) -> Option<crate::state::SelectedJobInfo> {
+        let state = self.state.read().await;
+        state.get_selected_job().cloned()
+    }
 }
 
 /// Server builder for easy configuration
