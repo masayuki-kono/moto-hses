@@ -46,6 +46,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x82 | Alarm Reset / Error Cancel Command |
 | 0x83 | Hold / Servo On/off Command |
 | 0x84 | Step / Cycle / Continuous Switching Command |
+| 0x86 | Start-up (Job Start) Command |
 
 ### File Control Commands
 
@@ -102,6 +103,7 @@ The crate includes comprehensive examples in the `examples/` directory:
 - `alarm_operations.rs` - Alarm data handling
 - `cycle_mode_control.rs` - Cycle mode switching operations
 - `io_operations.rs` - I/O operations
+- `job_start.rs` - Job start operations
 - `position_operations.rs` - Position data operations
 - `variable_operations.rs` - Variable read/write operations
 - `file_operations.rs` - File transfer operations
@@ -115,7 +117,6 @@ The crate includes comprehensive examples in the `examples/` directory:
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run --example alarm_operations -- 192.168.0.3 10040
-
 ```
 
 ## Testing

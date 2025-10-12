@@ -47,6 +47,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x82 | Alarm Reset / Error Cancel Command |
 | 0x83 | Hold / Servo On/off Command |
 | 0x84 | Step / Cycle / Continuous Switching Command |
+| 0x86 | Start-up (Job Start) Command |
 
 ### File Control Commands
 

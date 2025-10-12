@@ -6,7 +6,7 @@ use moto_hses_proto::{
     ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
     ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
     WriteVar,
-    commands::{parse_file_content, parse_file_list},
+    commands::{JobStartCommand, parse_file_content, parse_file_list},
 };
 use std::fmt::Write;
 use std::sync::atomic::Ordering;
@@ -204,6 +204,17 @@ impl HsesClient {
         mode: moto_hses_proto::CycleMode,
     ) -> Result<(), ClientError> {
         let command = moto_hses_proto::CycleModeSwitchingCommand::new(mode);
+        let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Start job execution (0x86 command)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub async fn start_job(&self) -> Result<(), ClientError> {
+        let command = JobStartCommand::new();
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }
