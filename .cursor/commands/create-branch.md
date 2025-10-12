@@ -41,7 +41,7 @@ git checkout -b chore/update-dependencies
 
 ```bash
 # Read implementation plan first
-cat docs/implementation-plans/<plan-name>.md
+cat .cursor/plans/<plan-name>.md
 
 # Create branch based on plan content
 git checkout -b <type>/<plan-based-description>
