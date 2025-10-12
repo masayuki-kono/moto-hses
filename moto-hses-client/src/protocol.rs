@@ -226,7 +226,7 @@ impl HsesClient {
     /// # Arguments
     ///
     /// * `select_type` - Type of job to select
-    /// * `job_name` - Name of the job to select (max 32 characters)
+    /// * `job_name` - Name of the job to select (max 32 bytes when encoded)
     /// * `line_number` - Starting line number (0 to 9999)
     ///
     /// # Errors
@@ -240,9 +240,13 @@ impl HsesClient {
     ) -> Result<(), ClientError> {
         let job_name = job_name.into();
 
-        // Validate job name length (max 32 characters)
-        if job_name.len() > 32 {
-            return Err(ClientError::SystemError("Job name exceeds 32 characters".to_string()));
+        // Validate job name byte length (max 32 bytes when encoded)
+        let encoded_bytes =
+            moto_hses_proto::encoding_utils::encode_string(&job_name, self.config.text_encoding);
+        if encoded_bytes.len() > 32 {
+            return Err(ClientError::SystemError(
+                "Job name exceeds 32 bytes when encoded".to_string(),
+            ));
         }
 
         // Validate line number (0 to 9999)

@@ -152,12 +152,35 @@ test_with_logging!(test_job_select_command_validation, {
 
     let client = create_test_client().await.expect("Failed to create client");
 
-    // Test job name length validation
-    log::info!("Testing job name length validation...");
+    // Test job name length validation (ASCII)
+    log::info!("Testing job name length validation (ASCII)...");
     let long_job_name = "A".repeat(33); // 33 characters, exceeds 32-byte limit
     let result = client.select_job(JobSelectType::InExecution, long_job_name, 0).await;
     assert!(result.is_err());
-    log::info!("✓ Job name length validation passed");
+    log::info!("✓ Job name length validation (ASCII) passed");
+
+    // Test job name length validation (multi-byte characters)
+    log::info!("Testing job name length validation (multi-byte)...");
+    // Japanese characters (9 bytes each in UTF-8) - 4 characters = 36 bytes, exceeds 32-byte limit
+    let long_japanese_name = "テスト".repeat(4); // 4 * 9 = 36 bytes
+    let result = client.select_job(JobSelectType::InExecution, long_japanese_name, 0).await;
+    assert!(result.is_err());
+    log::info!("✓ Job name length validation (multi-byte) passed");
+
+    // Test valid job name with multi-byte characters (within 32-byte limit)
+    log::info!("Testing valid job name with multi-byte characters...");
+    let valid_japanese_name = "テスト".repeat(3); // 3 * 9 = 27 bytes, within limit
+    client
+        .select_job(JobSelectType::InExecution, valid_japanese_name, 0)
+        .await
+        .expect("Failed to select job with valid Japanese name");
+    wait_for_operation().await;
+
+    let selected_job = server.get_selected_job().await;
+    assert!(selected_job.is_some());
+    let selected_job = selected_job.expect("Selected job should exist");
+    assert_eq!(selected_job.job_name, "テスト".repeat(3));
+    log::info!("✓ Valid multi-byte job name test passed");
 
     // Test line number validation
     log::info!("Testing line number validation...");
