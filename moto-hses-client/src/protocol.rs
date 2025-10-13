@@ -7,7 +7,8 @@ use moto_hses_proto::{
     ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
     WriteVar,
     commands::{
-        JobSelectCommand, JobSelectType, JobStartCommand, parse_file_content, parse_file_list,
+        JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleIo, WriteMultipleIo,
+        parse_file_content, parse_file_list,
     },
 };
 use std::fmt::Write;
@@ -428,6 +429,69 @@ impl HsesClient {
     pub async fn write_io(&self, io_number: u16, value: u8) -> Result<(), ClientError> {
         let command = WriteIo { io_number, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Read multiple I/O data (0x300 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_io_number` - Starting I/O number
+    /// * `count` - Number of I/O data to read (max 474, must be multiple of 2)
+    ///
+    /// # Returns
+    ///
+    /// Vector of I/O data bytes, where each byte contains 8 I/O states
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_io(
+        &self,
+        start_io_number: u16,
+        count: u32,
+    ) -> Result<Vec<u8>, ClientError> {
+        let command = ReadMultipleIo::new(start_io_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+
+        // Response format: Byte0-3 = count, Byte4-N = I/O data
+        if response.len() < 4 {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization("Response too short".to_string()),
+            ));
+        }
+
+        let response_count =
+            u32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+
+        if response_count != count {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization("Count mismatch".to_string()),
+            ));
+        }
+
+        Ok(response[4..].to_vec())
+    }
+
+    /// Write multiple I/O data (0x300 command)
+    ///
+    /// Note: Only network input signals are writable
+    ///
+    /// # Arguments
+    ///
+    /// * `start_io_number` - Starting I/O number (must be network input: 2701-2956)
+    /// * `io_data` - I/O data bytes to write (max 474, must be multiple of 2)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_io(
+        &self,
+        start_io_number: u16,
+        io_data: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        let command = WriteMultipleIo::new(start_io_number, io_data)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }
 

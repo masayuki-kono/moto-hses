@@ -82,3 +82,79 @@ impl CommandHandler for RegisterHandler {
         }
     }
 }
+
+/// Handler for plural I/O operations (0x300)
+pub struct PluralIoHandler;
+
+impl CommandHandler for PluralIoHandler {
+    fn handle(
+        &self,
+        message: &proto::HsesRequestMessage,
+        state: &mut MockState,
+    ) -> Result<Vec<u8>, proto::ProtocolError> {
+        let start_io_number = message.sub_header.instance;
+        let service = message.sub_header.service;
+
+        // Validate attribute (should be 0)
+        if message.sub_header.attribute != 0 {
+            return Err(proto::ProtocolError::InvalidAttribute);
+        }
+
+        // Validate I/O number range
+        if !IoCategory::is_valid_io_number(start_io_number) {
+            return Err(proto::ProtocolError::InvalidCommand);
+        }
+
+        // Parse count from payload (first 4 bytes)
+        if message.payload.len() < 4 {
+            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+        }
+
+        let count = u32::from_le_bytes([
+            message.payload[0],
+            message.payload[1],
+            message.payload[2],
+            message.payload[3],
+        ]);
+
+        // Validate count (max 474, must be multiple of 2)
+        if count == 0 || count > 474 || count % 2 != 0 {
+            return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
+        }
+
+        match service {
+            0x33 => {
+                // Read - return count + I/O data
+                let io_data = state
+                    .get_multiple_io_states(start_io_number, count as usize)
+                    .map_err(proto::ProtocolError::InvalidMessage)?;
+                let mut response = count.to_le_bytes().to_vec();
+                response.extend_from_slice(&io_data);
+                Ok(response)
+            }
+            0x34 => {
+                // Write - validate payload length and update state
+                let expected_len = 4 + count as usize;
+                if message.payload.len() != expected_len {
+                    return Err(proto::ProtocolError::InvalidMessage(
+                        "Invalid payload length".to_string(),
+                    ));
+                }
+
+                // Only network input signals are writable
+                if !(2701..=2956).contains(&start_io_number) {
+                    return Err(proto::ProtocolError::InvalidCommand);
+                }
+
+                let io_data = &message.payload[4..];
+                state
+                    .set_multiple_io_states(start_io_number, io_data)
+                    .map_err(proto::ProtocolError::InvalidMessage)?;
+
+                // Return only count
+                Ok(count.to_le_bytes().to_vec())
+            }
+            _ => Err(proto::ProtocolError::InvalidService),
+        }
+    }
+}

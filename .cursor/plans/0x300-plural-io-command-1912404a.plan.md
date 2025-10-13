@@ -394,25 +394,40 @@ assert_eq!(read_data, io_data);
 
 ## Implementation Feedback & Lessons Learned
 
-This section will be updated during and after implementation to capture:
+### Critical Safety Issue: MAX Fallback Pattern
 
-- Issues encountered during implementation
-- Solutions and workarounds
-- Prevention strategies for future implementations
-- Best practices discovered
-- Common pitfalls to avoid
+**Issue**: During implementation, we discovered a dangerous pattern using `unwrap_or(u16::MAX)` for type conversions.
+
+**Problem**: 
+```rust
+// ❌ DANGEROUS - Silent failure with wrong value
+let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
+```
+
+**Impact**: This pattern can cause severe issues by silently mapping out-of-range values to `u16::MAX`, leading to incorrect I/O number calculations and potential system failures.
+
+**Solution**: Use proper error handling with `map_err`:
+```rust
+// ✅ SAFE - Explicit error handling
+let offset = u16::try_from(i * 8 + bit)
+    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
+```
+
+**Lesson**: Never use `unwrap_or(MAX_VALUE)` for type conversions. Always use proper error handling to prevent silent failures that can lead to severe system issues.
+
+...
 
 ### To-dos
 
-- [ ] Protocol layer implementation - Add ReadMultipleIo and WriteMultipleIo structs to io.rs with proper validation
-- [ ] Export ReadMultipleIo and WriteMultipleIo in commands/mod.rs
-- [ ] Client API implementation - Add read_multiple_io() and write_multiple_io() methods in protocol.rs
-- [ ] MockState extension - Add or verify get_multiple_io_states() and set_multiple_io_states() methods
-- [ ] Handler implementation - Add PluralIoHandler in handlers/io.rs with validation and state management
-- [ ] Handler registration - Register PluralIoHandler for 0x300 command
-- [ ] Create unit tests for ReadMultipleIo and WriteMultipleIo including validation and serialization
-- [ ] Create integration tests with MockServer state verification for read/write operations
-- [ ] Create example code in examples/plural_io_operations.rs demonstrating usage
-- [ ] Update README.md files in all crates (client, proto, mock, root) with 0x300 command
-- [ ] Run quality checks (fmt, clippy, test, doc)
-- [ ] Update Implementation Feedback section with lessons learned during and after implementation
+- [x] Protocol layer implementation - Add ReadMultipleIo and WriteMultipleIo structs to io.rs with proper validation
+- [x] Export ReadMultipleIo and WriteMultipleIo in commands/mod.rs
+- [x] Client API implementation - Add read_multiple_io() and write_multiple_io() methods in protocol.rs
+- [x] MockState extension - Add or verify get_multiple_io_states() and set_multiple_io_states() methods
+- [x] Handler implementation - Add PluralIoHandler in handlers/io.rs with validation and state management
+- [x] Handler registration - Register PluralIoHandler for 0x300 command
+- [x] Create unit tests for ReadMultipleIo and WriteMultipleIo including validation and serialization
+- [x] Create integration tests with MockServer state verification for read/write operations
+- [x] Create example code in examples/plural_io_operations.rs demonstrating usage
+- [x] Update README.md files in all crates (client, proto, mock, root) with 0x300 command
+- [x] Run quality checks (fmt, clippy, test, doc)
+- [x] Update Implementation Feedback section with lessons learned during and after implementation

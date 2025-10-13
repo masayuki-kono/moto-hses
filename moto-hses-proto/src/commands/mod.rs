@@ -20,7 +20,7 @@ pub use command_trait::{Command, Division, Service};
 pub use cycle_mode::{CycleMode, CycleModeSwitchingCommand};
 pub use file::response::{parse_file_content, parse_file_list};
 pub use file::{DeleteFile, ReadFileList, ReceiveFile, SendFile};
-pub use io::{ReadIo, WriteIo};
+pub use io::{ReadIo, ReadMultipleIo, WriteIo, WriteMultipleIo};
 pub use job::{JobSelectCommand, JobSelectType, JobStartCommand, ReadExecutingJobInfo, TaskType};
 pub use position::ReadCurrentPosition;
 pub use register::{ReadRegister, WriteRegister};
