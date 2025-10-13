@@ -1405,30 +1405,36 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 **Request Structure:**
 
 - **Command**: 0x300
-- **Instance**: Logical number of the I/O data (divided by 10)
-  - `1 to 128`: Robot user input
-  - `1001 to 1128`: Robot user output
+- **Instance**: Logical number of the I/O data
+  - Reads/writes multiple I/O data starting from the specified instance number for the count specified in the payload
+  - `1 to 512`: Robot user input
+  - `1001 to 1512`: Robot user output
   - `2001 to 2128`: External input
-  - `2501 to 2628`: Network input
+  - `2701 to 2956`: Network input
   - `3001 to 3128`: External output
-  - `3501 to 3628`: Network output
-  - `4001 to 4160`: Robot system input
-  - `5001 to 5200`: Robot system output
+  - `3701 to 3956`: Network output
+  - `4001 to 4256`: Robot system input
+  - `5001 to 5512`: Robot system output
   - `6001 to 6064`: Interface panel input
   - `7001 to 7999`: Auxiliary relay
-  - `8001 to 8064`: Robot control status signal
-  - `8201 to 8220`: Pseudo input
+  - `8001 to 8512`: Robot control status signal
+  - `8701 to 8720`: Pseudo input
 - **Attribute**: Fixed to 0
 - **Service**:
   - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
   - `0x34`: Write plural data (Writes the fixed size specified by the data part)
     - Note: Only the network input signal can be writable
-- **Payload**: Data exists during writing operation only
-  - 120 × 32-bit integers (480 bytes): Plural I/O data
-    - Integer 1: Number (Maximum value: 474, can only be specified by a multiple of 2)
-    - Integers 2-120: I/O data 1 to 474
-      - I/O data part is valid only when writing
-      - When reading, only the "Number" of data is valid
+- **Payload**: Plural I/O data
+  - Byte0-3: Number of I/O data (Maximum value: 474, must be specified as a multiple of 2)
+  - Byte4: I/O data 1
+  - Byte5: I/O data 2
+  - ...
+  - Byte474: I/O data 474
+  - Note:
+    - When reading, only the "Number" field is valid
+    - I/O data section is valid only when writing
+    - Each I/O data is 1 byte, and the payload contains the number of I/O data specified by the Number field
+    - Each I/O data is represented in 8-bit format containing 8 I/O states, where bit value 0 is OFF and 1 is ON
 
 **Response Structure:**
 
@@ -1440,9 +1446,16 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - I/O data exists only when requested by the client
+- **Payload**: Plural I/O data
+  - Byte0-3: Number of I/O data (Set to the same value as the Number specified in the request)
+  - Byte4: I/O data 1
+  - Byte5: I/O data 2
+  - ...
+  - Byte474: I/O data 474
+  - Note:
+    - When writing, only the "Number" field is valid
+    - I/O data section is valid only when reading
+    - The structure of each I/O data is the same as the I/O data in the request
 
 #### Plural Register Data Reading / Writing Command (Command 0x301)
 
