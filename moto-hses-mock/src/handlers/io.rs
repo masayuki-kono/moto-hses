@@ -118,7 +118,7 @@ impl CommandHandler for PluralIoHandler {
         ]);
 
         // Validate count (max 474, must be multiple of 2)
-        if count == 0 || count > 474 || count % 2 != 0 {
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
             return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
         }
 
