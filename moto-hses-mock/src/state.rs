@@ -215,9 +215,7 @@ impl MockState {
     pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> Vec<u8> {
         let mut values = Vec::with_capacity(count);
         for i in 0..count {
-            let var_num = start_variable.saturating_add(
-                u8::try_from(i).unwrap_or(u8::MAX)
-            );
+            let var_num = start_variable.saturating_add(u8::try_from(i).unwrap_or(u8::MAX));
             let var_data = self.get_variable(var_num);
             values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
         }
@@ -227,9 +225,7 @@ impl MockState {
     /// Set multiple byte variable values
     pub fn set_multiple_byte_variables(&mut self, start_variable: u8, values: &[u8]) {
         for (i, &value) in values.iter().enumerate() {
-            let var_num = start_variable.saturating_add(
-                u8::try_from(i).unwrap_or(u8::MAX)
-            );
+            let var_num = start_variable.saturating_add(u8::try_from(i).unwrap_or(u8::MAX));
             self.set_variable(var_num, vec![value]);
         }
     }

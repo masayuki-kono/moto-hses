@@ -219,7 +219,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Demonstrate efficiency with larger batch
     let large_batch: Vec<u8> = (0..20).map(|i| (i * 10) as u8).collect();
-    info!("Writing large batch of byte variables B50-B69 (count=20): First few values: {:?}...", &large_batch[..5]);
+    info!(
+        "Writing large batch of byte variables B50-B69 (count=20): First few values: {:?}...",
+        &large_batch[..5]
+    );
     client.write_multiple_byte_variables(50, large_batch.clone()).await?;
 
     let read_large_batch = client.read_multiple_byte_variables(50, 20).await?;
