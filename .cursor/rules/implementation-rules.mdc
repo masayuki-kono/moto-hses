@@ -34,8 +34,6 @@ When there are unclear points, refer to specifications in the following order:
 **CRITICAL**: Never use `unwrap_or(MAX_VALUE)` for type conversions.
 
 ```rust
-let offset_value = i * 8 + bit;
-
 // ❌ DANGEROUS - Silent failure with wrong value
 let offset = u16::try_from(offset_value).unwrap_or(u16::MAX);
 
