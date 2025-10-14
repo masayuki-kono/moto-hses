@@ -19,7 +19,9 @@ impl CommandHandler for IoHandler {
 
         // Validate I/O number range
         if !IoCategory::is_valid_io_number(io_number) {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid I/O number: {io_number}"
+            )));
         }
 
         match service {
@@ -55,7 +57,9 @@ impl CommandHandler for RegisterHandler {
 
         // Validate register number range (0-999)
         if reg_number > 999 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid register number: {reg_number} (must be 0-999)"
+            )));
         }
 
         match service {
@@ -102,7 +106,9 @@ impl CommandHandler for PluralIoHandler {
 
         // Validate I/O number range
         if !IoCategory::is_valid_io_number(start_io_number) {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid start I/O number: {start_io_number}"
+            )));
         }
 
         // Parse count from payload (first 4 bytes)
@@ -162,7 +168,9 @@ impl CommandHandler for PluralIoHandler {
 
                 // Only network input signals are writable
                 if !(2701..=2956).contains(&start_io_number) {
-                    return Err(proto::ProtocolError::InvalidCommand);
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "I/O number {start_io_number} is not writable (only network input range 2701..=2956 is writable)"
+                    )));
                 }
 
                 // Validate the full range of I/O numbers being written
@@ -172,28 +180,18 @@ impl CommandHandler for PluralIoHandler {
                     proto::ProtocolError::InvalidMessage("I/O data count too large".to_string())
                 })?;
                 let end_io_number = start_io_number
-                    .checked_add(
-                        io_data_count_u16
-                            .checked_mul(8)
-                            .ok_or_else(|| {
-                                proto::ProtocolError::InvalidMessage(
-                                    "I/O data count overflow".to_string(),
-                                )
-                            })?
-                            .checked_sub(1)
-                            .ok_or_else(|| {
-                                proto::ProtocolError::InvalidMessage(
-                                    "I/O data count is zero".to_string(),
-                                )
-                            })?,
-                    )
+                    .checked_add(io_data_count_u16.checked_sub(1).ok_or_else(|| {
+                        proto::ProtocolError::InvalidMessage("I/O data count is zero".to_string())
+                    })?)
                     .ok_or_else(|| {
                         proto::ProtocolError::InvalidMessage("I/O range overflow".to_string())
                     })?;
 
                 // Check that the entire range falls within network input range (2701..=2956)
                 if end_io_number > 2956 {
-                    return Err(proto::ProtocolError::InvalidCommand);
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "I/O range {start_io_number}..{end_io_number} exceeds network input range (2701..=2956)"
+                    )));
                 }
                 state
                     .set_multiple_io_states(start_io_number, io_data)

@@ -180,7 +180,7 @@ test_with_logging!(test_multiple_io_validation, {
 
     // Test write that exceeds network input range
     log::info!("Testing write that exceeds network input range...");
-    let large_io_data = vec![0u8; 100]; // This would exceed the 2701..=2956 range
+    let large_io_data = vec![0u8; 258]; // This would exceed the 2701..=2956 range (256 bytes)
     match client.write_multiple_io(2701, large_io_data).await {
         Ok(()) => {
             log::error!("✗ Write exceeding range succeeded unexpectedly");
