@@ -146,7 +146,15 @@ impl CommandHandler for PluralIoHandler {
                     return Err(proto::ProtocolError::InvalidCommand);
                 }
 
+                // Validate the full range of I/O numbers being written
                 let io_data = &message.payload[4..];
+                let io_data_count = io_data.len();
+                let end_io_number = start_io_number + (io_data_count as u16 * 8) - 1;
+                
+                // Check that the entire range falls within network input range (2701..=2956)
+                if end_io_number > 2956 {
+                    return Err(proto::ProtocolError::InvalidCommand);
+                }
                 state
                     .set_multiple_io_states(start_io_number, io_data)
                     .map_err(proto::ProtocolError::InvalidMessage)?;

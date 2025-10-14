@@ -177,6 +177,19 @@ test_with_logging!(test_multiple_io_validation, {
             log::debug!("✓ Write to non-writable range correctly failed: {e}");
         }
     }
+
+    // Test write that exceeds network input range
+    log::info!("Testing write that exceeds network input range...");
+    let large_io_data = vec![0u8; 100]; // This would exceed the 2701..=2956 range
+    match client.write_multiple_io(2701, large_io_data).await {
+        Ok(()) => {
+            log::error!("✗ Write exceeding range succeeded unexpectedly");
+            unreachable!("Write exceeding range should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Write exceeding range correctly failed: {e}");
+        }
+    }
 });
 
 test_with_logging!(test_multiple_io_boundary_conditions, {
@@ -193,17 +206,19 @@ test_with_logging!(test_multiple_io_boundary_conditions, {
     let io_data = client.read_multiple_io(1, 474).await.expect("Failed to read maximum count");
     assert_eq!(io_data.len(), 474, "Should read exactly 474 I/O data bytes");
 
-    // Test writing maximum count to network input
+    // Test writing maximum count to network input (within valid range)
     log::info!("Testing write maximum count to network input...");
-    let large_io_data = vec![0u8; 474];
+    // Calculate maximum safe count: (2956 - 2701 + 1) / 8 = 32 bytes
+    let max_safe_count = (2956 - 2701 + 1) / 8;
+    let large_io_data = vec![0u8; max_safe_count as usize];
     client
         .write_multiple_io(2701, large_io_data.clone())
         .await
-        .expect("Failed to write maximum count");
+        .expect("Failed to write maximum safe count");
 
     // Verify the write
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
     let read_data =
-        client.read_multiple_io(2701, 474).await.expect("Failed to read back maximum count");
+        client.read_multiple_io(2701, max_safe_count).await.expect("Failed to read back maximum safe count");
     assert_eq!(read_data, large_io_data, "Read back data should match written data");
 });
