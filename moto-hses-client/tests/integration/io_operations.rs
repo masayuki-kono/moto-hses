@@ -218,7 +218,9 @@ test_with_logging!(test_multiple_io_boundary_conditions, {
 
     // Verify the write
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-    let read_data =
-        client.read_multiple_io(2701, max_safe_count).await.expect("Failed to read back maximum safe count");
+    let read_data = client
+        .read_multiple_io(2701, max_safe_count)
+        .await
+        .expect("Failed to read back maximum safe count");
     assert_eq!(read_data, large_io_data, "Read back data should match written data");
 });

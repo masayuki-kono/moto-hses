@@ -150,7 +150,7 @@ impl CommandHandler for PluralIoHandler {
                 let io_data = &message.payload[4..];
                 let io_data_count = io_data.len();
                 let end_io_number = start_io_number + (io_data_count as u16 * 8) - 1;
-                
+
                 // Check that the entire range falls within network input range (2701..=2956)
                 if end_io_number > 2956 {
                     return Err(proto::ProtocolError::InvalidCommand);
