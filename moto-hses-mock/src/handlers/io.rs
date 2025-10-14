@@ -118,7 +118,7 @@ impl CommandHandler for PluralIoHandler {
         ]);
 
         // Validate count (max 474, must be multiple of 2)
-        if count == 0 || count > 474 || !count.is_multiple_of(2) {
+        if count == 0 || count > 474 || count % 2 != 0 {
             return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
         }
 
@@ -149,8 +149,9 @@ impl CommandHandler for PluralIoHandler {
                 // Validate the full range of I/O numbers being written
                 let io_data = &message.payload[4..];
                 let io_data_count = io_data.len();
-                let io_data_count_u16 = u16::try_from(io_data_count)
-                    .map_err(|_| proto::ProtocolError::InvalidMessage("I/O data count too large".to_string()))?;
+                let io_data_count_u16 = u16::try_from(io_data_count).map_err(|_| {
+                    proto::ProtocolError::InvalidMessage("I/O data count too large".to_string())
+                })?;
                 let end_io_number = start_io_number + (io_data_count_u16 * 8) - 1;
 
                 // Check that the entire range falls within network input range (2701..=2956)
