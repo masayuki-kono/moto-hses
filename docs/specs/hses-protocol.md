@@ -1512,12 +1512,16 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
   - `0x34`: Write plural data (Writes the fixed size specified by the data part)
-- **Payload**: Data exists during writing operation only
-  - 120 × 32-bit integers (480 bytes): Plural B variable data
-    - Integer 1: Number (Maximum: 474, can only be specified by a multiple of 2)
-    - Integers 2-120: B variable 1 to 474
-      - B variable data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural B variable
+  - Byte0-3: Number of B variable data (Maximum value: 474, must be specified as a multiple of 2)
+  - Byte4:   B variable data 1
+  - Byte5:   B variable data 2
+  - ...
+  - Byte(3 + Number): B variable data “Number”
+  - Note:
+    - When reading, only the "Number" field is valid
+    - B variable data section is valid only when writing
+    - Each B variable data is 1 byte, and the payload contains the number of B variable data specified by the Number field
 
 **Response Structure:**
 
@@ -1529,9 +1533,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - B variable data exists only when requested by the client
+- **Payload**: Plural B variable
+  - Byte0-3: Number of B variable data (Set to the same value as the Number specified in the request)
+  - Byte4:   B variable data 1
+  - Byte5:   B variable data 2
+  - ...
+  - Byte(3 + Number): B variable data “Number”
+  - Note:
+    - When writing, only the "Number" field is valid
+    - B variable data section is valid only when reading
 
 #### Plural Integer Type Variable (I) Reading / Writing Command (Command 0x303)
 
