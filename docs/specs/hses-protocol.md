@@ -767,7 +767,8 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
 
 - **Command**: 0x79
 - **Instance**: Register number
-  - `0 to 999`: Register number (writable register: 0 to 559)
+  - `0 to 999`: Readable register number
+  - `0 to 559`: Writable register number
 - **Attribute**: Fixed to 1
 - **Service**:
   - `0x0E` (Get_Attribute_Single): Read out the specified register data
@@ -1468,12 +1469,16 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data (Reads out the fixed size specified by the data part)
   - `0x34`: Write plural data (Writes the fixed size specified by the data part)
-- **Payload**: Data exists during writing operation only
-  - 120 × 32-bit integers (480 bytes): Plural register data
-    - Integer 1: Number (Maximum: 237)
-    - Integers 2-120: Register data 1 to 237
-      - Register data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural register data
+  - Byte0-3: Number of register data (Maximum value: 237)
+  - Byte4-5: Register data 1
+  - Byte6-7: Register data 2
+  - ...
+  - Byte(3 + Number * 2 - 1)-Byte(3 + Number * 2): Register data “Number”
+  - Note:
+    - When reading, only the "Number" field is valid
+    - Register data section is valid only when writing
+    - Each register data is 2 byte, and the payload contains the number of register data specified by the Number field
 
 **Response Structure:**
 
@@ -1485,9 +1490,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - Register data exists only when requested by the client
+- **Payload**: Plural register data
+  - Byte0-3: Number of register data (Set to the same value as the Number specified in the request)
+  - Byte4-5: Register data 1
+  - Byte6-7: Register data 2
+  - ...
+  - Byte(3 + Number * 2 - 1)-Byte(3 + Number * 2): Register data “Number”
+  - Note:
+    - When writing, only the "Number" field is valid
+    - Register data section is valid only when reading
 
 #### Plural Byte Type Variable (B) Reading / Writing Command (Command 0x302)
 

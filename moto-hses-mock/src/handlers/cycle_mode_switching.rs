@@ -15,7 +15,10 @@ impl CommandHandler for CycleModeSwitchingHandler {
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         // Validate instance (must be 2)
         if message.sub_header.instance != 2 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid instance: {} (expected: 2)",
+                message.sub_header.instance
+            )));
         }
 
         // Validate attribute (must be 1)

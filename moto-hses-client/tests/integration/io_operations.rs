@@ -192,6 +192,43 @@ test_with_logging!(test_multiple_io_validation, {
             log::debug!("✓ Write exceeding range correctly failed: {e}");
         }
     }
+
+    // Test invalid I/O number (out of range - too low)
+    log::info!("Testing invalid I/O number (0 - too low)...");
+    match client.read_multiple_io(0, 2).await {
+        Ok(_) => {
+            log::error!("✗ Invalid I/O number (0) succeeded unexpectedly");
+            unreachable!("Invalid I/O number should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Invalid I/O number (0) correctly failed: {e}");
+        }
+    }
+
+    // Test invalid I/O number (out of range - too high)
+    log::info!("Testing invalid I/O number (9000 - too high)...");
+    match client.read_multiple_io(9000, 2).await {
+        Ok(_) => {
+            log::error!("✗ Invalid I/O number (9000) succeeded unexpectedly");
+            unreachable!("Invalid I/O number should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Invalid I/O number (9000) correctly failed: {e}");
+        }
+    }
+
+    // Test invalid I/O number for write operation
+    log::info!("Testing invalid I/O number for write (10000)...");
+    let io_data = vec![0b1010_1010, 0b0101_0101];
+    match client.write_multiple_io(10000, io_data).await {
+        Ok(()) => {
+            log::error!("✗ Invalid I/O number write succeeded unexpectedly");
+            unreachable!("Invalid I/O number write should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Invalid I/O number write correctly failed: {e}");
+        }
+    }
 });
 
 test_with_logging!(test_multiple_io_boundary_conditions, {

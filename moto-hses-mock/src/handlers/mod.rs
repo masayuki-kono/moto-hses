@@ -26,6 +26,7 @@ pub mod file;
 pub mod io;
 pub mod job;
 pub mod position;
+pub mod register;
 pub mod registry;
 pub mod system;
 pub mod variable;

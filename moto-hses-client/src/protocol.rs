@@ -457,7 +457,10 @@ impl HsesClient {
         // Response format: Byte0-3 = count, Byte4-N = I/O data
         if response.len() < 4 {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization("Response too short".to_string()),
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Response too short: expected at least 4 bytes, got {}",
+                    response.len()
+                )),
             ));
         }
 
@@ -526,7 +529,10 @@ impl HsesClient {
             Ok(value)
         } else {
             Err(ClientError::ProtocolError(moto_hses_proto::ProtocolError::Deserialization(
-                "Invalid response length for register read".to_string(),
+                format!(
+                    "Invalid response length for register read: expected 2 bytes, got {}",
+                    response.len()
+                ),
             )))
         }
     }
@@ -542,6 +548,94 @@ impl HsesClient {
         use moto_hses_proto::WriteRegister;
         let command = WriteRegister { register_number, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Read multiple registers (0x301 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_register_number` - Starting register number (0-999)
+    /// * `count` - Number of registers to read (max 237)
+    ///
+    /// # Returns
+    ///
+    /// Vector of register values (i16)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_registers(
+        &self,
+        start_register_number: u16,
+        count: u32,
+    ) -> Result<Vec<i16>, ClientError> {
+        use moto_hses_proto::commands::ReadMultipleRegisters;
+        let command = ReadMultipleRegisters::new(start_register_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+
+        // Response format: Byte0-3 = count, Byte4-N = register data (2 bytes each)
+        if response.len() < 4 {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Response too short: expected at least 4 bytes, got {}",
+                    response.len()
+                )),
+            ));
+        }
+
+        let response_count =
+            u32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+
+        if response_count != count {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Count mismatch: expected {count}, got {response_count}"
+                )),
+            ));
+        }
+
+        // Parse register values (2 bytes each)
+        let expected_len = 4 + (count as usize * 2);
+        if response.len() != expected_len {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Invalid response length: expected {expected_len} bytes, got {}",
+                    response.len()
+                )),
+            ));
+        }
+
+        let mut values = Vec::with_capacity(count as usize);
+        for i in 0..count as usize {
+            let offset = 4 + i * 2;
+            let value = i16::from_le_bytes([response[offset], response[offset + 1]]);
+            values.push(value);
+        }
+
+        Ok(values)
+    }
+
+    /// Write multiple registers (0x301 command)
+    ///
+    /// Note: Only registers 0-559 are writable
+    ///
+    /// # Arguments
+    ///
+    /// * `start_register_number` - Starting register number (0-559)
+    /// * `values` - Register values to write (max 237)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_registers(
+        &self,
+        start_register_number: u16,
+        values: Vec<i16>,
+    ) -> Result<(), ClientError> {
+        use moto_hses_proto::commands::WriteMultipleRegisters;
+        let command = WriteMultipleRegisters::new(start_register_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }
 

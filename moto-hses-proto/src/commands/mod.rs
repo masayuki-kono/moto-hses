@@ -23,7 +23,7 @@ pub use file::{DeleteFile, ReadFileList, ReceiveFile, SendFile};
 pub use io::{ReadIo, ReadMultipleIo, WriteIo, WriteMultipleIo};
 pub use job::{JobSelectCommand, JobSelectType, JobStartCommand, ReadExecutingJobInfo, TaskType};
 pub use position::ReadCurrentPosition;
-pub use register::{ReadRegister, WriteRegister};
+pub use register::{ReadMultipleRegisters, ReadRegister, WriteMultipleRegisters, WriteRegister};
 pub use servo::{HoldServoControl, HoldServoType, HoldServoValue};
 pub use status::{ReadStatus, ReadStatusData1, ReadStatusData2};
 pub use variable::{ReadVar, VariableCommandId, WriteVar};

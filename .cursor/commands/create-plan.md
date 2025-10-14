@@ -17,7 +17,4 @@ When creating implementation plans in Plan mode, please follow these key require
   - Issues encountered during implementation
   - Solutions and workarounds
   - Prevention strategies for future implementations
-  - Best practices discovered
-  - Common pitfalls to avoid
 - Add a task to update this section during and after implementation
-

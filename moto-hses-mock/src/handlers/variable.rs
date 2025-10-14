@@ -14,13 +14,15 @@ impl CommandHandler for ByteVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidMessage("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for B variables)
         if var_index > 99 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable index: {var_index} (valid range: 0-99)"
+            )));
         }
 
         match service {
@@ -63,13 +65,15 @@ impl CommandHandler for IntegerVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidMessage("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for I variables)
         if var_index > 99 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable index: {var_index} (valid range: 0-99)"
+            )));
         }
 
         match service {
@@ -112,13 +116,15 @@ impl CommandHandler for DoubleVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidMessage("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for D variables)
         if var_index > 99 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable index: {var_index} (valid range: 0-99)"
+            )));
         }
 
         match service {
@@ -161,13 +167,15 @@ impl CommandHandler for RealVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidMessage("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for R variables)
         if var_index > 99 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable index: {var_index} (valid range: 0-99)"
+            )));
         }
 
         match service {
@@ -213,13 +221,15 @@ impl CommandHandler for StringVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidMessage("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for S variables)
         if var_index > 99 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable index: {var_index} (valid range: 0-99)"
+            )));
         }
 
         match service {

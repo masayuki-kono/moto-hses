@@ -43,50 +43,6 @@ impl CommandHandler for IoHandler {
     }
 }
 
-/// Handler for register operations (0x79)
-pub struct RegisterHandler;
-
-impl CommandHandler for RegisterHandler {
-    fn handle(
-        &self,
-        message: &proto::HsesRequestMessage,
-        state: &mut MockState,
-    ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let reg_number = message.sub_header.instance;
-        let service = message.sub_header.service;
-
-        // Validate register number range (0-999)
-        if reg_number > 999 {
-            return Err(proto::ProtocolError::InvalidMessage(format!(
-                "Invalid register number: {reg_number} (must be 0-999)"
-            )));
-        }
-
-        match service {
-            0x0e => {
-                // Read
-                let value = state.get_register(reg_number);
-                // Register data is 2 bytes (i16) + 2 bytes reserved = 4 bytes total
-                let mut response = Vec::new();
-                response.extend_from_slice(&value.to_le_bytes()); // 2 bytes
-                response.extend_from_slice(&[0u8, 0u8]); // 2 bytes reserved
-                Ok(response)
-            }
-            0x10 => {
-                // Write
-                if message.payload.len() >= 2 {
-                    // Register data is 2 bytes (i16) + 2 bytes reserved = 4 bytes total
-                    // We only use the first 2 bytes for the actual register value
-                    let value = i16::from_le_bytes([message.payload[0], message.payload[1]]);
-                    state.set_register(reg_number, value);
-                }
-                Ok(vec![])
-            }
-            _ => Err(proto::ProtocolError::InvalidService),
-        }
-    }
-}
-
 /// Handler for plural I/O operations (0x300)
 pub struct PluralIoHandler;
 
@@ -107,13 +63,17 @@ impl CommandHandler for PluralIoHandler {
         // Validate I/O number range
         if !IoCategory::is_valid_io_number(start_io_number) {
             return Err(proto::ProtocolError::InvalidMessage(format!(
-                "Invalid start I/O number: {start_io_number}"
+                "Invalid start I/O number: {start_io_number} (valid range: {})",
+                IoCategory::valid_range_description()
             )));
         }
 
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
-            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: expected at least 4 bytes, got {}",
+                message.payload.len()
+            )));
         }
 
         let count = u32::from_le_bytes([
@@ -125,21 +85,27 @@ impl CommandHandler for PluralIoHandler {
 
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} (must be 1-474 and multiple of 2)"
+            )));
         }
 
         match service {
             0x33 => {
                 // Read - validate full range before reading
                 let count_u16 = u16::try_from(count).map_err(|_| {
-                    proto::ProtocolError::InvalidMessage("Count too large".to_string())
+                    proto::ProtocolError::InvalidMessage(format!(
+                        "Count too large: {count} (max u16::MAX)"
+                    ))
                 })?;
                 let end_io_number = start_io_number
                     .checked_add(count_u16.checked_sub(1).ok_or_else(|| {
-                        proto::ProtocolError::InvalidMessage("Count is zero".to_string())
+                        proto::ProtocolError::InvalidMessage(format!("Count is zero: {count}"))
                     })?)
                     .ok_or_else(|| {
-                        proto::ProtocolError::InvalidMessage("I/O range overflow".to_string())
+                        proto::ProtocolError::InvalidMessage(format!(
+                            "I/O range overflow: {start_io_number} + {count} - 1 exceeds u16::MAX"
+                        ))
                     })?;
 
                 // Validate that the entire range falls within the same category
@@ -161,9 +127,10 @@ impl CommandHandler for PluralIoHandler {
                 // Write - validate payload length and update state
                 let expected_len = 4 + count as usize;
                 if message.payload.len() != expected_len {
-                    return Err(proto::ProtocolError::InvalidMessage(
-                        "Invalid payload length".to_string(),
-                    ));
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length: expected {expected_len} bytes, got {}",
+                        message.payload.len()
+                    )));
                 }
 
                 // Only network input signals are writable
@@ -177,14 +144,20 @@ impl CommandHandler for PluralIoHandler {
                 let io_data = &message.payload[4..];
                 let io_data_count = io_data.len();
                 let io_data_count_u16 = u16::try_from(io_data_count).map_err(|_| {
-                    proto::ProtocolError::InvalidMessage("I/O data count too large".to_string())
+                    proto::ProtocolError::InvalidMessage(format!(
+                        "I/O data count too large: {io_data_count} (max u16::MAX)"
+                    ))
                 })?;
                 let end_io_number = start_io_number
                     .checked_add(io_data_count_u16.checked_sub(1).ok_or_else(|| {
-                        proto::ProtocolError::InvalidMessage("I/O data count is zero".to_string())
+                        proto::ProtocolError::InvalidMessage(format!(
+                            "I/O data count is zero: {io_data_count}"
+                        ))
                     })?)
                     .ok_or_else(|| {
-                        proto::ProtocolError::InvalidMessage("I/O range overflow".to_string())
+                        proto::ProtocolError::InvalidMessage(format!(
+                            "I/O range overflow: {start_io_number} + {io_data_count} - 1 exceeds u16::MAX"
+                        ))
                     })?;
 
                 // Check that the entire range falls within network input range (2701..=2956)
