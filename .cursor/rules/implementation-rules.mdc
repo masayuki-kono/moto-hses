@@ -73,13 +73,6 @@ cargo test --test integration_tests
 
 ## Debugging and Troubleshooting
 
-### Common Issues
-
-1. **Protocol Errors**: Verify consistency with HSES Protocol Specification
-2. **Type Errors**: Check `VariableType` trait implementation
-3. **Serialization Errors**: Verify byte order and data structure
-4. **Network Errors**: Check UDP communication settings and timeouts
-
 ### Test Failure Response
 
 1. Analyze failed test cases in detail
