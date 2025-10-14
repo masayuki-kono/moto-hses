@@ -202,6 +202,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => info!("✗ Failed to read S000: {e}"),
     }
 
+    // Multiple byte variable operations (0x302 command)
+    info!("\n=== Multiple Byte Variable Operations ===");
+
+    // Write multiple byte variables
+    let byte_values = vec![10, 20, 30, 40, 50, 60];
+    info!("Writing multiple byte variables B40-B45: {byte_values:?}");
+    client.write_multiple_byte_variables(40, byte_values.clone()).await?;
+
+    // Read back multiple byte variables
+    let read_byte_values = client.read_multiple_byte_variables(40, 6).await?;
+    info!("Read back multiple byte variables B40-B45: {read_byte_values:?}");
+
+    // Verify the values match
+    assert_eq!(byte_values, read_byte_values, "Multiple byte variable values should match");
+
+    // Demonstrate efficiency with larger batch
+    let large_batch: Vec<u8> = (0..20).map(|i| (i * 10) as u8).collect();
+    info!("Writing large batch of byte variables B50-B69 (count=20): First few values: {:?}...", &large_batch[..5]);
+    client.write_multiple_byte_variables(50, large_batch.clone()).await?;
+
+    let read_large_batch = client.read_multiple_byte_variables(50, 20).await?;
+    info!("Read back large batch: First few values: {:?}...", &read_large_batch[..5]);
+    assert_eq!(large_batch, read_large_batch, "Large batch values should match");
+
+    info!("Multiple byte variable operations completed successfully!");
+
     info!("\n--- Variable Operations Example completed successfully ---");
     Ok(())
 }

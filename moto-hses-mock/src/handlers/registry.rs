@@ -23,7 +23,8 @@ use super::system::{
     TextDisplayHandler, TorqueHandler,
 };
 use super::variable::{
-    ByteVarHandler, DoubleVarHandler, IntegerVarHandler, RealVarHandler, StringVarHandler,
+    ByteVarHandler, DoubleVarHandler, IntegerVarHandler, PluralByteVarHandler, RealVarHandler,
+    StringVarHandler,
 };
 
 /// Command handler registry
@@ -85,6 +86,8 @@ impl CommandHandlerRegistry {
             0x301,
             Arc::new(PluralRegisterHandler) as Arc<dyn CommandHandler + Send + Sync>,
         );
+        handlers
+            .insert(0x302, Arc::new(PluralByteVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
 
         // Variable handlers
         handlers.insert(0x7a, Arc::new(ByteVarHandler) as Arc<dyn CommandHandler + Send + Sync>);
