@@ -1,0 +1,451 @@
+﻿2025-10-14T21:15:04.6785602Z Current runner version: '2.328.0'
+2025-10-14T21:15:04.6815647Z ##[group]Runner Image Provisioner
+2025-10-14T21:15:04.6816844Z Hosted Compute Agent
+2025-10-14T21:15:04.6817740Z Version: 20250912.392
+2025-10-14T21:15:04.6818673Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+2025-10-14T21:15:04.6819799Z Build Date: 2025-09-12T15:23:14Z
+2025-10-14T21:15:04.6820830Z ##[endgroup]
+2025-10-14T21:15:04.6821569Z ##[group]Operating System
+2025-10-14T21:15:04.6822430Z Ubuntu
+2025-10-14T21:15:04.6823292Z 24.04.3
+2025-10-14T21:15:04.6824054Z LTS
+2025-10-14T21:15:04.6824751Z ##[endgroup]
+2025-10-14T21:15:04.6825785Z ##[group]Runner Image
+2025-10-14T21:15:04.6826730Z Image: ubuntu-24.04
+2025-10-14T21:15:04.6827488Z Version: 20250929.60.1
+2025-10-14T21:15:04.6829239Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+2025-10-14T21:15:04.6831798Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+2025-10-14T21:15:04.6833541Z ##[endgroup]
+2025-10-14T21:15:04.6837693Z ##[group]GITHUB_TOKEN Permissions
+2025-10-14T21:15:04.6840430Z Actions: write
+2025-10-14T21:15:04.6841209Z Attestations: write
+2025-10-14T21:15:04.6842032Z Checks: write
+2025-10-14T21:15:04.6842921Z Contents: write
+2025-10-14T21:15:04.6843741Z Deployments: write
+2025-10-14T21:15:04.6844483Z Discussions: write
+2025-10-14T21:15:04.6845602Z Issues: write
+2025-10-14T21:15:04.6846384Z Metadata: read
+2025-10-14T21:15:04.6847211Z Models: read
+2025-10-14T21:15:04.6848023Z Packages: write
+2025-10-14T21:15:04.6848832Z Pages: write
+2025-10-14T21:15:04.6849629Z PullRequests: write
+2025-10-14T21:15:04.6850524Z RepositoryProjects: write
+2025-10-14T21:15:04.6851394Z SecurityEvents: write
+2025-10-14T21:15:04.6852392Z Statuses: write
+2025-10-14T21:15:04.6853306Z ##[endgroup]
+2025-10-14T21:15:04.6856246Z Secret source: Actions
+2025-10-14T21:15:04.6857281Z Prepare workflow directory
+2025-10-14T21:15:04.7391202Z Prepare all required actions
+2025-10-14T21:15:04.7445861Z Getting action download info
+2025-10-14T21:15:05.1525483Z Download action repository 'actions/checkout@v5' (SHA:08c6903cd8c0fde910a37f88322edcfb5dd907a8)
+2025-10-14T21:15:05.3180468Z Download action repository 'dtolnay/rust-toolchain@stable' (SHA:5d458579430fc14a04a08a1e7d3694f545e91ce6)
+2025-10-14T21:15:05.5139917Z Download action repository 'swatinem/rust-cache@v2' (SHA:98c8021b550208e191a6a3145459bfc9fb29c4c0)
+2025-10-14T21:15:05.7430133Z Download action repository 'github/codeql-action@v3' (SHA:755f44910c12a3d7ca0d8c6e42c048b3362f7cec)
+2025-10-14T21:15:06.2332408Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2025-10-14T21:15:06.4867637Z Complete job name: Quality Gatekeeper
+2025-10-14T21:15:06.5660778Z ##[group]Run actions/checkout@v5
+2025-10-14T21:15:06.5662005Z with:
+2025-10-14T21:15:06.5662733Z   repository: masayuki-kono/moto-hses
+2025-10-14T21:15:06.5663897Z   token: ***
+2025-10-14T21:15:06.5664579Z   ssh-strict: true
+2025-10-14T21:15:06.5665469Z   ssh-user: git
+2025-10-14T21:15:06.5666237Z   persist-credentials: true
+2025-10-14T21:15:06.5667049Z   clean: true
+2025-10-14T21:15:06.5667788Z   sparse-checkout-cone-mode: true
+2025-10-14T21:15:06.5668676Z   fetch-depth: 1
+2025-10-14T21:15:06.5669386Z   fetch-tags: false
+2025-10-14T21:15:06.5670116Z   show-progress: true
+2025-10-14T21:15:06.5670849Z   lfs: false
+2025-10-14T21:15:06.5671519Z   submodules: false
+2025-10-14T21:15:06.5672254Z   set-safe-directory: true
+2025-10-14T21:15:06.5673552Z env:
+2025-10-14T21:15:06.5674221Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:06.5675026Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:06.5675918Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:06.5676716Z ##[endgroup]
+2025-10-14T21:15:06.6633683Z Syncing repository: masayuki-kono/moto-hses
+2025-10-14T21:15:06.6637010Z ##[group]Getting Git version info
+2025-10-14T21:15:06.6638355Z Working directory is '/home/runner/work/moto-hses/moto-hses'
+2025-10-14T21:15:06.6640581Z [command]/usr/bin/git version
+2025-10-14T21:15:06.6687830Z git version 2.51.0
+2025-10-14T21:15:06.6717434Z ##[endgroup]
+2025-10-14T21:15:06.6736126Z Temporarily overriding HOME='/home/runner/work/_temp/441b2dd5-45c3-4eae-8951-02d66f34c083' before making global git config changes
+2025-10-14T21:15:06.6738948Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-14T21:15:06.6741721Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/moto-hses/moto-hses
+2025-10-14T21:15:06.6783961Z Deleting the contents of '/home/runner/work/moto-hses/moto-hses'
+2025-10-14T21:15:06.6787655Z ##[group]Initializing the repository
+2025-10-14T21:15:06.6793453Z [command]/usr/bin/git init /home/runner/work/moto-hses/moto-hses
+2025-10-14T21:15:06.6947223Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-10-14T21:15:06.6950633Z hint: is subject to change. To configure the initial branch name to use in all
+2025-10-14T21:15:06.6953729Z hint: of your new repositories, which will suppress this warning, call:
+2025-10-14T21:15:06.6956230Z hint:
+2025-10-14T21:15:06.6957996Z hint: 	git config --global init.defaultBranch <name>
+2025-10-14T21:15:06.6959920Z hint:
+2025-10-14T21:15:06.6961773Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-10-14T21:15:06.6964979Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-10-14T21:15:06.6967753Z hint:
+2025-10-14T21:15:06.6969212Z hint: 	git branch -m <name>
+2025-10-14T21:15:06.6970888Z hint:
+2025-10-14T21:15:06.6973126Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-10-14T21:15:06.6976699Z Initialized empty Git repository in /home/runner/work/moto-hses/moto-hses/.git/
+2025-10-14T21:15:06.6982310Z [command]/usr/bin/git remote add origin https://github.com/masayuki-kono/moto-hses
+2025-10-14T21:15:06.7003446Z ##[endgroup]
+2025-10-14T21:15:06.7004930Z ##[group]Disabling automatic garbage collection
+2025-10-14T21:15:06.7007342Z [command]/usr/bin/git config --local gc.auto 0
+2025-10-14T21:15:06.7103986Z ##[endgroup]
+2025-10-14T21:15:06.7106090Z ##[group]Setting up auth
+2025-10-14T21:15:06.7108193Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-14T21:15:06.7117243Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-14T21:15:06.7484932Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-14T21:15:06.7518633Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-14T21:15:06.7751034Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-10-14T21:15:06.7784463Z ##[endgroup]
+2025-10-14T21:15:06.7786831Z ##[group]Fetching the repository
+2025-10-14T21:15:06.7795894Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +5ef182de993e05fee7388004ef1e3193dea05b3a:refs/remotes/pull/67/merge
+2025-10-14T21:15:06.9952909Z From https://github.com/masayuki-kono/moto-hses
+2025-10-14T21:15:06.9955553Z  * [new ref]         5ef182de993e05fee7388004ef1e3193dea05b3a -> pull/67/merge
+2025-10-14T21:15:06.9986750Z ##[endgroup]
+2025-10-14T21:15:06.9988549Z ##[group]Determining the checkout info
+2025-10-14T21:15:06.9990269Z ##[endgroup]
+2025-10-14T21:15:06.9993269Z [command]/usr/bin/git sparse-checkout disable
+2025-10-14T21:15:07.0033493Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-10-14T21:15:07.0059996Z ##[group]Checking out the ref
+2025-10-14T21:15:07.0062904Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/67/merge
+2025-10-14T21:15:07.0168247Z Note: switching to 'refs/remotes/pull/67/merge'.
+2025-10-14T21:15:07.0169605Z 
+2025-10-14T21:15:07.0170940Z You are in 'detached HEAD' state. You can look around, make experimental
+2025-10-14T21:15:07.0173397Z changes and commit them, and you can discard any commits you make in this
+2025-10-14T21:15:07.0175449Z state without impacting any branches by switching back to a branch.
+2025-10-14T21:15:07.0177055Z 
+2025-10-14T21:15:07.0178122Z If you want to create a new branch to retain commits you create, you may
+2025-10-14T21:15:07.0180650Z do so (now or later) by using -c with the switch command. Example:
+2025-10-14T21:15:07.0182177Z 
+2025-10-14T21:15:07.0182625Z   git switch -c <new-branch-name>
+2025-10-14T21:15:07.0183271Z 
+2025-10-14T21:15:07.0183604Z Or undo this operation with:
+2025-10-14T21:15:07.0184165Z 
+2025-10-14T21:15:07.0184475Z   git switch -
+2025-10-14T21:15:07.0184908Z 
+2025-10-14T21:15:07.0185932Z Turn off this advice by setting config variable advice.detachedHead to false
+2025-10-14T21:15:07.0186960Z 
+2025-10-14T21:15:07.0188112Z HEAD is now at 5ef182d Merge 6f25812017c5af0f0650a707e519b13b3364863a into f4444aabd23bd6cb322550d050ab7e7a1484b4dd
+2025-10-14T21:15:07.0191912Z ##[endgroup]
+2025-10-14T21:15:07.0214176Z [command]/usr/bin/git log -1 --format=%H
+2025-10-14T21:15:07.0242232Z 5ef182de993e05fee7388004ef1e3193dea05b3a
+2025-10-14T21:15:07.0671329Z ##[group]Run dtolnay/rust-toolchain@stable
+2025-10-14T21:15:07.0672309Z with:
+2025-10-14T21:15:07.0672978Z   components: clippy, rustfmt
+2025-10-14T21:15:07.0673798Z   toolchain: stable
+2025-10-14T21:15:07.0674477Z env:
+2025-10-14T21:15:07.0675101Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.0676042Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.0676755Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.0677533Z ##[endgroup]
+2025-10-14T21:15:07.0815619Z ##[group]Run : parse toolchain version
+2025-10-14T21:15:07.0816687Z [36;1m: parse toolchain version[0m
+2025-10-14T21:15:07.0817602Z [36;1mif [[ -z $toolchain ]]; then[0m
+2025-10-14T21:15:07.0819176Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+2025-10-14T21:15:07.0820876Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+2025-10-14T21:15:07.0821853Z [36;1m  exit 1[0m
+2025-10-14T21:15:07.0822950Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+2025-10-14T21:15:07.0824241Z [36;1m  if [[ Linux == macOS ]]; then[0m
+2025-10-14T21:15:07.0825905Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.0827448Z [36;1m  else[0m
+2025-10-14T21:15:07.0828699Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.0830142Z [36;1m  fi[0m
+2025-10-14T21:15:07.0831112Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+2025-10-14T21:15:07.0832781Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.0834263Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+2025-10-14T21:15:07.0836006Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.0837541Z [36;1melse[0m
+2025-10-14T21:15:07.0838346Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.0839341Z [36;1mfi[0m
+2025-10-14T21:15:07.0877156Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:07.0878273Z env:
+2025-10-14T21:15:07.0878928Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.0879703Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.0880432Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.0881212Z   toolchain: stable
+2025-10-14T21:15:07.0881901Z ##[endgroup]
+2025-10-14T21:15:07.1106566Z ##[group]Run : construct rustup command line
+2025-10-14T21:15:07.1107604Z [36;1m: construct rustup command line[0m
+2025-10-14T21:15:07.1108998Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.1111103Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.1112659Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:07.1143710Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:07.1144776Z env:
+2025-10-14T21:15:07.1145647Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.1146484Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.1147213Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.1147982Z   targets: 
+2025-10-14T21:15:07.1148652Z   components: clippy, rustfmt
+2025-10-14T21:15:07.1149457Z ##[endgroup]
+2025-10-14T21:15:07.1259297Z ##[group]Run : set $CARGO_HOME
+2025-10-14T21:15:07.1260138Z [36;1m: set $CARGO_HOME[0m
+2025-10-14T21:15:07.1261194Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+2025-10-14T21:15:07.1292277Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:07.1293356Z env:
+2025-10-14T21:15:07.1293981Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.1294752Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.1295647Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.1296422Z ##[endgroup]
+2025-10-14T21:15:07.1406974Z ##[group]Run : install rustup if needed
+2025-10-14T21:15:07.1407956Z [36;1m: install rustup if needed[0m
+2025-10-14T21:15:07.1408914Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+2025-10-14T21:15:07.1411125Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+2025-10-14T21:15:07.1413312Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+2025-10-14T21:15:07.1414230Z [36;1mfi[0m
+2025-10-14T21:15:07.1445034Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:07.1446288Z env:
+2025-10-14T21:15:07.1446924Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.1447694Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.1448409Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.1449257Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:07.1450098Z ##[endgroup]
+2025-10-14T21:15:07.1562653Z ##[group]Run rustup toolchain install stable --component clippy --component rustfmt --profile minimal --no-self-update
+2025-10-14T21:15:07.1565171Z [36;1mrustup toolchain install stable --component clippy --component rustfmt --profile minimal --no-self-update[0m
+2025-10-14T21:15:07.1597864Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:07.1598931Z env:
+2025-10-14T21:15:07.1599554Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:07.1600314Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:07.1601024Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:07.1601832Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:07.1602654Z ##[endgroup]
+2025-10-14T21:15:07.9964592Z info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
+2025-10-14T21:15:08.2796511Z info: latest update on 2025-09-18, rust version 1.90.0 (1159e78c4 2025-09-14)
+2025-10-14T21:15:08.3116622Z info: component 'clippy' for target 'x86_64-unknown-linux-gnu' is up to date
+2025-10-14T21:15:08.3117610Z info: component 'rustfmt' for target 'x86_64-unknown-linux-gnu' is up to date
+2025-10-14T21:15:08.3135455Z 
+2025-10-14T21:15:08.3233194Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.90.0 (1159e78c4 2025-09-14)
+2025-10-14T21:15:08.3233826Z 
+2025-10-14T21:15:08.3292845Z ##[group]Run rustup default stable
+2025-10-14T21:15:08.3293201Z [36;1mrustup default stable[0m
+2025-10-14T21:15:08.3327531Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.3327962Z env:
+2025-10-14T21:15:08.3328200Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.3328479Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.3328753Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.3329051Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.3329354Z ##[endgroup]
+2025-10-14T21:15:08.3435556Z info: using existing install for 'stable-x86_64-unknown-linux-gnu'
+2025-10-14T21:15:08.3766016Z info: default toolchain set to 'stable-x86_64-unknown-linux-gnu'
+2025-10-14T21:15:08.3767086Z 
+2025-10-14T21:15:08.3855874Z   stable-x86_64-unknown-linux-gnu unchanged - rustc 1.90.0 (1159e78c4 2025-09-14)
+2025-10-14T21:15:08.3857452Z info: note that the toolchain '1.90.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/moto-hses/moto-hses/rust-toolchain.toml')
+2025-10-14T21:15:08.3858487Z 
+2025-10-14T21:15:08.3911137Z ##[group]Run : create cachekey
+2025-10-14T21:15:08.3911488Z [36;1m: create cachekey[0m
+2025-10-14T21:15:08.3912043Z [36;1mDATE=$(rustc +stable --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+2025-10-14T21:15:08.3912735Z [36;1mHASH=$(rustc +stable --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+2025-10-14T21:15:08.3913291Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+2025-10-14T21:15:08.3947708Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.3948137Z env:
+2025-10-14T21:15:08.3948378Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.3948666Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.3948967Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.3949456Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.3949782Z ##[endgroup]
+2025-10-14T21:15:08.4780235Z ##[group]Run : disable incremental compilation
+2025-10-14T21:15:08.4780696Z [36;1m: disable incremental compilation[0m
+2025-10-14T21:15:08.4781116Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+2025-10-14T21:15:08.4781517Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+2025-10-14T21:15:08.4781851Z [36;1mfi[0m
+2025-10-14T21:15:08.4816188Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.4816603Z env:
+2025-10-14T21:15:08.4816842Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.4817135Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.4817404Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.4817703Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.4818003Z ##[endgroup]
+2025-10-14T21:15:08.4901149Z ##[group]Run : enable colors in Cargo output
+2025-10-14T21:15:08.4901537Z [36;1m: enable colors in Cargo output[0m
+2025-10-14T21:15:08.4901900Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+2025-10-14T21:15:08.4902312Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+2025-10-14T21:15:08.4902644Z [36;1mfi[0m
+2025-10-14T21:15:08.4934955Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.4935570Z env:
+2025-10-14T21:15:08.4935811Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.4936095Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.4936359Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.4936660Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.4936959Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:08.4937221Z ##[endgroup]
+2025-10-14T21:15:08.5078171Z ##[group]Run : enable Cargo sparse registry
+2025-10-14T21:15:08.5078580Z [36;1m: enable Cargo sparse registry[0m
+2025-10-14T21:15:08.5079019Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+2025-10-14T21:15:08.5079822Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+2025-10-14T21:15:08.5080624Z [36;1m  if rustc +stable --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+2025-10-14T21:15:08.5081271Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-10-14T21:15:08.5081891Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+2025-10-14T21:15:08.5082483Z [36;1m  elif rustc +stable --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+2025-10-14T21:15:08.5083146Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+2025-10-14T21:15:08.5083754Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+2025-10-14T21:15:08.5084162Z [36;1m  fi[0m
+2025-10-14T21:15:08.5084422Z [36;1mfi[0m
+2025-10-14T21:15:08.5117487Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.5117910Z env:
+2025-10-14T21:15:08.5118174Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.5118473Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.5118772Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.5119098Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.5119442Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:08.5119719Z ##[endgroup]
+2025-10-14T21:15:08.5498235Z ##[group]Run : work around spurious network errors in curl 8.0
+2025-10-14T21:15:08.5498794Z [36;1m: work around spurious network errors in curl 8.0[0m
+2025-10-14T21:15:08.5499449Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+2025-10-14T21:15:08.5500178Z [36;1mif rustc +stable --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+2025-10-14T21:15:08.5500723Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+2025-10-14T21:15:08.5501101Z [36;1mfi[0m
+2025-10-14T21:15:08.5537277Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.5537716Z env:
+2025-10-14T21:15:08.5538004Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.5538312Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.5538771Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.5539106Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.5539431Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:08.5539748Z ##[endgroup]
+2025-10-14T21:15:08.5771774Z ##[group]Run rustc +stable --version --verbose
+2025-10-14T21:15:08.5772214Z [36;1mrustc +stable --version --verbose[0m
+2025-10-14T21:15:08.5806970Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2025-10-14T21:15:08.5807391Z env:
+2025-10-14T21:15:08.5807666Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.5807978Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.5808277Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.5808602Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.5808941Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:08.5809223Z ##[endgroup]
+2025-10-14T21:15:08.5983631Z rustc 1.90.0 (1159e78c4 2025-09-14)
+2025-10-14T21:15:08.5984281Z binary: rustc
+2025-10-14T21:15:08.5984827Z commit-hash: 1159e78c4747b02ef996e55082b704c09b970588
+2025-10-14T21:15:08.5985788Z commit-date: 2025-09-14
+2025-10-14T21:15:08.5986364Z host: x86_64-unknown-linux-gnu
+2025-10-14T21:15:08.5986951Z release: 1.90.0
+2025-10-14T21:15:08.5987397Z LLVM version: 20.1.8
+2025-10-14T21:15:08.6121174Z ##[group]Run swatinem/rust-cache@v2
+2025-10-14T21:15:08.6121579Z with:
+2025-10-14T21:15:08.6121857Z   prefix-key: v0-rust
+2025-10-14T21:15:08.6122170Z   cache-targets: true
+2025-10-14T21:15:08.6122472Z   cache-all-crates: false
+2025-10-14T21:15:08.6122802Z   cache-workspace-crates: false
+2025-10-14T21:15:08.6123129Z   save-if: true
+2025-10-14T21:15:08.6123407Z   cache-provider: github
+2025-10-14T21:15:08.6123711Z   cache-bin: true
+2025-10-14T21:15:08.6123983Z   lookup-only: false
+2025-10-14T21:15:08.6124257Z env:
+2025-10-14T21:15:08.6124512Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:08.6124814Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:08.6125116Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:08.6125665Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:08.6125997Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:08.6126285Z ##[endgroup]
+2025-10-14T21:15:17.5399808Z ##[group]Cache Configuration
+2025-10-14T21:15:17.5400354Z Cache Provider:
+2025-10-14T21:15:17.5400695Z     github
+2025-10-14T21:15:17.5401101Z Workspaces:
+2025-10-14T21:15:17.5401505Z     /home/runner/work/moto-hses/moto-hses
+2025-10-14T21:15:17.5401961Z Cache Paths:
+2025-10-14T21:15:17.5402302Z     /home/runner/.cargo/bin
+2025-10-14T21:15:17.5402729Z     /home/runner/.cargo/.crates.toml
+2025-10-14T21:15:17.5403222Z     /home/runner/.cargo/.crates2.json
+2025-10-14T21:15:17.5403676Z     /home/runner/.cargo/registry
+2025-10-14T21:15:17.5404112Z     /home/runner/.cargo/git
+2025-10-14T21:15:17.5406672Z     /home/runner/work/moto-hses/moto-hses/target
+2025-10-14T21:15:17.5407404Z Restore Key:
+2025-10-14T21:15:17.5408128Z     v0-rust-gatekeeper-Linux-x64-ac053192
+2025-10-14T21:15:17.5409053Z Cache Key:
+2025-10-14T21:15:17.5409466Z     v0-rust-gatekeeper-Linux-x64-ac053192-b96cccc7
+2025-10-14T21:15:17.5409982Z .. Prefix:
+2025-10-14T21:15:17.5410326Z   - v0-rust-gatekeeper-Linux-x64
+2025-10-14T21:15:17.5410784Z .. Environment considered:
+2025-10-14T21:15:17.5411461Z   - Rust Version: 1.90.0 x86_64-unknown-linux-gnu (1159e78c4747b02ef996e55082b704c09b970588)
+2025-10-14T21:15:17.5412170Z   - CARGO_HOME
+2025-10-14T21:15:17.5412523Z   - CARGO_INCREMENTAL
+2025-10-14T21:15:17.5412923Z   - CARGO_TERM_COLOR
+2025-10-14T21:15:17.5413282Z   - RUST_BACKTRACE
+2025-10-14T21:15:17.5413608Z   - RUSTDOCFLAGS
+2025-10-14T21:15:17.5413953Z .. Lockfiles considered:
+2025-10-14T21:15:17.5414494Z   - /home/runner/work/moto-hses/moto-hses/.cargo/config.toml
+2025-10-14T21:15:17.5415153Z   - /home/runner/work/moto-hses/moto-hses/Cargo.lock
+2025-10-14T21:15:17.5416175Z   - /home/runner/work/moto-hses/moto-hses/moto-hses-client/Cargo.toml
+2025-10-14T21:15:17.5417081Z   - /home/runner/work/moto-hses/moto-hses/moto-hses-mock/Cargo.toml
+2025-10-14T21:15:17.5417939Z   - /home/runner/work/moto-hses/moto-hses/moto-hses-proto/Cargo.toml
+2025-10-14T21:15:17.5418902Z   - /home/runner/work/moto-hses/moto-hses/rust-toolchain.toml
+2025-10-14T21:15:17.5419794Z ##[endgroup]
+2025-10-14T21:15:17.5420017Z 
+2025-10-14T21:15:17.5420172Z ... Restoring cache ...
+2025-10-14T21:15:17.6500837Z Cache hit for: v0-rust-gatekeeper-Linux-x64-ac053192-b96cccc7
+2025-10-14T21:15:18.6853324Z Received 164497589 of 164497589 (100.0%), 160.2 MBs/sec
+2025-10-14T21:15:18.6854193Z Cache Size: ~157 MB (164497589 B)
+2025-10-14T21:15:18.6929749Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f46f77a9-4773-4cfc-9529-75019842e058/cache.tzst -P -C /home/runner/work/moto-hses/moto-hses --use-compress-program unzstd
+2025-10-14T21:15:19.5378087Z Cache restored successfully
+2025-10-14T21:15:19.5704852Z Restored from cache key "v0-rust-gatekeeper-Linux-x64-ac053192-b96cccc7" full match: true.
+2025-10-14T21:15:19.5821636Z ##[group]Run cargo fmt --all -- --check
+2025-10-14T21:15:19.5821988Z [36;1mcargo fmt --all -- --check[0m
+2025-10-14T21:15:19.5855407Z shell: /usr/bin/bash -e {0}
+2025-10-14T21:15:19.5855650Z env:
+2025-10-14T21:15:19.5855826Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:19.5856034Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:19.5856227Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:19.5856445Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:19.5856664Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:19.5856860Z   CACHE_ON_FAILURE: false
+2025-10-14T21:15:19.5857053Z ##[endgroup]
+2025-10-14T21:15:19.8398995Z Diff in /home/runner/work/moto-hses/moto-hses/moto-hses-proto/src/commands/variable.rs:179:
+2025-10-14T21:15:19.8400018Z                  "Invalid variable number: {start_variable_number} (valid range: 0-99)"
+2025-10-14T21:15:19.8400541Z              )));
+2025-10-14T21:15:19.8400791Z          }
+2025-10-14T21:15:19.8404563Z -        let count_u32 = u32::try_from(count)
+2025-10-14T21:15:19.8405413Z -            .map_err(|_| ProtocolError::InvalidMessage(format!("Values count too large: {count}")))?;
+2025-10-14T21:15:19.8406041Z +        let count_u32 = u32::try_from(count).map_err(|_| {
+2025-10-14T21:15:19.8406531Z +            ProtocolError::InvalidMessage(format!("Values count too large: {count}"))
+2025-10-14T21:15:19.8406955Z +        })?;
+2025-10-14T21:15:19.8407278Z          let end_variable = u32::from(start_variable_number) + count_u32 - 1;
+2025-10-14T21:15:19.8407672Z          if end_variable > 99 {
+2025-10-14T21:15:19.8408002Z              return Err(ProtocolError::InvalidMessage(format!(
+2025-10-14T21:15:19.8561646Z ##[error]Process completed with exit code 1.
+2025-10-14T21:15:19.8619478Z ##[group]Run echo "=== Test Logs ==="
+2025-10-14T21:15:19.8619802Z [36;1mecho "=== Test Logs ==="[0m
+2025-10-14T21:15:19.8620228Z [36;1mcat moto-hses-client/logs/integration_tests.log || echo "No integration test log found"[0m
+2025-10-14T21:15:19.8651825Z shell: /usr/bin/bash -e {0}
+2025-10-14T21:15:19.8652061Z env:
+2025-10-14T21:15:19.8652234Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:19.8652621Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:19.8652820Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:19.8653040Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:19.8653271Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:19.8653463Z   CACHE_ON_FAILURE: false
+2025-10-14T21:15:19.8653660Z ##[endgroup]
+2025-10-14T21:15:19.8700069Z === Test Logs ===
+2025-10-14T21:15:19.8709605Z cat: moto-hses-client/logs/integration_tests.log: No such file or directory
+2025-10-14T21:15:19.8735562Z No integration test log found
+2025-10-14T21:15:19.8784951Z ##[group]Run actions/upload-artifact@v4
+2025-10-14T21:15:19.8785493Z with:
+2025-10-14T21:15:19.8785704Z   name: test-logs
+2025-10-14T21:15:19.8785912Z   path: moto-hses-client/logs/
+2025-10-14T21:15:19.8786135Z   retention-days: 7
+2025-10-14T21:15:19.8786328Z   if-no-files-found: warn
+2025-10-14T21:15:19.8786533Z   compression-level: 6
+2025-10-14T21:15:19.8786730Z   overwrite: false
+2025-10-14T21:15:19.8786919Z   include-hidden-files: false
+2025-10-14T21:15:19.8787131Z env:
+2025-10-14T21:15:19.8787297Z   CARGO_TERM_COLOR: always
+2025-10-14T21:15:19.8787494Z   RUST_BACKTRACE: 1
+2025-10-14T21:15:19.8787684Z   RUSTDOCFLAGS: -D warnings
+2025-10-14T21:15:19.8787898Z   CARGO_HOME: /home/runner/.cargo
+2025-10-14T21:15:19.8788121Z   CARGO_INCREMENTAL: 0
+2025-10-14T21:15:19.8788310Z   CACHE_ON_FAILURE: false
+2025-10-14T21:15:19.8788501Z ##[endgroup]
+2025-10-14T21:15:20.0869930Z ##[warning]No files were found with the provided path: moto-hses-client/logs/. No artifacts will be uploaded.
+2025-10-14T21:15:20.0995575Z Post job cleanup.
+2025-10-14T21:15:20.1744417Z [command]/usr/bin/git version
+2025-10-14T21:15:20.1778903Z git version 2.51.0
+2025-10-14T21:15:20.1816331Z Temporarily overriding HOME='/home/runner/work/_temp/fb118198-84c5-4c3a-a78d-9a2a958e5800' before making global git config changes
+2025-10-14T21:15:20.1817640Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-14T21:15:20.1822323Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/moto-hses/moto-hses
+2025-10-14T21:15:20.1856443Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-14T21:15:20.1889796Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-14T21:15:20.2114195Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-14T21:15:20.2135777Z http.https://github.com/.extraheader
+2025-10-14T21:15:20.2145551Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-10-14T21:15:20.2176274Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-14T21:15:20.2493462Z Cleaning up orphan processes

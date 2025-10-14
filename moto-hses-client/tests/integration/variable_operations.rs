@@ -1,5 +1,6 @@
 #![allow(clippy::expect_used)]
 #![allow(clippy::float_cmp)]
+#![allow(clippy::panic)]
 // Integration tests for variable operations
 
 use crate::common::{
@@ -122,4 +123,109 @@ test_with_logging!(test_invalid_variable_handling, {
 
     let result: Result<(), _> = client.write_string(255, b"test".to_vec()).await;
     assert!(result.is_err(), "Invalid string variable index write should return error");
+});
+
+test_with_logging!(test_multiple_byte_variables_operations, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test writing and reading multiple byte variables
+    let test_values = vec![10, 20, 30, 40, 50, 60];
+    client
+        .write_multiple_byte_variables(0, test_values.clone())
+        .await
+        .expect("Failed to write multiple byte variables");
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_byte_variables(0, 6)
+        .await
+        .expect("Failed to read multiple byte variables");
+    assert_eq!(read_values, test_values);
+
+    // Test boundary conditions - minimum count (2)
+    let min_values = vec![99, 100];
+    client
+        .write_multiple_byte_variables(10, min_values.clone())
+        .await
+        .expect("Failed to write minimum count variables");
+
+    let read_min_values = client
+        .read_multiple_byte_variables(10, 2)
+        .await
+        .expect("Failed to read minimum count variables");
+    assert_eq!(read_min_values, min_values);
+
+    // Test maximum valid range (variables 98-99)
+    let boundary_values = vec![200, 201];
+    client
+        .write_multiple_byte_variables(98, boundary_values.clone())
+        .await
+        .expect("Failed to write boundary variables");
+
+    let read_boundary_values = client
+        .read_multiple_byte_variables(98, 2)
+        .await
+        .expect("Failed to read boundary variables");
+    assert_eq!(read_boundary_values, boundary_values);
+
+    // Test larger count (multiple of 2)
+    let large_values: Vec<u8> = (0..20).map(|i| u8::try_from(i * 5).unwrap_or(0)).collect();
+    client
+        .write_multiple_byte_variables(20, large_values.clone())
+        .await
+        .expect("Failed to write large count variables");
+
+    let read_large_values = client
+        .read_multiple_byte_variables(20, 20)
+        .await
+        .expect("Failed to read large count variables");
+    assert_eq!(read_large_values, large_values);
+});
+
+test_with_logging!(test_multiple_byte_variables_error_cases, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test odd count (should fail)
+    let odd_values = vec![10, 20, 30]; // count = 3 (odd)
+    assert!(
+        client.write_multiple_byte_variables(0, odd_values).await.is_err(),
+        "write_multiple_byte_variables should error for odd count"
+    );
+
+    // Test reading with odd count (should fail)
+    assert!(
+        client.read_multiple_byte_variables(0, 3).await.is_err(),
+        "read_multiple_byte_variables should error for odd count"
+    );
+
+    // Test range overflow (start + count - 1 > 99)
+    let overflow_values = vec![10, 20]; // count = 2
+    assert!(
+        client.write_multiple_byte_variables(99, overflow_values).await.is_err(),
+        "write_multiple_byte_variables should error for range overflow"
+    );
+
+    // Test reading with range overflow
+    assert!(
+        client.read_multiple_byte_variables(99, 2).await.is_err(),
+        "read_multiple_byte_variables should error for range overflow"
+    );
+
+    // Test zero count (should fail)
+    assert!(
+        client.read_multiple_byte_variables(0, 0).await.is_err(),
+        "read_multiple_byte_variables should error for zero count"
+    );
+
+    // Test empty values (should fail)
+    assert!(
+        client.write_multiple_byte_variables(0, vec![]).await.is_err(),
+        "write_multiple_byte_variables should error for empty values"
+    );
 });

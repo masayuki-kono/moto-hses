@@ -270,3 +270,86 @@ impl CommandHandler for StringVarHandler {
         }
     }
 }
+
+/// Handler for plural byte variable operations (0x302)
+pub struct PluralByteVarHandler;
+
+impl CommandHandler for PluralByteVarHandler {
+    fn handle(
+        &self,
+        message: &proto::HsesRequestMessage,
+        state: &mut MockState,
+    ) -> Result<Vec<u8>, proto::ProtocolError> {
+        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
+            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
+        })?;
+        let service = message.sub_header.service;
+
+        // Validate attribute (should be 0)
+        if message.sub_header.attribute != 0 {
+            return Err(proto::ProtocolError::InvalidAttribute);
+        }
+
+        // Validate variable number range (0-99)
+        if start_variable > 99 {
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid variable number: {start_variable} (valid range: 0-99)"
+            )));
+        }
+
+        // Parse count from payload (first 4 bytes)
+        if message.payload.len() < 4 {
+            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+        }
+
+        let count = u32::from_le_bytes([
+            message.payload[0],
+            message.payload[1],
+            message.payload[2],
+            message.payload[3],
+        ]);
+
+        // Validate count (max 474, must be > 0, must be multiple of 2)
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} (must be 1-474 and multiple of 2)"
+            )));
+        }
+
+        // Validate range doesn't exceed maximum variable number
+        let end_variable = u32::from(start_variable) + count - 1;
+        if end_variable > 99 {
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Variable range exceeds maximum: {start_variable}-{end_variable} (max 99)"
+            )));
+        }
+
+        match service {
+            0x33 => {
+                // Read - return count + variable data
+                let values = state.get_multiple_byte_variables(start_variable, count as usize);
+                let mut response = count.to_le_bytes().to_vec();
+                response.extend_from_slice(&values);
+                Ok(response)
+            }
+            0x34 => {
+                // Write - validate payload length and update state
+                let expected_len = 4 + count as usize;
+                if message.payload.len() != expected_len {
+                    return Err(proto::ProtocolError::InvalidMessage(
+                        "Invalid payload length".to_string(),
+                    ));
+                }
+
+                // Parse variable values (1 byte each)
+                let values = message.payload[4..].to_vec();
+
+                state.set_multiple_byte_variables(start_variable, &values);
+
+                // Return only count
+                Ok(count.to_le_bytes().to_vec())
+            }
+            _ => Err(proto::ProtocolError::InvalidService),
+        }
+    }
+}
