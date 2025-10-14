@@ -218,7 +218,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(byte_values, read_byte_values, "Multiple byte variable values should match");
 
     // Demonstrate efficiency with larger batch
-    let large_batch: Vec<u8> = (0..20).map(|i| (i * 10) as u8).collect();
+    let large_batch: Vec<u8> = (0..20).map(|i| u8::try_from(i * 10).unwrap_or(0)).collect();
     info!(
         "Writing large batch of byte variables B50-B69 (count=20): First few values: {:?}...",
         &large_batch[..5]

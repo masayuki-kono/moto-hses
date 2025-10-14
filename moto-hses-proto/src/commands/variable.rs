@@ -326,7 +326,7 @@ mod tests {
 
     #[test]
     fn test_write_multiple_byte_variables_serialize_maximum() {
-        let large_values: Vec<u8> = (0..100).map(|i| i as u8).collect();
+        let large_values: Vec<u8> = (0..100).map(|i| u8::try_from(i).unwrap_or(0)).collect();
         let cmd = WriteMultipleByteVariables::new(0, large_values)
             .expect("Valid command should not fail");
         let payload = cmd.serialize().expect("Serialization should not fail");

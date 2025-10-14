@@ -1,5 +1,6 @@
 #![allow(clippy::expect_used)]
 #![allow(clippy::float_cmp)]
+#![allow(clippy::panic)]
 // Integration tests for variable operations
 
 use crate::common::{
@@ -171,7 +172,7 @@ test_with_logging!(test_multiple_byte_variables_operations, {
     assert_eq!(read_boundary_values, boundary_values);
 
     // Test larger count (multiple of 2)
-    let large_values: Vec<u8> = (0..20).map(|i| (i * 5) as u8).collect();
+    let large_values: Vec<u8> = (0..20).map(|i| u8::try_from(i * 5).unwrap_or(0)).collect();
     client
         .write_multiple_byte_variables(20, large_values.clone())
         .await
@@ -192,39 +193,33 @@ test_with_logging!(test_multiple_byte_variables_error_cases, {
 
     // Test odd count (should fail)
     let odd_values = vec![10, 20, 30]; // count = 3 (odd)
-    match client.write_multiple_byte_variables(0, odd_values).await {
-        Ok(_) => panic!("Should fail for odd count"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(()) = client.write_multiple_byte_variables(0, odd_values).await {
+        panic!("Should fail for odd count");
+    } // Expected: Err
 
     // Test reading with odd count (should fail)
-    match client.read_multiple_byte_variables(0, 3).await {
-        Ok(_) => panic!("Should fail for odd count read"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(_) = client.read_multiple_byte_variables(0, 3).await {
+        panic!("Should fail for odd count read");
+    } // Expected: Err
 
     // Test range overflow (start + count - 1 > 99)
     let overflow_values = vec![10, 20]; // count = 2
-    match client.write_multiple_byte_variables(99, overflow_values).await {
-        Ok(_) => panic!("Should fail for range overflow"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(()) = client.write_multiple_byte_variables(99, overflow_values).await {
+        panic!("Should fail for range overflow");
+    } // Expected: Err
 
     // Test reading with range overflow
-    match client.read_multiple_byte_variables(99, 2).await {
-        Ok(_) => panic!("Should fail for range overflow read"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(_) = client.read_multiple_byte_variables(99, 2).await {
+        panic!("Should fail for range overflow read");
+    } // Expected: Err
 
     // Test zero count (should fail)
-    match client.read_multiple_byte_variables(0, 0).await {
-        Ok(_) => panic!("Should fail for zero count"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(_) = client.read_multiple_byte_variables(0, 0).await {
+        panic!("Should fail for zero count");
+    } // Expected: Err
 
     // Test empty values (should fail)
-    match client.write_multiple_byte_variables(0, vec![]).await {
-        Ok(_) => panic!("Should fail for empty values"),
-        Err(_) => {} // Expected
-    }
+    if let Ok(()) = client.write_multiple_byte_variables(0, vec![]).await {
+        panic!("Should fail for empty values");
+    } // Expected: Err
 });
