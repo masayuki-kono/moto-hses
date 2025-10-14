@@ -35,10 +35,15 @@ impl CommandHandler for RegisterHandler {
                     return Err(proto::ProtocolError::InvalidCommand);
                 }
 
-                if message.payload.len() >= 2 {
-                    let value = i16::from_le_bytes([message.payload[0], message.payload[1]]);
-                    state.set_register(reg_number, value);
+                if message.payload.len() != 2 {
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length for register write: expected 2 bytes, got {}",
+                        message.payload.len()
+                    )));
                 }
+
+                let value = i16::from_le_bytes([message.payload[0], message.payload[1]]);
+                state.set_register(reg_number, value);
                 Ok(vec![])
             }
             _ => Err(proto::ProtocolError::InvalidService),
