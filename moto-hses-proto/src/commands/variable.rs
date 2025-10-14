@@ -207,8 +207,9 @@ impl Command for WriteMultipleByteVariables {
         0x34 // Write plural data
     }
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let count = u32::try_from(self.values.len())
-            .map_err(|_| ProtocolError::InvalidMessage("Values count too large".to_string()))?;
+        let len = self.values.len();
+        let count = u32::try_from(len)
+            .map_err(|_| ProtocolError::InvalidMessage(format!("Values count too large: {len}")))?;
         let mut payload = count.to_le_bytes().to_vec();
         payload.extend_from_slice(&self.values);
         Ok(payload)
