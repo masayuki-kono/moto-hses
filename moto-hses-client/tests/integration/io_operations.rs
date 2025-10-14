@@ -111,6 +111,8 @@ test_with_logging!(test_read_multiple_io, {
     let io_data = client.read_multiple_io(1, 4).await.expect("Failed to read multiple I/O");
     log::info!("Read {} I/O data bytes", io_data.len());
     assert_eq!(io_data.len(), 4, "Should read exactly 4 I/O data bytes");
+    // Verify that I/O #1 is ON (bit 0 of first byte)
+    assert_eq!(io_data[0] & 0b0000_0001, 0b0000_0001, "I/O #1 should be ON");
 
     // Test reading from network input range
     log::info!("Reading multiple I/O data from network input...");
