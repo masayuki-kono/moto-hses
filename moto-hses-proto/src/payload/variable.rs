@@ -109,10 +109,6 @@ impl HsesPayload for Vec<u8> {
         let trimmed_len = padded_data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
 
         // If all bytes are null, return empty vector
-        if trimmed_len == 0 {
-            Ok(vec![])
-        } else {
-            Ok(padded_data[..trimmed_len].to_vec())
-        }
+        if trimmed_len == 0 { Ok(vec![]) } else { Ok(padded_data[..trimmed_len].to_vec()) }
     }
 }

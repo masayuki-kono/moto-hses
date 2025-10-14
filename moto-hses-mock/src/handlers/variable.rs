@@ -310,14 +310,16 @@ impl CommandHandler for PluralByteVarHandler {
         ]);
 
         // Validate count (max 474, must be > 0, must be multiple of 2)
-        if count == 0 || count > 474 || count % 2 != 0 {
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
             return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
         }
-        
+
         // Validate range doesn't exceed maximum variable number
         let end_variable = u32::from(start_variable) + count - 1;
         if end_variable > 99 {
-            return Err(proto::ProtocolError::InvalidMessage("Variable range exceeds maximum".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(
+                "Variable range exceeds maximum".to_string(),
+            ));
         }
 
         match service {

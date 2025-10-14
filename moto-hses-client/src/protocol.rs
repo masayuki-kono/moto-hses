@@ -1,15 +1,16 @@
 //! Protocol communication for HSES client
 
 use moto_hses_proto::{
-    commands::{
-        parse_file_content, parse_file_list, JobSelectCommand, JobSelectType, JobStartCommand,
-        ReadMultipleByteVariables, ReadMultipleIo, WriteMultipleByteVariables, WriteMultipleIo,
-    },
     Alarm, AlarmAttribute, AlarmReset, Command, DeleteFile, Division, ExecutingJobInfo,
     HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory, ReadCurrentPosition,
     ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
     ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
     WriteVar,
+    commands::{
+        JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleByteVariables,
+        ReadMultipleIo, WriteMultipleByteVariables, WriteMultipleIo, parse_file_content,
+        parse_file_list,
+    },
 };
 use std::fmt::Write;
 use std::sync::atomic::Ordering;

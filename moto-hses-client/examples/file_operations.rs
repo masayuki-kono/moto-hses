@@ -5,7 +5,7 @@
 use log::info;
 
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{TextEncoding, FILE_CONTROL_PORT};
+use moto_hses_proto::{FILE_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]

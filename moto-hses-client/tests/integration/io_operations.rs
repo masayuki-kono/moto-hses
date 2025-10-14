@@ -2,7 +2,7 @@
 // Integration tests for I/O operations
 
 use crate::common::{
-    mock_server_setup::{create_io_test_server, MockServerManager},
+    mock_server_setup::{MockServerManager, create_io_test_server},
     test_utils::create_test_client,
 };
 use crate::test_with_logging;

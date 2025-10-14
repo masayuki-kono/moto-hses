@@ -1,7 +1,7 @@
 //! Variable related commands (`ReadVar`, `WriteVar`)
 
 use super::command_trait::Command;
-use crate::{error::ProtocolError, HsesPayload};
+use crate::{HsesPayload, error::ProtocolError};
 use std::marker::PhantomData;
 
 /// Command ID mapping for variable types
@@ -116,7 +116,7 @@ impl ReadMultipleByteVariables {
                 "Invalid count: {count} (must be 1-474)"
             )));
         }
-        if count % 2 != 0 {
+        if !count.is_multiple_of(2) {
             return Err(ProtocolError::InvalidMessage(format!(
                 "Count must be multiple of 2: {count}"
             )));
@@ -168,7 +168,7 @@ impl WriteMultipleByteVariables {
     pub fn new(start_variable_number: u8, values: Vec<u8>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 474, must be > 0, must be multiple of 2)
-        if count == 0 || count > 474 || count % 2 != 0 {
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
             return Err(ProtocolError::InvalidMessage(format!(
                 "Invalid count: {count} (must be 1-474 and multiple of 2)"
             )));
@@ -179,7 +179,7 @@ impl WriteMultipleByteVariables {
                 "Invalid variable number: {start_variable_number} (valid range: 0-99)"
             )));
         }
-        let end_variable = u32::from(start_variable_number) + count as u32 - 1;
+        let end_variable = u32::from(start_variable_number) + u32::try_from(count).map_err(|_| ProtocolError::InvalidMessage("Count too large".to_string()))? - 1;
         if end_variable > 99 {
             return Err(ProtocolError::InvalidMessage(format!(
                 "Variable range exceeds maximum: {start_variable_number}-{end_variable} (max 99)"
