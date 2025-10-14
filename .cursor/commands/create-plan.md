@@ -28,3 +28,12 @@ When creating implementation plans in Plan mode, please follow these key require
 - Update the To-dos section at the end of the implementation plan in `.cursor/plans/`
 - Mark completed tasks as "completed" and update any remaining tasks with current status
 - This ensures plan documents reflect the actual implementation progress
+
+- **Always include task to update plan content based on final implementation**
+- Review the actual implementation against the original plan
+- Update plan sections to reflect what was actually implemented:
+  - Technical approach details that changed during implementation
+  - File structure and module organization that evolved
+  - Implementation patterns and decisions that differed from the plan
+  - Any scope changes or feature additions/removals
+- This prevents plan documents from becoming outdated and ensures they remain valuable references for future implementations
