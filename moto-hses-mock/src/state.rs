@@ -293,7 +293,7 @@ impl MockState {
     #[must_use]
     #[allow(clippy::expect_used)]
     pub fn get_multiple_registers(&self, start_register: u16, count: usize) -> Vec<i16> {
-        let mut values = Vec::new();
+        let mut values = Vec::with_capacity(count);
         for i in 0..count {
             let reg_num = start_register + u16::try_from(i).expect("i should fit in u16");
             values.push(self.get_register(reg_num));

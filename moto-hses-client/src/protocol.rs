@@ -606,7 +606,7 @@ impl HsesClient {
             ));
         }
 
-        let mut values = Vec::new();
+        let mut values = Vec::with_capacity(count as usize);
         for i in 0..count as usize {
             let offset = 4 + i * 2;
             let value = i16::from_le_bytes([response[offset], response[offset + 1]]);
