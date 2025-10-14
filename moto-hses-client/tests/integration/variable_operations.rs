@@ -182,7 +182,7 @@ test_with_logging!(test_multiple_byte_variables_boundary, {
     assert_eq!(read_boundary, boundary_values);
 
     // Test maximum safe range: variables 0-99 (100 variables)
-    let max_values: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+    let max_values: Vec<u8> = (0u8..100u8).collect();
     client
         .write_multiple_byte_variables(0, max_values.clone())
         .await
@@ -203,48 +203,32 @@ test_with_logging!(test_multiple_byte_variables_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test count must be multiple of 2 (should fail)
-    match client.read_multiple_byte_variables(0, 3).await {
-        Ok(_) => panic!("Should fail for odd count"),
-        Err(_) => {} // Expected
-    }
+    let result = client.read_multiple_byte_variables(0, 3).await;
+    assert!(result.is_err(), "Should fail for odd count");
 
-    match client.write_multiple_byte_variables(0, vec![10, 20, 30]).await {
-        Ok(_) => panic!("Should fail for odd count"),
-        Err(_) => {} // Expected
-    }
+    let result = client.write_multiple_byte_variables(0, vec![10, 20, 30]).await;
+    assert!(result.is_err(), "Should fail for odd count");
 
     // Test range overflow (should fail)
-    match client.read_multiple_byte_variables(99, 4).await {
-        Ok(_) => panic!("Should fail for range overflow"),
-        Err(_) => {} // Expected
-    }
+    let result = client.read_multiple_byte_variables(99, 4).await;
+    assert!(result.is_err(), "Should fail for range overflow");
 
-    match client.write_multiple_byte_variables(99, vec![10, 20, 30, 40]).await {
-        Ok(_) => panic!("Should fail for range overflow"),
-        Err(_) => {} // Expected
-    }
+    let result = client.write_multiple_byte_variables(99, vec![10, 20, 30, 40]).await;
+    assert!(result.is_err(), "Should fail for range overflow");
 
     // Test invalid variable number (should fail)
-    match client.read_multiple_byte_variables(100, 2).await {
-        Ok(_) => panic!("Should fail for invalid variable number"),
-        Err(_) => {} // Expected
-    }
+    let result = client.read_multiple_byte_variables(100, 2).await;
+    assert!(result.is_err(), "Should fail for invalid variable number");
 
-    match client.write_multiple_byte_variables(100, vec![10, 20]).await {
-        Ok(_) => panic!("Should fail for invalid variable number"),
-        Err(_) => {} // Expected
-    }
+    let result = client.write_multiple_byte_variables(100, vec![10, 20]).await;
+    assert!(result.is_err(), "Should fail for invalid variable number");
 
     // Test zero count (should fail)
-    match client.read_multiple_byte_variables(0, 0).await {
-        Ok(_) => panic!("Should fail for zero count"),
-        Err(_) => {} // Expected
-    }
+    let result = client.read_multiple_byte_variables(0, 0).await;
+    assert!(result.is_err(), "Should fail for zero count");
 
-    match client.write_multiple_byte_variables(0, vec![]).await {
-        Ok(_) => panic!("Should fail for empty values"),
-        Err(_) => {} // Expected
-    }
+    let result = client.write_multiple_byte_variables(0, vec![]).await;
+    assert!(result.is_err(), "Should fail for empty values");
 });
 
 test_with_logging!(test_multiple_byte_variables_mixed_operations, {

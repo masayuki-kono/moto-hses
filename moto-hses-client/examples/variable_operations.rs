@@ -210,7 +210,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.write_multiple_byte_variables(10, values.clone()).await {
         Ok(()) => {
             info!("✓ Wrote {} byte variables (B010-B015) in one operation", values.len());
-            info!("  Values: {:?}", values);
+            info!("  Values: {values:?}");
         }
         Err(e) => {
             info!("✗ Failed to write multiple byte variables: {e}");
@@ -221,7 +221,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.read_multiple_byte_variables(10, 6).await {
         Ok(read_values) => {
             info!("✓ Read {} byte variables (B010-B015) in one operation", read_values.len());
-            info!("  Values: {:?}", read_values);
+            info!("  Values: {read_values:?}");
             if read_values == values {
                 info!("  ✓ Values match expected");
             } else {
@@ -244,7 +244,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let individual_time = start.elapsed();
-    info!("✓ Individual writes took: {:?}", individual_time);
+    info!("✓ Individual writes took: {individual_time:?}");
 
     // Multiple operation (more efficient)
     let start = std::time::Instant::now();
@@ -252,7 +252,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.write_multiple_byte_variables(30, batch_values).await {
         Ok(()) => {
             let batch_time = start.elapsed();
-            info!("✓ Batch write took: {:?}", batch_time);
+            info!("✓ Batch write took: {batch_time:?}");
             if batch_time < individual_time {
                 info!(
                     "  ✓ Batch operation was {} faster!",
