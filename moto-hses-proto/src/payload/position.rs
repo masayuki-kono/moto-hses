@@ -352,7 +352,8 @@ impl Position {
                     data.extend_from_slice(&((cart.z * 1000.0) as i32).to_le_bytes()); // mm to μm
                     data.extend_from_slice(&((cart.rx * 10000.0) as i32).to_le_bytes()); // deg to 0.0001deg
                     data.extend_from_slice(&((cart.ry * 10000.0) as i32).to_le_bytes()); // deg to 0.0001deg
-                    data.extend_from_slice(&((cart.rz * 10000.0) as i32).to_le_bytes()); // deg to 0.0001deg
+                    data.extend_from_slice(&((cart.rz * 10000.0) as i32).to_le_bytes());
+                    // deg to 0.0001deg
                 }
             }
         }
