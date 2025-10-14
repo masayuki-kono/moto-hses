@@ -34,12 +34,14 @@ When there are unclear points, refer to specifications in the following order:
 **CRITICAL**: Never use `unwrap_or(MAX_VALUE)` for type conversions.
 
 ```rust
+let offset_value = i * 8 + bit;
+
 // ❌ DANGEROUS - Silent failure with wrong value
-let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
+let offset = u16::try_from(offset_value).unwrap_or(u16::MAX);
 
 // ✅ SAFE - Explicit error handling
-let offset = u16::try_from(i * 8 + bit)
-    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
+let offset = u16::try_from(offset_value)
+    .map_err(|_| format!("I/O offset {offset_value} exceeds u16::MAX"))?;
 ```
 
 **Reason**: Using `unwrap_or(MAX_VALUE)` can cause severe issues by silently mapping out-of-range values to maximum values, leading to incorrect calculations and potential system failures.
