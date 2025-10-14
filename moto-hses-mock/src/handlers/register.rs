@@ -79,7 +79,10 @@ impl CommandHandler for PluralRegisterHandler {
 
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
-            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: expected at least 4 bytes, got {}",
+                message.payload.len()
+            )));
         }
 
         let count = u32::from_le_bytes([
@@ -106,9 +109,17 @@ impl CommandHandler for PluralRegisterHandler {
 
         match service {
             0x33 => {
+                // Read request must contain only count (4 bytes)
+                if message.payload.len() != 4 {
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length for plural register read: expected 4 bytes (count only), got {}",
+                        message.payload.len()
+                    )));
+                }
                 // Read - return count + register data
                 let values = state.get_multiple_registers(start_register, count as usize);
-                let mut response = count.to_le_bytes().to_vec();
+                let mut response = Vec::with_capacity(4 + (count as usize * 2));
+                response.extend_from_slice(&count.to_le_bytes());
                 for value in values {
                     response.extend_from_slice(&value.to_le_bytes());
                 }
