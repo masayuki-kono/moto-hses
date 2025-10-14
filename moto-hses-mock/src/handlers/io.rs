@@ -171,7 +171,25 @@ impl CommandHandler for PluralIoHandler {
                 let io_data_count_u16 = u16::try_from(io_data_count).map_err(|_| {
                     proto::ProtocolError::InvalidMessage("I/O data count too large".to_string())
                 })?;
-                let end_io_number = start_io_number + (io_data_count_u16 * 8) - 1;
+                let end_io_number = start_io_number
+                    .checked_add(
+                        io_data_count_u16
+                            .checked_mul(8)
+                            .ok_or_else(|| {
+                                proto::ProtocolError::InvalidMessage(
+                                    "I/O data count overflow".to_string(),
+                                )
+                            })?
+                            .checked_sub(1)
+                            .ok_or_else(|| {
+                                proto::ProtocolError::InvalidMessage(
+                                    "I/O data count is zero".to_string(),
+                                )
+                            })?,
+                    )
+                    .ok_or_else(|| {
+                        proto::ProtocolError::InvalidMessage("I/O range overflow".to_string())
+                    })?;
 
                 // Check that the entire range falls within network input range (2701..=2956)
                 if end_io_number > 2956 {
