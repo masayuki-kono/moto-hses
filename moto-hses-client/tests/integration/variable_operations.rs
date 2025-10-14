@@ -193,33 +193,39 @@ test_with_logging!(test_multiple_byte_variables_error_cases, {
 
     // Test odd count (should fail)
     let odd_values = vec![10, 20, 30]; // count = 3 (odd)
-    if matches!(client.write_multiple_byte_variables(0, odd_values).await, Ok(())) {
-        panic!("Should fail for odd count");
-    } // Expected: Err
+    assert!(
+        client.write_multiple_byte_variables(0, odd_values).await.is_err(),
+        "write_multiple_byte_variables should error for odd count"
+    );
 
     // Test reading with odd count (should fail)
     assert!(
         client.read_multiple_byte_variables(0, 3).await.is_err(),
-        "Should fail for odd count read"
-    ); // Expected: Err
+        "read_multiple_byte_variables should error for odd count"
+    );
 
     // Test range overflow (start + count - 1 > 99)
     let overflow_values = vec![10, 20]; // count = 2
-    if matches!(client.write_multiple_byte_variables(99, overflow_values).await, Ok(())) {
-        panic!("Should fail for range overflow");
-    } // Expected: Err
+    assert!(
+        client.write_multiple_byte_variables(99, overflow_values).await.is_err(),
+        "write_multiple_byte_variables should error for range overflow"
+    );
 
     // Test reading with range overflow
     assert!(
         client.read_multiple_byte_variables(99, 2).await.is_err(),
-        "Should fail for range overflow read"
-    ); // Expected: Err
+        "read_multiple_byte_variables should error for range overflow"
+    );
 
     // Test zero count (should fail)
-    assert!(client.read_multiple_byte_variables(0, 0).await.is_err(), "Should fail for zero count"); // Expected: Err
+    assert!(
+        client.read_multiple_byte_variables(0, 0).await.is_err(),
+        "read_multiple_byte_variables should error for zero count"
+    );
 
     // Test empty values (should fail)
-    if matches!(client.write_multiple_byte_variables(0, vec![]).await, Ok(())) {
-        panic!("Should fail for empty values");
-    } // Expected: Err
+    assert!(
+        client.write_multiple_byte_variables(0, vec![]).await.is_err(),
+        "write_multiple_byte_variables should error for empty values"
+    );
 });
