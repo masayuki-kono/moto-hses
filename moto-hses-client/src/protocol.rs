@@ -473,12 +473,14 @@ impl HsesClient {
         // Convert count to usize and validate response length
         let response_count_usize = response_count as usize;
         let expected_length = 4 + response_count_usize;
-        
+
         if response.len() < expected_length {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(
-                    format!("Truncated response: expected {} bytes, got {}", expected_length, response.len())
-                ),
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Truncated response: expected {} bytes, got {}",
+                    expected_length,
+                    response.len()
+                )),
             ));
         }
 
