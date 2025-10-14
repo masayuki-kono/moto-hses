@@ -292,8 +292,14 @@ impl MockServer {
                 // For invalid attribute, return error status
                 (vec![], 0x03, 0x0003) // Error status with attribute error code
             }
-            Err(_e) => {
-                // For other errors, return generic error status
+            Err(proto::ProtocolError::InvalidMessage(msg)) => {
+                // Log detailed error message and return generic error status
+                error!("Protocol error: {msg}");
+                (vec![], 0xFF, 0x00FF) // Generic error status
+            }
+            Err(e) => {
+                // For other errors, log and return generic error status
+                error!("Protocol error: {e}");
                 (vec![], 0xFF, 0x00FF) // Generic error status
             }
         };

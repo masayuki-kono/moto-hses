@@ -154,6 +154,100 @@ impl Command for WriteIo {
     }
 }
 
+/// Read multiple I/O data command (0x300)
+#[derive(Debug, Clone)]
+pub struct ReadMultipleIo {
+    pub start_io_number: u16,
+    pub count: u32, // Number of I/O data (max 474, must be multiple of 2)
+}
+
+impl ReadMultipleIo {
+    /// Create a new `ReadMultipleIo` command
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I/O number is invalid or count is invalid
+    pub fn new(start_io_number: u16, count: u32) -> Result<Self, ProtocolError> {
+        if !IoCategory::is_valid_io_number(start_io_number) {
+            return Err(ProtocolError::InvalidCommand);
+        }
+        // Validate count (max 474, must be multiple of 2)
+        if count == 0 || count > 474 || count % 2 != 0 {
+            return Err(ProtocolError::InvalidMessage("Invalid count".to_string()));
+        }
+        Ok(Self { start_io_number, count })
+    }
+}
+
+impl Command for ReadMultipleIo {
+    type Response = Vec<u8>; // Array of I/O data bytes
+    fn command_id() -> u16 {
+        0x300
+    }
+    fn instance(&self) -> u16 {
+        self.start_io_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Different from 0x78 (which uses 1)
+    fn service(&self) -> u8 {
+        0x33
+    } // Read plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // Only send count (4 bytes, little-endian)
+        Ok(self.count.to_le_bytes().to_vec())
+    }
+}
+
+/// Write multiple I/O data command (0x300)
+#[derive(Debug, Clone)]
+pub struct WriteMultipleIo {
+    pub start_io_number: u16,
+    pub io_data: Vec<u8>, // Each byte contains 8 I/O states
+}
+
+impl WriteMultipleIo {
+    /// Create a new `WriteMultipleIo` command
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I/O number is invalid or `io_data` is invalid
+    pub fn new(start_io_number: u16, io_data: Vec<u8>) -> Result<Self, ProtocolError> {
+        if !IoCategory::is_valid_io_number(start_io_number) {
+            return Err(ProtocolError::InvalidCommand);
+        }
+        let count = io_data.len();
+        // Validate count (max 474, must be multiple of 2)
+        if count == 0 || count > 474 || count % 2 != 0 {
+            return Err(ProtocolError::InvalidMessage("Invalid count".to_string()));
+        }
+        Ok(Self { start_io_number, io_data })
+    }
+}
+
+impl Command for WriteMultipleIo {
+    type Response = ();
+    fn command_id() -> u16 {
+        0x300
+    }
+    fn instance(&self) -> u16 {
+        self.start_io_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Different from 0x78 (which uses 1)
+    fn service(&self) -> u8 {
+        0x34
+    } // Write plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        let count = u32::try_from(self.io_data.len())
+            .map_err(|_| ProtocolError::InvalidMessage("I/O data too large".to_string()))?;
+        let mut payload = count.to_le_bytes().to_vec();
+        payload.extend_from_slice(&self.io_data);
+        Ok(payload)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,5 +309,118 @@ mod tests {
             assert!(start <= end, "Range {category:?}: start ({start}) should be <= end ({end})");
             assert!(start > 0, "Range {category:?}: start ({start}) should be > 0");
         }
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_read_multiple_io_construction() {
+        // Valid construction
+        let cmd = ReadMultipleIo::new(1, 2).unwrap();
+        assert_eq!(cmd.start_io_number, 1);
+        assert_eq!(cmd.count, 2);
+
+        // Valid construction with maximum count
+        let cmd = ReadMultipleIo::new(2701, 474).unwrap();
+        assert_eq!(cmd.start_io_number, 2701);
+        assert_eq!(cmd.count, 474);
+    }
+
+    #[test]
+    fn test_read_multiple_io_validation() {
+        // Invalid I/O number
+        assert!(ReadMultipleIo::new(0, 2).is_err());
+        assert!(ReadMultipleIo::new(65535, 2).is_err());
+
+        // Invalid count - zero
+        assert!(ReadMultipleIo::new(1, 0).is_err());
+
+        // Invalid count - odd number
+        assert!(ReadMultipleIo::new(1, 1).is_err());
+        assert!(ReadMultipleIo::new(1, 3).is_err());
+
+        // Invalid count - too large
+        assert!(ReadMultipleIo::new(1, 475).is_err());
+        assert!(ReadMultipleIo::new(1, 1000).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_read_multiple_io_command_trait() {
+        let cmd = ReadMultipleIo::new(1, 2).unwrap();
+        assert_eq!(ReadMultipleIo::command_id(), 0x300);
+        assert_eq!(cmd.instance(), 1);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x33);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_read_multiple_io_serialization() {
+        let cmd = ReadMultipleIo::new(1, 2).unwrap();
+        let payload = cmd.serialize().unwrap();
+        assert_eq!(payload, vec![2, 0, 0, 0]); // 2 in little-endian
+
+        let cmd = ReadMultipleIo::new(2701, 474).unwrap();
+        let payload = cmd.serialize().unwrap();
+        assert_eq!(payload, vec![218, 1, 0, 0]); // 474 in little-endian
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    #[allow(clippy::redundant_clone)]
+    fn test_write_multiple_io_construction() {
+        // Valid construction
+        let io_data = vec![0b1010_1010, 0b0101_0101];
+        let cmd = WriteMultipleIo::new(2701, io_data.clone()).unwrap();
+        assert_eq!(cmd.start_io_number, 2701);
+        assert_eq!(cmd.io_data, io_data);
+
+        // Valid construction with maximum count
+        let io_data = vec![0u8; 474];
+        let cmd = WriteMultipleIo::new(2701, io_data.clone()).unwrap();
+        assert_eq!(cmd.start_io_number, 2701);
+        assert_eq!(cmd.io_data.len(), 474);
+    }
+
+    #[test]
+    fn test_write_multiple_io_validation() {
+        // Invalid I/O number
+        assert!(WriteMultipleIo::new(0, vec![0, 0]).is_err());
+        assert!(WriteMultipleIo::new(65535, vec![0, 0]).is_err());
+
+        // Invalid count - empty
+        assert!(WriteMultipleIo::new(1, vec![]).is_err());
+
+        // Invalid count - odd number
+        assert!(WriteMultipleIo::new(1, vec![0]).is_err());
+        assert!(WriteMultipleIo::new(1, vec![0, 0, 0]).is_err());
+
+        // Invalid count - too large
+        let large_data = vec![0u8; 475];
+        assert!(WriteMultipleIo::new(1, large_data).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_write_multiple_io_command_trait() {
+        let io_data = vec![0b1010_1010, 0b0101_0101];
+        let cmd = WriteMultipleIo::new(1, io_data).unwrap();
+        assert_eq!(WriteMultipleIo::command_id(), 0x300);
+        assert_eq!(cmd.instance(), 1);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x34);
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn test_write_multiple_io_serialization() {
+        let io_data = vec![0b1010_1010, 0b0101_0101];
+        let cmd = WriteMultipleIo::new(1, io_data.clone()).unwrap();
+        let payload = cmd.serialize().unwrap();
+
+        // Expected: count (4 bytes) + io_data
+        let mut expected = vec![2, 0, 0, 0]; // count = 2 in little-endian
+        expected.extend_from_slice(&io_data);
+        assert_eq!(payload, expected);
     }
 }

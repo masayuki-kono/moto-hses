@@ -96,6 +96,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => info!("Failed to read I/O #2701: {e}"),
     }
 
+    info!("\n=== 0x300 Command (Plural I/O Operations) ===\n");
+
+    // Read multiple I/O data from network input
+    info!("Reading multiple I/O data from network input (I/O #2701-2704)...");
+    match client.read_multiple_io(2701, 4).await {
+        Ok(io_data) => {
+            info!("Read {} I/O data bytes from network input:", io_data.len());
+            for (i, &byte) in io_data.iter().enumerate() {
+                #[allow(clippy::cast_possible_truncation)]
+                let io_number = 2701 + i as u16;
+                info!("  I/O #{io_number}: 0b{byte:08b}");
+            }
+        }
+        Err(e) => info!("Failed to read multiple I/O from network input: {e}"),
+    }
+
+    // Write multiple I/O data to network input signals
+    info!("Writing multiple I/O data to network input signals (I/O #2701-2704)...");
+    let io_data = vec![0b1010_1010, 0b0101_0101, 0b1111_0000, 0b0000_1111];
+    match client.write_multiple_io(2701, io_data.clone()).await {
+        Ok(()) => {
+            info!("Successfully wrote {} I/O data bytes:", io_data.len());
+            for (i, &byte) in io_data.iter().enumerate() {
+                #[allow(clippy::cast_possible_truncation)]
+                let io_number = 2701 + i as u16;
+                info!("  I/O #{io_number}: 0b{byte:08b}");
+            }
+        }
+        Err(e) => info!("Failed to write multiple I/O: {e}"),
+    }
+
     info!("\nI/O operations completed.");
 
     Ok(())

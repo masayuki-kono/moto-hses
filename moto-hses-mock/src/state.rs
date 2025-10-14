@@ -221,6 +221,59 @@ impl MockState {
         self.io_states.insert(io_number, state);
     }
 
+    /// Get multiple I/O states
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I/O offset exceeds `u16::MAX`
+    pub fn get_multiple_io_states(
+        &self,
+        start_io_number: u16,
+        count: usize,
+    ) -> Result<Vec<u8>, String> {
+        let mut result = Vec::with_capacity(count);
+        for i in 0..count {
+            let mut byte_value = 0u8;
+            for bit in 0..8 {
+                let offset = u16::try_from(i * 8 + bit)
+                    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
+                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
+                    format!("I/O number {start_io_number} + {offset} overflows u16")
+                })?;
+                let state = self.get_io_state(io_number);
+                if state {
+                    byte_value |= 1 << bit;
+                }
+            }
+            result.push(byte_value);
+        }
+        Ok(result)
+    }
+
+    /// Set multiple I/O states
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the I/O offset exceeds `u16::MAX`
+    pub fn set_multiple_io_states(
+        &mut self,
+        start_io_number: u16,
+        io_data: &[u8],
+    ) -> Result<(), String> {
+        for (i, &byte) in io_data.iter().enumerate() {
+            for bit in 0..8 {
+                let offset = u16::try_from(i * 8 + bit)
+                    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
+                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
+                    format!("I/O number {start_io_number} + {offset} overflows u16")
+                })?;
+                let state = (byte & (1 << bit)) != 0;
+                self.set_io_state(io_number, state);
+            }
+        }
+        Ok(())
+    }
+
     /// Get register value
     #[must_use]
     pub fn get_register(&self, reg_number: u16) -> i16 {

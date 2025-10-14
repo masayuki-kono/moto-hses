@@ -101,3 +101,128 @@ test_with_logging!(test_read_and_write_io_with_invalid_number, {
         }
     }
 });
+
+test_with_logging!(test_read_multiple_io, {
+    let _server = create_io_test_server().await.expect("Failed to start mock server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test reading multiple I/O data
+    log::info!("Reading multiple I/O data from robot user input...");
+    let io_data = client.read_multiple_io(1, 4).await.expect("Failed to read multiple I/O");
+    log::info!("Read {} I/O data bytes", io_data.len());
+    assert_eq!(io_data.len(), 4, "Should read exactly 4 I/O data bytes");
+    // Verify that I/O #1 is ON (bit 0 of first byte)
+    assert_eq!(io_data[0] & 0b0000_0001, 0b0000_0001, "I/O #1 should be ON");
+
+    // Test reading from network input range
+    log::info!("Reading multiple I/O data from network input...");
+    let io_data = client.read_multiple_io(2701, 2).await.expect("Failed to read multiple I/O");
+    log::info!("Read {} I/O data bytes from network input", io_data.len());
+    assert_eq!(io_data.len(), 2, "Should read exactly 2 I/O data bytes");
+});
+
+test_with_logging!(test_write_multiple_io, {
+    let _server = create_io_test_server().await.expect("Failed to start mock server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test writing multiple I/O data to network input signals
+    log::info!("Writing multiple I/O data to network input signals...");
+    let io_data = vec![0b1010_1010, 0b0101_0101];
+    client.write_multiple_io(2701, io_data.clone()).await.expect("Failed to write multiple I/O");
+    log::info!("Successfully wrote {} I/O data bytes", io_data.len());
+
+    // Wait a moment and verify the change
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    log::info!("Verifying written I/O data...");
+    let read_data = client.read_multiple_io(2701, 2).await.expect("Failed to read back I/O data");
+    log::info!("Read back data: {read_data:?}");
+    assert_eq!(read_data, io_data, "Read back data should match written data");
+});
+
+test_with_logging!(test_multiple_io_validation, {
+    let _server = create_io_test_server().await.expect("Failed to start mock server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid count (odd number)
+    log::info!("Testing invalid count (odd number)...");
+    match client.read_multiple_io(1, 3).await {
+        Ok(_) => {
+            log::error!("✗ Odd count succeeded unexpectedly");
+            unreachable!("Odd count should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Odd count correctly failed: {e}");
+        }
+    }
+
+    // Test invalid count (too large)
+    log::info!("Testing invalid count (too large)...");
+    match client.read_multiple_io(1, 475).await {
+        Ok(_) => {
+            log::error!("✗ Too large count succeeded unexpectedly");
+            unreachable!("Too large count should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Too large count correctly failed: {e}");
+        }
+    }
+
+    // Test write to non-writable range
+    log::info!("Testing write to non-writable range...");
+    let io_data = vec![0b1010_1010, 0b0101_0101];
+    match client.write_multiple_io(1, io_data).await {
+        Ok(()) => {
+            log::error!("✗ Write to non-writable range succeeded unexpectedly");
+            unreachable!("Write to non-writable range should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Write to non-writable range correctly failed: {e}");
+        }
+    }
+
+    // Test write that exceeds network input range
+    log::info!("Testing write that exceeds network input range...");
+    let large_io_data = vec![0u8; 258]; // This would exceed the 2701..=2956 range (256 bytes)
+    match client.write_multiple_io(2701, large_io_data).await {
+        Ok(()) => {
+            log::error!("✗ Write exceeding range succeeded unexpectedly");
+            unreachable!("Write exceeding range should return error");
+        }
+        Err(e) => {
+            log::debug!("✓ Write exceeding range correctly failed: {e}");
+        }
+    }
+});
+
+test_with_logging!(test_multiple_io_boundary_conditions, {
+    let _server = create_io_test_server().await.expect("Failed to start mock server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test minimum valid count (2)
+    log::info!("Testing minimum valid count (2)...");
+    let io_data = client.read_multiple_io(1, 2).await.expect("Failed to read minimum count");
+    assert_eq!(io_data.len(), 2, "Should read exactly 2 I/O data bytes");
+
+    // Test maximum valid count (474)
+    log::info!("Testing maximum valid count (474)...");
+    let io_data = client.read_multiple_io(1, 474).await.expect("Failed to read maximum count");
+    assert_eq!(io_data.len(), 474, "Should read exactly 474 I/O data bytes");
+
+    // Test writing maximum count to network input (within valid range)
+    log::info!("Testing write maximum count to network input...");
+    // Calculate maximum safe count: (2956 - 2701 + 1) / 8 = 32 bytes
+    let max_safe_count = (2956 - 2701 + 1) / 8;
+    let large_io_data = vec![0u8; max_safe_count as usize];
+    client
+        .write_multiple_io(2701, large_io_data.clone())
+        .await
+        .expect("Failed to write maximum safe count");
+
+    // Verify the write
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    let read_data = client
+        .read_multiple_io(2701, max_safe_count)
+        .await
+        .expect("Failed to read back maximum safe count");
+    assert_eq!(read_data, large_io_data, "Read back data should match written data");
+});
