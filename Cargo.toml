@@ -7,7 +7,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-edition = "2024"
+edition = "2021"
 license = "Apache-2.0"
 authors = ["masayuki-kono@mamezou.com"]
 
