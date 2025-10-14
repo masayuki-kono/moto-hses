@@ -285,6 +285,35 @@ impl MockState {
         self.registers.insert(reg_number, value);
     }
 
+    /// Get multiple register values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the count is too large to fit in a u16
+    #[must_use]
+    #[allow(clippy::expect_used)]
+    pub fn get_multiple_registers(&self, start_register: u16, count: usize) -> Vec<i16> {
+        let mut values = Vec::new();
+        for i in 0..count {
+            let reg_num = start_register + u16::try_from(i).expect("i should fit in u16");
+            values.push(self.get_register(reg_num));
+        }
+        values
+    }
+
+    /// Set multiple register values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the count is too large to fit in a u16
+    #[allow(clippy::expect_used)]
+    pub fn set_multiple_registers(&mut self, start_register: u16, values: &[i16]) {
+        for (i, &value) in values.iter().enumerate() {
+            let reg_num = start_register + u16::try_from(i).expect("i should fit in u16");
+            self.set_register(reg_num, value);
+        }
+    }
+
     /// Add alarm
     pub fn add_alarm(&mut self, alarm: proto::Alarm) {
         self.alarms.push(alarm);

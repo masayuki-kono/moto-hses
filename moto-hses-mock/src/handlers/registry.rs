@@ -9,7 +9,7 @@ use std::sync::Arc;
 use super::alarm::{AlarmDataHandler, AlarmInfoHandler, AlarmResetHandler};
 use super::cycle_mode_switching::CycleModeSwitchingHandler;
 use super::file::FileControlHandler;
-use super::io::{IoHandler, PluralIoHandler, RegisterHandler};
+use super::io::{IoHandler, PluralIoHandler};
 use super::job::{
     ExecutingJobInfoHandler, JobSelectHandler, JobStartHandler, MovHandler, PmovHandler,
 };
@@ -17,6 +17,7 @@ use super::position::{
     BasePositionVarHandler, ExternalAxisVarHandler, PositionErrorHandler, PositionHandler,
     PositionVarHandler,
 };
+use super::register::{PluralRegisterHandler, RegisterHandler};
 use super::system::{
     AxisNameHandler, HoldServoHandler, ManagementTimeHandler, StatusHandler, SystemInfoHandler,
     TextDisplayHandler, TorqueHandler,
@@ -76,8 +77,14 @@ impl CommandHandlerRegistry {
 
         // I/O handlers
         handlers.insert(0x78, Arc::new(IoHandler) as Arc<dyn CommandHandler + Send + Sync>);
-        handlers.insert(0x79, Arc::new(RegisterHandler) as Arc<dyn CommandHandler + Send + Sync>);
         handlers.insert(0x300, Arc::new(PluralIoHandler) as Arc<dyn CommandHandler + Send + Sync>);
+
+        // Register handlers
+        handlers.insert(0x79, Arc::new(RegisterHandler) as Arc<dyn CommandHandler + Send + Sync>);
+        handlers.insert(
+            0x301,
+            Arc::new(PluralRegisterHandler) as Arc<dyn CommandHandler + Send + Sync>,
+        );
 
         // Variable handlers
         handlers.insert(0x7a, Arc::new(ByteVarHandler) as Arc<dyn CommandHandler + Send + Sync>);

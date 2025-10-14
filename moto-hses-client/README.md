@@ -49,6 +49,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x86 | Start-up (Job Start) Command |
 | 0x87 | Job Select Command |
 | 0x300 | Plural I/O Data Reading / Writing Command |
+| 0x301 | Plural Register Data Reading / Writing Command |
 
 ### File Control Commands
 
