@@ -1429,7 +1429,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - Byte4: I/O data 1
   - Byte5: I/O data 2
   - ...
-  - Byte474: I/O data 474
+  - Byte(3 + Number): I/O data “Number”
   - Note:
     - When reading, only the "Number" field is valid
     - I/O data section is valid only when writing
@@ -1451,7 +1451,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - Byte4: I/O data 1
   - Byte5: I/O data 2
   - ...
-  - Byte474: I/O data 474
+  - Byte(3 + Number): I/O data “Number”
   - Note:
     - When writing, only the "Number" field is valid
     - I/O data section is valid only when reading
