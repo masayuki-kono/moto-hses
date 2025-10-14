@@ -63,7 +63,8 @@ impl CommandHandler for PluralIoHandler {
         // Validate I/O number range
         if !IoCategory::is_valid_io_number(start_io_number) {
             return Err(proto::ProtocolError::InvalidMessage(format!(
-                "Invalid start I/O number: {start_io_number}"
+                "Invalid start I/O number: {start_io_number} (valid range: {})",
+                IoCategory::valid_range_description()
             )));
         }
 

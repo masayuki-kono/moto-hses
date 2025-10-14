@@ -59,6 +59,38 @@ impl IoCategory {
         Self::from_io_number(io_number).is_some()
     }
 
+    /// Get the valid I/O number range as a string for error messages
+    #[must_use]
+    pub fn valid_range_description() -> String {
+        // Get all valid ranges from the range method of each category
+        let ranges: Vec<(u16, u16)> = [
+            Self::RobotUserInput,
+            Self::RobotUserOutput,
+            Self::ExternalInput,
+            Self::NetworkInput,
+            Self::ExternalOutput,
+            Self::NetworkOutput,
+            Self::RobotSystemInput,
+            Self::RobotSystemOutput,
+            Self::InterfacePanelInput,
+            Self::AuxiliaryRelay,
+            Self::RobotControlStatusSignal,
+            Self::PseudoInput,
+        ]
+        .iter()
+        .map(Self::range)
+        .collect();
+
+        let min = ranges.iter().map(|(start, _)| *start).min().unwrap_or(0);
+        let max = ranges.iter().map(|(_, end)| *end).max().unwrap_or(0);
+
+        // Create detailed range description
+        let range_strings: Vec<String> =
+            ranges.iter().map(|(start, end)| format!("{start}-{end}")).collect();
+
+        format!("{min}-{max} (ranges: {})", range_strings.join(", "))
+    }
+
     /// Get the range of I/O numbers for this category
     #[must_use]
     pub const fn range(&self) -> (u16, u16) {
@@ -170,7 +202,8 @@ impl ReadMultipleIo {
     pub fn new(start_io_number: u16, count: u32) -> Result<Self, ProtocolError> {
         if !IoCategory::is_valid_io_number(start_io_number) {
             return Err(ProtocolError::InvalidInstance(format!(
-                "Invalid I/O number: {start_io_number} (valid range: 0-999)"
+                "Invalid I/O number: {start_io_number} (valid range: {})",
+                IoCategory::valid_range_description()
             )));
         }
         // Validate count (max 474, must be multiple of 2)
@@ -217,7 +250,8 @@ impl WriteMultipleIo {
     pub fn new(start_io_number: u16, io_data: Vec<u8>) -> Result<Self, ProtocolError> {
         if !IoCategory::is_valid_io_number(start_io_number) {
             return Err(ProtocolError::InvalidInstance(format!(
-                "Invalid I/O number: {start_io_number} (valid range: 0-999)"
+                "Invalid I/O number: {start_io_number} (valid range: {})",
+                IoCategory::valid_range_description()
             )));
         }
         let count = io_data.len();
