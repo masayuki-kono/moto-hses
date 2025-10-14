@@ -466,7 +466,9 @@ impl HsesClient {
 
         if response_count != count {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization("Count mismatch".to_string()),
+                moto_hses_proto::ProtocolError::Deserialization(format!(
+                    "Count mismatch: expected {count}, got {response_count}"
+                )),
             ));
         }
 
@@ -474,10 +476,10 @@ impl HsesClient {
         let response_count_usize = response_count as usize;
         let expected_length = 4 + response_count_usize;
 
-        if response.len() < expected_length {
+        if response.len() != expected_length {
             return Err(ClientError::ProtocolError(
                 moto_hses_proto::ProtocolError::Deserialization(format!(
-                    "Truncated response: expected {} bytes, got {}",
+                    "Invalid response length: expected {} bytes, got {}",
                     expected_length,
                     response.len()
                 )),

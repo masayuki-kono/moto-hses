@@ -237,7 +237,9 @@ impl MockState {
             for bit in 0..8 {
                 let offset = u16::try_from(i * 8 + bit)
                     .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
-                let io_number = start_io_number + offset;
+                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
+                    format!("I/O number {start_io_number} + {offset} overflows u16")
+                })?;
                 let state = self.get_io_state(io_number);
                 if state {
                     byte_value |= 1 << bit;
@@ -262,7 +264,9 @@ impl MockState {
             for bit in 0..8 {
                 let offset = u16::try_from(i * 8 + bit)
                     .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
-                let io_number = start_io_number + offset;
+                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
+                    format!("I/O number {start_io_number} + {offset} overflows u16")
+                })?;
                 let state = (byte & (1 << bit)) != 0;
                 self.set_io_state(io_number, state);
             }
