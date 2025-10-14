@@ -1,7 +1,7 @@
 //! Variable related commands (`ReadVar`, `WriteVar`)
 
 use super::command_trait::Command;
-use crate::{HsesPayload, error::ProtocolError};
+use crate::{error::ProtocolError, HsesPayload};
 use std::marker::PhantomData;
 
 /// Command ID mapping for variable types

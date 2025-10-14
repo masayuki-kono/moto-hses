@@ -1,16 +1,15 @@
 //! Protocol communication for HSES client
 
 use moto_hses_proto::{
+    commands::{
+        parse_file_content, parse_file_list, JobSelectCommand, JobSelectType, JobStartCommand,
+        ReadMultipleByteVariables, ReadMultipleIo, WriteMultipleByteVariables, WriteMultipleIo,
+    },
     Alarm, AlarmAttribute, AlarmReset, Command, DeleteFile, Division, ExecutingJobInfo,
     HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory, ReadCurrentPosition,
     ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
     ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
     WriteVar,
-    commands::{
-        JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleIo, WriteMultipleIo,
-        ReadMultipleByteVariables, WriteMultipleByteVariables,
-        parse_file_content, parse_file_list,
-    },
 };
 use std::fmt::Write;
 use std::sync::atomic::Ordering;
@@ -661,32 +660,37 @@ impl HsesClient {
     ) -> Result<Vec<u8>, ClientError> {
         let command = ReadMultipleByteVariables::new(start_variable_number, count)?;
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        
+
         // Response format: Byte0-3 = count, Byte4-N = variable data (1 byte each)
         if response.len() < 4 {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::error::ProtocolError::Deserialization("Response too short".to_string())
+                moto_hses_proto::error::ProtocolError::Deserialization(
+                    "Response too short".to_string(),
+                ),
             ));
         }
-        
-        let response_count = u32::from_le_bytes([
-            response[0], response[1], response[2], response[3]
-        ]);
-        
+
+        let response_count =
+            u32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+
         if response_count != count {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::error::ProtocolError::Deserialization("Count mismatch".to_string())
+                moto_hses_proto::error::ProtocolError::Deserialization(
+                    "Count mismatch".to_string(),
+                ),
             ));
         }
-        
+
         // Parse variable values (1 byte each)
         let expected_len = 4 + count as usize;
         if response.len() != expected_len {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::error::ProtocolError::Deserialization("Invalid response length".to_string())
+                moto_hses_proto::error::ProtocolError::Deserialization(
+                    "Invalid response length".to_string(),
+                ),
             ));
         }
-        
+
         let values = response[4..].to_vec();
         Ok(values)
     }

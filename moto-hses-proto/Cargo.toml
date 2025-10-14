@@ -1,7 +1,7 @@
 [package]
 name = "moto-hses-proto"
 version = "0.1.2"
-edition = "2024"
+edition = "2021"
 license = "Apache-2.0"
 description = "Protocol definitions and serialization for Yaskawa High-Speed Ethernet Server (HSES)"
 authors = ["masayuki-kono@mamezou.com"]

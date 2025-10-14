@@ -2,9 +2,9 @@
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::sync::atomic::AtomicU8;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::atomic::AtomicU8;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::net::UdpSocket;

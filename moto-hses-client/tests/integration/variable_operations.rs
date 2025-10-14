@@ -125,54 +125,81 @@ test_with_logging!(test_invalid_variable_handling, {
 });
 
 test_with_logging!(test_multiple_byte_variables_read_write, {
-    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
     let client = create_test_client().await.expect("Failed to create client");
 
     // Write multiple byte variables (count must be multiple of 2)
     let values = vec![10, 20, 30, 40];
-    client.write_multiple_byte_variables(0, values.clone()).await.expect("Failed to write multiple byte variables");
+    client
+        .write_multiple_byte_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple byte variables");
 
     wait_for_operation().await;
 
     // Read back and verify
-    let read_values = client.read_multiple_byte_variables(0, 4).await.expect("Failed to read multiple byte variables");
+    let read_values = client
+        .read_multiple_byte_variables(0, 4)
+        .await
+        .expect("Failed to read multiple byte variables");
     assert_eq!(read_values, values);
 
     // Test different range
     let values2 = vec![255, 0, 100, 200];
-    client.write_multiple_byte_variables(10, values2.clone()).await.expect("Failed to write multiple byte variables");
+    client
+        .write_multiple_byte_variables(10, values2.clone())
+        .await
+        .expect("Failed to write multiple byte variables");
 
     wait_for_operation().await;
 
-    let read_values2 = client.read_multiple_byte_variables(10, 4).await.expect("Failed to read multiple byte variables");
+    let read_values2 = client
+        .read_multiple_byte_variables(10, 4)
+        .await
+        .expect("Failed to read multiple byte variables");
     assert_eq!(read_values2, values2);
 });
 
 test_with_logging!(test_multiple_byte_variables_boundary, {
-    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test boundary: variables 98-99 (maximum range)
     let boundary_values = vec![99, 100];
-    client.write_multiple_byte_variables(98, boundary_values.clone()).await.expect("Failed to write boundary variables");
+    client
+        .write_multiple_byte_variables(98, boundary_values.clone())
+        .await
+        .expect("Failed to write boundary variables");
 
     wait_for_operation().await;
 
-    let read_boundary = client.read_multiple_byte_variables(98, 2).await.expect("Failed to read boundary variables");
+    let read_boundary = client
+        .read_multiple_byte_variables(98, 2)
+        .await
+        .expect("Failed to read boundary variables");
     assert_eq!(read_boundary, boundary_values);
 
     // Test maximum safe range: variables 0-99 (100 variables)
     let max_values: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
-    client.write_multiple_byte_variables(0, max_values.clone()).await.expect("Failed to write max range variables");
+    client
+        .write_multiple_byte_variables(0, max_values.clone())
+        .await
+        .expect("Failed to write max range variables");
 
     wait_for_operation().await;
 
-    let read_max = client.read_multiple_byte_variables(0, 100).await.expect("Failed to read max range variables");
+    let read_max = client
+        .read_multiple_byte_variables(0, 100)
+        .await
+        .expect("Failed to read max range variables");
     assert_eq!(read_max, max_values);
 });
 
 test_with_logging!(test_multiple_byte_variables_validation, {
-    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test count must be multiple of 2 (should fail)
@@ -221,7 +248,8 @@ test_with_logging!(test_multiple_byte_variables_validation, {
 });
 
 test_with_logging!(test_multiple_byte_variables_mixed_operations, {
-    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
     let client = create_test_client().await.expect("Failed to create client");
 
     // Write some individual variables first
@@ -232,7 +260,10 @@ test_with_logging!(test_multiple_byte_variables_mixed_operations, {
 
     // Now write multiple variables that overlap
     let values = vec![55, 65];
-    client.write_multiple_byte_variables(5, values.clone()).await.expect("Failed to write multiple byte variables");
+    client
+        .write_multiple_byte_variables(5, values.clone())
+        .await
+        .expect("Failed to write multiple byte variables");
 
     wait_for_operation().await;
 
@@ -243,6 +274,9 @@ test_with_logging!(test_multiple_byte_variables_mixed_operations, {
     assert_eq!(val6, 65);
 
     // Read back using multiple variable read
-    let read_values = client.read_multiple_byte_variables(5, 2).await.expect("Failed to read multiple byte variables");
+    let read_values = client
+        .read_multiple_byte_variables(5, 2)
+        .await
+        .expect("Failed to read multiple byte variables");
     assert_eq!(read_values, values);
 });

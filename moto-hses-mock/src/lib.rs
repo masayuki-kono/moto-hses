@@ -134,14 +134,14 @@ impl Default for MockConfig {
 /// Test utilities for mock server
 pub mod test_utils {
     use super::{MockConfig, MockServer, SocketAddr};
-    use tokio::time::{Duration, sleep};
+    use tokio::time::{sleep, Duration};
 
     /// Start a mock server for testing
     /// # Errors
     ///
     /// Returns an error if server creation fails
-    pub async fn start_test_server()
-    -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
+    pub async fn start_test_server(
+    ) -> Result<(SocketAddr, tokio::task::JoinHandle<()>), Box<dyn std::error::Error + Send + Sync>>
     {
         // Try to bind to a specific high port first
         let mut port = 49152; // Start from dynamic port range

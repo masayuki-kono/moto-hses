@@ -1,7 +1,7 @@
 use log::info;
 
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{TextEncoding, ROBOT_CONTROL_PORT};
 use std::time::Duration;
 
 #[tokio::main]
@@ -254,8 +254,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let batch_time = start.elapsed();
             info!("✓ Batch write took: {:?}", batch_time);
             if batch_time < individual_time {
-                info!("  ✓ Batch operation was {} faster!", 
-                      individual_time.as_nanos() / batch_time.as_nanos().max(1));
+                info!(
+                    "  ✓ Batch operation was {} faster!",
+                    individual_time.as_nanos() / batch_time.as_nanos().max(1)
+                );
             }
         }
         Err(e) => {
@@ -264,14 +266,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Verify both approaches produced same results
-    match (client.read_multiple_byte_variables(20, 6).await, 
-           client.read_multiple_byte_variables(30, 6).await) {
+    match (
+        client.read_multiple_byte_variables(20, 6).await,
+        client.read_multiple_byte_variables(30, 6).await,
+    ) {
         (Ok(individual_results), Ok(batch_results)) => {
             if individual_results == batch_results {
                 info!("✓ Both approaches produced identical results: {:?}", individual_results);
             } else {
-                info!("✗ Results differ - Individual: {:?}, Batch: {:?}", 
-                      individual_results, batch_results);
+                info!(
+                    "✗ Results differ - Individual: {:?}, Batch: {:?}",
+                    individual_results, batch_results
+                );
             }
         }
         (Err(e), _) => info!("✗ Failed to read individual results: {e}"),

@@ -2,7 +2,7 @@
 // Integration tests for connection management
 
 use crate::common::{
-    mock_server_setup::{MockServerManager, create_test_server},
+    mock_server_setup::{create_test_server, MockServerManager},
     test_utils::{create_test_client, create_test_client_with_host_and_port},
 };
 use crate::test_with_logging;

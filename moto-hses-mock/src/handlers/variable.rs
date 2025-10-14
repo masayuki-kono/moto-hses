@@ -284,42 +284,42 @@ impl CommandHandler for PluralByteVarHandler {
             proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
         })?;
         let service = message.sub_header.service;
-        
+
         // Validate attribute (should be 0)
         if message.sub_header.attribute != 0 {
             return Err(proto::ProtocolError::InvalidAttribute);
         }
-        
+
         // Validate variable number range (0-99)
         if start_variable > 99 {
             return Err(proto::ProtocolError::InvalidInstance(format!(
                 "Invalid variable number: {start_variable} (valid range: 0-99)"
             )));
         }
-        
+
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
             return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
         }
-        
+
         let count = u32::from_le_bytes([
             message.payload[0],
             message.payload[1],
             message.payload[2],
             message.payload[3],
         ]);
-        
+
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage("Invalid count".to_string()));
         }
         
         // Validate range doesn't exceed maximum variable number
         let end_variable = u32::from(start_variable) + count - 1;
         if end_variable > 99 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage("Variable range exceeds maximum".to_string()));
         }
-        
+
         match service {
             0x33 => {
                 // Read - return count + variable data
@@ -332,14 +332,16 @@ impl CommandHandler for PluralByteVarHandler {
                 // Write - validate payload length and update state
                 let expected_len = 4 + count as usize;
                 if message.payload.len() != expected_len {
-                    return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+                    return Err(proto::ProtocolError::InvalidMessage(
+                        "Invalid payload length".to_string(),
+                    ));
                 }
-                
+
                 // Parse variable values (1 byte each)
                 let values = message.payload[4..].to_vec();
-                
+
                 state.set_multiple_byte_variables(start_variable, &values);
-                
+
                 // Return only count
                 Ok(count.to_le_bytes().to_vec())
             }

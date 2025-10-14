@@ -2,7 +2,7 @@
 // Integration tests for alarm operations
 
 use crate::common::{
-    mock_server_setup::{MockServerManager, create_alarm_test_server},
+    mock_server_setup::{create_alarm_test_server, MockServerManager},
     test_utils::create_test_client,
 };
 use crate::test_with_logging;

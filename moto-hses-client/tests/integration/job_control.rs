@@ -4,7 +4,7 @@
 use crate::common::test_utils::{create_test_client, wait_for_operation};
 use crate::test_with_logging;
 use moto_hses_mock::server::MockServerBuilder;
-use moto_hses_proto::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT, commands::JobSelectType};
+use moto_hses_proto::{commands::JobSelectType, FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
 use std::sync::Arc;
 
 test_with_logging!(test_job_start_command, {

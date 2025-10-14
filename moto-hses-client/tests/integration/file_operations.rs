@@ -5,7 +5,7 @@
 use crate::common::mock_server_setup::MockServerManager;
 use crate::test_with_logging;
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{FILE_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{TextEncoding, FILE_CONTROL_PORT};
 use std::time::Duration;
 
 // Helper function to create client with ShiftJIS encoding

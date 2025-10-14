@@ -1,9 +1,9 @@
 //! Alarm-related command handlers
 
-use crate::{CommandHandler, state::MockState};
+use crate::{state::MockState, CommandHandler};
 use moto_hses_proto::{
-    Alarm, AlarmAttribute, HsesRequestMessage, ProtocolError, ReadAlarmData, ReadAlarmHistory,
-    encoding_utils,
+    encoding_utils, Alarm, AlarmAttribute, HsesRequestMessage, ProtocolError, ReadAlarmData,
+    ReadAlarmHistory,
 };
 
 /// Common helper function to handle alarm attribute reading based on service type
