@@ -222,9 +222,8 @@ mod tests {
         // Valid cases
         assert!(ReadMultipleByteVariables::new(0, 2).is_ok());
         assert!(ReadMultipleByteVariables::new(50, 4).is_ok());
-        assert!(ReadMultipleByteVariables::new(99, 2).is_ok()); // Last variable + minimum count
-        assert!(ReadMultipleByteVariables::new(0, 474).is_ok()); // Maximum count
-        assert!(ReadMultipleByteVariables::new(0, 100).is_ok()); // Maximum range
+        assert!(ReadMultipleByteVariables::new(98, 2).is_ok()); // Variables 98-99
+        assert!(ReadMultipleByteVariables::new(0, 100).is_ok()); // Maximum range (variables 0-99)
 
         // Invalid variable number
         assert!(ReadMultipleByteVariables::new(100, 2).is_err());
@@ -232,16 +231,17 @@ mod tests {
         // Invalid count - zero
         assert!(ReadMultipleByteVariables::new(0, 0).is_err());
 
-        // Invalid count - too large
-        assert!(ReadMultipleByteVariables::new(0, 475).is_err());
+        // Invalid count - too large (exceeding variable range)
+        assert!(ReadMultipleByteVariables::new(0, 102).is_err()); // Would need variables 0-101
+        assert!(ReadMultipleByteVariables::new(0, 475).is_err()); // Exceeds max 474 and variable range
 
         // Invalid count - not multiple of 2
         assert!(ReadMultipleByteVariables::new(0, 3).is_err());
         assert!(ReadMultipleByteVariables::new(0, 5).is_err());
-        assert!(ReadMultipleByteVariables::new(0, 473).is_err());
+        assert!(ReadMultipleByteVariables::new(0, 99).is_err()); // 99 is not multiple of 2
 
         // Range overflow
-        assert!(ReadMultipleByteVariables::new(99, 4).is_err()); // 99 + 4 - 1 = 102 > 99
+        assert!(ReadMultipleByteVariables::new(99, 2).is_err()); // 99 + 2 - 1 = 100 > 99
         assert!(ReadMultipleByteVariables::new(50, 52).is_err()); // 50 + 52 - 1 = 101 > 99
         assert!(ReadMultipleByteVariables::new(1, 100).is_err()); // 1 + 100 - 1 = 100 > 99
     }
@@ -270,9 +270,8 @@ mod tests {
         // Valid cases
         assert!(WriteMultipleByteVariables::new(0, vec![10, 20]).is_ok());
         assert!(WriteMultipleByteVariables::new(50, vec![100, 200, 150, 250]).is_ok());
-        assert!(WriteMultipleByteVariables::new(99, vec![255, 0]).is_ok()); // Last variable + minimum count
-        assert!(WriteMultipleByteVariables::new(0, vec![0; 474]).is_ok()); // Maximum count
-        assert!(WriteMultipleByteVariables::new(0, vec![0; 100]).is_ok()); // Maximum range
+        assert!(WriteMultipleByteVariables::new(98, vec![255, 0]).is_ok()); // Variables 98-99
+        assert!(WriteMultipleByteVariables::new(0, vec![0; 100]).is_ok()); // Maximum range (variables 0-99)
 
         // Invalid variable number
         assert!(WriteMultipleByteVariables::new(100, vec![10, 20]).is_err());
@@ -280,16 +279,17 @@ mod tests {
         // Invalid count - empty
         assert!(WriteMultipleByteVariables::new(0, vec![]).is_err());
 
-        // Invalid count - too large
-        assert!(WriteMultipleByteVariables::new(0, vec![0; 475]).is_err());
+        // Invalid count - too large (exceeding variable range)
+        assert!(WriteMultipleByteVariables::new(0, vec![0; 102]).is_err()); // Would need variables 0-101
+        assert!(WriteMultipleByteVariables::new(0, vec![0; 475]).is_err()); // Exceeds max 474 and variable range
 
         // Invalid count - not multiple of 2
         assert!(WriteMultipleByteVariables::new(0, vec![10]).is_err());
         assert!(WriteMultipleByteVariables::new(0, vec![10, 20, 30]).is_err());
-        assert!(WriteMultipleByteVariables::new(0, vec![0; 473]).is_err());
+        assert!(WriteMultipleByteVariables::new(0, vec![0; 99]).is_err()); // 99 is not multiple of 2
 
         // Range overflow
-        assert!(WriteMultipleByteVariables::new(99, vec![10, 20, 30, 40]).is_err()); // 99 + 4 - 1 = 102 > 99
+        assert!(WriteMultipleByteVariables::new(99, vec![10, 20]).is_err()); // 99 + 2 - 1 = 100 > 99
         assert!(WriteMultipleByteVariables::new(50, vec![0; 52]).is_err()); // 50 + 52 - 1 = 101 > 99
         assert!(WriteMultipleByteVariables::new(1, vec![0; 100]).is_err()); // 1 + 100 - 1 = 100 > 99
     }
@@ -307,19 +307,20 @@ mod tests {
 
     #[test]
     fn test_write_multiple_byte_variables_serialize() {
-        let cmd = WriteMultipleByteVariables::new(10, vec![100, 200, 150])
+        let cmd = WriteMultipleByteVariables::new(10, vec![100, 200, 150, 250])
             .expect("Valid command should not fail");
         let payload = cmd.serialize().expect("Serialization should not fail");
 
-        assert_eq!(payload.len(), 4 + 3); // 4 bytes count + 3 bytes data
+        assert_eq!(payload.len(), 4 + 4); // 4 bytes count + 4 bytes data
 
         // Check count
-        assert_eq!(u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]), 3);
+        assert_eq!(u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]), 4);
 
         // Check data
         assert_eq!(payload[4], 100);
         assert_eq!(payload[5], 200);
         assert_eq!(payload[6], 150);
+        assert_eq!(payload[7], 250);
     }
 
     #[test]
@@ -334,14 +335,14 @@ mod tests {
         assert_eq!(payload[4], 255);
         assert_eq!(payload[5], 0);
 
-        // Test with larger values
-        let large_values: Vec<u8> = (0..474).map(|i| (i % 256) as u8).collect();
+        // Test with larger values (maximum range for byte variables)
+        let large_values: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
         let cmd = WriteMultipleByteVariables::new(0, large_values.clone())
             .expect("Valid command should not fail");
         let payload = cmd.serialize().expect("Serialization should not fail");
 
-        assert_eq!(payload.len(), 4 + 474); // 4 bytes count + 474 bytes data
-        assert_eq!(u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]), 474);
+        assert_eq!(payload.len(), 4 + 100); // 4 bytes count + 100 bytes data
+        assert_eq!(u32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]), 100);
 
         // Verify data integrity
         for (i, &expected) in large_values.iter().enumerate() {
@@ -372,14 +373,14 @@ mod tests {
 
     #[test]
     fn test_count_multiple_of_2_validation() {
-        // Valid multiples of 2
-        for count in [2, 4, 6, 8, 10, 100, 200, 474] {
+        // Valid multiples of 2 (within variable range 0-99)
+        for count in [2, 4, 6, 8, 10, 20, 50, 100] {
             assert!(ReadMultipleByteVariables::new(0, count).is_ok());
             assert!(WriteMultipleByteVariables::new(0, vec![0; count as usize]).is_ok());
         }
 
         // Invalid non-multiples of 2
-        for count in [1, 3, 5, 7, 9, 99, 199, 473] {
+        for count in [1, 3, 5, 7, 9, 19, 49, 99] {
             assert!(ReadMultipleByteVariables::new(0, count).is_err());
             assert!(WriteMultipleByteVariables::new(0, vec![0; count as usize]).is_err());
         }

@@ -123,3 +123,126 @@ test_with_logging!(test_invalid_variable_handling, {
     let result: Result<(), _> = client.write_string(255, b"test".to_vec()).await;
     assert!(result.is_err(), "Invalid string variable index write should return error");
 });
+
+test_with_logging!(test_multiple_byte_variables_read_write, {
+    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Write multiple byte variables (count must be multiple of 2)
+    let values = vec![10, 20, 30, 40];
+    client.write_multiple_byte_variables(0, values.clone()).await.expect("Failed to write multiple byte variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client.read_multiple_byte_variables(0, 4).await.expect("Failed to read multiple byte variables");
+    assert_eq!(read_values, values);
+
+    // Test different range
+    let values2 = vec![255, 0, 100, 200];
+    client.write_multiple_byte_variables(10, values2.clone()).await.expect("Failed to write multiple byte variables");
+
+    wait_for_operation().await;
+
+    let read_values2 = client.read_multiple_byte_variables(10, 4).await.expect("Failed to read multiple byte variables");
+    assert_eq!(read_values2, values2);
+});
+
+test_with_logging!(test_multiple_byte_variables_boundary, {
+    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test boundary: variables 98-99 (maximum range)
+    let boundary_values = vec![99, 100];
+    client.write_multiple_byte_variables(98, boundary_values.clone()).await.expect("Failed to write boundary variables");
+
+    wait_for_operation().await;
+
+    let read_boundary = client.read_multiple_byte_variables(98, 2).await.expect("Failed to read boundary variables");
+    assert_eq!(read_boundary, boundary_values);
+
+    // Test maximum safe range: variables 0-99 (100 variables)
+    let max_values: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+    client.write_multiple_byte_variables(0, max_values.clone()).await.expect("Failed to write max range variables");
+
+    wait_for_operation().await;
+
+    let read_max = client.read_multiple_byte_variables(0, 100).await.expect("Failed to read max range variables");
+    assert_eq!(read_max, max_values);
+});
+
+test_with_logging!(test_multiple_byte_variables_validation, {
+    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test count must be multiple of 2 (should fail)
+    match client.read_multiple_byte_variables(0, 3).await {
+        Ok(_) => panic!("Should fail for odd count"),
+        Err(_) => {} // Expected
+    }
+
+    match client.write_multiple_byte_variables(0, vec![10, 20, 30]).await {
+        Ok(_) => panic!("Should fail for odd count"),
+        Err(_) => {} // Expected
+    }
+
+    // Test range overflow (should fail)
+    match client.read_multiple_byte_variables(99, 4).await {
+        Ok(_) => panic!("Should fail for range overflow"),
+        Err(_) => {} // Expected
+    }
+
+    match client.write_multiple_byte_variables(99, vec![10, 20, 30, 40]).await {
+        Ok(_) => panic!("Should fail for range overflow"),
+        Err(_) => {} // Expected
+    }
+
+    // Test invalid variable number (should fail)
+    match client.read_multiple_byte_variables(100, 2).await {
+        Ok(_) => panic!("Should fail for invalid variable number"),
+        Err(_) => {} // Expected
+    }
+
+    match client.write_multiple_byte_variables(100, vec![10, 20]).await {
+        Ok(_) => panic!("Should fail for invalid variable number"),
+        Err(_) => {} // Expected
+    }
+
+    // Test zero count (should fail)
+    match client.read_multiple_byte_variables(0, 0).await {
+        Ok(_) => panic!("Should fail for zero count"),
+        Err(_) => {} // Expected
+    }
+
+    match client.write_multiple_byte_variables(0, vec![]).await {
+        Ok(_) => panic!("Should fail for empty values"),
+        Err(_) => {} // Expected
+    }
+});
+
+test_with_logging!(test_multiple_byte_variables_mixed_operations, {
+    let _server = create_variable_test_server().await.expect("Failed to start variable test server");
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Write some individual variables first
+    client.write_u8(5, 50).await.expect("Failed to write single byte variable");
+    client.write_u8(6, 60).await.expect("Failed to write single byte variable");
+
+    wait_for_operation().await;
+
+    // Now write multiple variables that overlap
+    let values = vec![55, 65];
+    client.write_multiple_byte_variables(5, values.clone()).await.expect("Failed to write multiple byte variables");
+
+    wait_for_operation().await;
+
+    // Read back individual variables to verify
+    let val5 = client.read_u8(5).await.expect("Failed to read single byte variable");
+    let val6 = client.read_u8(6).await.expect("Failed to read single byte variable");
+    assert_eq!(val5, 55);
+    assert_eq!(val6, 65);
+
+    // Read back using multiple variable read
+    let read_values = client.read_multiple_byte_variables(5, 2).await.expect("Failed to read multiple byte variables");
+    assert_eq!(read_values, values);
+});

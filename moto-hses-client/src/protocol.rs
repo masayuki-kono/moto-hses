@@ -8,6 +8,7 @@ use moto_hses_proto::{
     WriteVar,
     commands::{
         JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleIo, WriteMultipleIo,
+        ReadMultipleByteVariables, WriteMultipleByteVariables,
         parse_file_content, parse_file_list,
     },
 };
@@ -635,6 +636,77 @@ impl HsesClient {
     ) -> Result<(), ClientError> {
         use moto_hses_proto::commands::WriteMultipleRegisters;
         let command = WriteMultipleRegisters::new(start_register_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Read multiple byte variables (B) (0x302 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-99)
+    /// * `count` - Number of variables to read (max 474, must be multiple of 2)
+    ///
+    /// # Returns
+    ///
+    /// Vector of variable values (u8)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_byte_variables(
+        &self,
+        start_variable_number: u8,
+        count: u32,
+    ) -> Result<Vec<u8>, ClientError> {
+        let command = ReadMultipleByteVariables::new(start_variable_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+        
+        // Response format: Byte0-3 = count, Byte4-N = variable data (1 byte each)
+        if response.len() < 4 {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::error::ProtocolError::Deserialization("Response too short".to_string())
+            ));
+        }
+        
+        let response_count = u32::from_le_bytes([
+            response[0], response[1], response[2], response[3]
+        ]);
+        
+        if response_count != count {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::error::ProtocolError::Deserialization("Count mismatch".to_string())
+            ));
+        }
+        
+        // Parse variable values (1 byte each)
+        let expected_len = 4 + count as usize;
+        if response.len() != expected_len {
+            return Err(ClientError::ProtocolError(
+                moto_hses_proto::error::ProtocolError::Deserialization("Invalid response length".to_string())
+            ));
+        }
+        
+        let values = response[4..].to_vec();
+        Ok(values)
+    }
+
+    /// Write multiple byte variables (B) (0x302 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-99)
+    /// * `values` - Variable values to write (max 474, must be multiple of 2 in length)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_byte_variables(
+        &self,
+        start_variable_number: u8,
+        values: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        let command = WriteMultipleByteVariables::new(start_variable_number, values)?;
         self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

@@ -210,6 +210,26 @@ impl MockState {
         self.variables.insert(index, value);
     }
 
+    /// Get multiple byte variable values
+    #[must_use]
+    pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> Vec<u8> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            let var_num = start_variable + i as u8;
+            let var_data = self.get_variable(var_num);
+            values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
+        }
+        values
+    }
+
+    /// Set multiple byte variable values
+    pub fn set_multiple_byte_variables(&mut self, start_variable: u8, values: &[u8]) {
+        for (i, &value) in values.iter().enumerate() {
+            let var_num = start_variable + i as u8;
+            self.set_variable(var_num, vec![value]);
+        }
+    }
+
     /// Get I/O state
     #[must_use]
     pub fn get_io_state(&self, io_number: u16) -> bool {
