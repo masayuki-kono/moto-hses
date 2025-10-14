@@ -339,7 +339,7 @@ mod tests {
         assert_eq!(payload[5], 0);
 
         // Test with larger values (maximum range for byte variables)
-        let large_values: Vec<u8> = (0..100).map(|i| (i % 256) as u8).collect();
+        let large_values: Vec<u8> = (0u8..100u8).collect();
         let cmd = WriteMultipleByteVariables::new(0, large_values.clone())
             .expect("Valid command should not fail");
         let payload = cmd.serialize().expect("Serialization should not fail");
