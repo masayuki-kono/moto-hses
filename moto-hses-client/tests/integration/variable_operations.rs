@@ -193,33 +193,33 @@ test_with_logging!(test_multiple_byte_variables_error_cases, {
 
     // Test odd count (should fail)
     let odd_values = vec![10, 20, 30]; // count = 3 (odd)
-    if let Ok(()) = client.write_multiple_byte_variables(0, odd_values).await {
+    if matches!(client.write_multiple_byte_variables(0, odd_values).await, Ok(())) {
         panic!("Should fail for odd count");
     } // Expected: Err
 
     // Test reading with odd count (should fail)
-    if let Ok(_) = client.read_multiple_byte_variables(0, 3).await {
-        panic!("Should fail for odd count read");
-    } // Expected: Err
+    assert!(
+        client.read_multiple_byte_variables(0, 3).await.is_err(),
+        "Should fail for odd count read"
+    ); // Expected: Err
 
     // Test range overflow (start + count - 1 > 99)
     let overflow_values = vec![10, 20]; // count = 2
-    if let Ok(()) = client.write_multiple_byte_variables(99, overflow_values).await {
+    if matches!(client.write_multiple_byte_variables(99, overflow_values).await, Ok(())) {
         panic!("Should fail for range overflow");
     } // Expected: Err
 
     // Test reading with range overflow
-    if let Ok(_) = client.read_multiple_byte_variables(99, 2).await {
-        panic!("Should fail for range overflow read");
-    } // Expected: Err
+    assert!(
+        client.read_multiple_byte_variables(99, 2).await.is_err(),
+        "Should fail for range overflow read"
+    ); // Expected: Err
 
     // Test zero count (should fail)
-    if let Ok(_) = client.read_multiple_byte_variables(0, 0).await {
-        panic!("Should fail for zero count");
-    } // Expected: Err
+    assert!(client.read_multiple_byte_variables(0, 0).await.is_err(), "Should fail for zero count"); // Expected: Err
 
     // Test empty values (should fail)
-    if let Ok(()) = client.write_multiple_byte_variables(0, vec![]).await {
+    if matches!(client.write_multiple_byte_variables(0, vec![]).await, Ok(())) {
         panic!("Should fail for empty values");
     } // Expected: Err
 });
