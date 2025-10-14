@@ -26,14 +26,21 @@ pub enum ProtocolError {
     FileError(String),
     #[error("system info error: {0}")]
     SystemInfoError(String),
+    /// Invalid message content or payload (e.g., invalid count, range overflow, malformed data)
     #[error("invalid message: {0}")]
     InvalidMessage(String),
     #[error("server error: {0}")]
     ServerError(String),
+    /// Invalid attribute value in message header
     #[error("invalid attribute")]
     InvalidAttribute,
+    /// Invalid service code in message header
     #[error("invalid service")]
     InvalidService,
+    /// Invalid command ID
     #[error("invalid command")]
     InvalidCommand,
+    /// Invalid instance parameter (e.g., register number, I/O number out of range)
+    #[error("invalid instance: {0}")]
+    InvalidInstance(String),
 }

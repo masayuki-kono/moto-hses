@@ -515,7 +515,7 @@ None
 - [x] Export ReadMultipleRegisters and WriteMultipleRegisters in commands/mod.rs
 - [x] Client API implementation - Add read_multiple_registers() and write_multiple_registers() methods in protocol.rs
 - [x] MockState extension - Add get_multiple_registers() and set_multiple_registers() methods
-- [x] Handler implementation - Add PluralRegisterHandler in handlers/io.rs with validation and state management
+- [x] Handler implementation - Add PluralRegisterHandler in handlers/register.rs with validation and state management
 - [x] Handler registration - Register PluralRegisterHandler for 0x301 command
 - [x] Create unit tests for ReadMultipleRegisters and WriteMultipleRegisters including validation and serialization
 - [x] Create integration tests with read-back verification for read/write operations

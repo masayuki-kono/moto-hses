@@ -95,7 +95,9 @@ impl ReadMultipleRegisters {
     pub fn new(start_register_number: u16, count: u32) -> Result<Self, ProtocolError> {
         // Validate register number (0-999)
         if start_register_number > 999 {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Invalid register number: {start_register_number} (valid range: 0-999)"
+            )));
         }
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
@@ -157,7 +159,9 @@ impl WriteMultipleRegisters {
         }
         // Validate writable range (0-559 for writes)
         if start_register_number > 559 {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Register {start_register_number} is not writable (writable range: 0-559)"
+            )));
         }
         let end_register = u32::from(start_register_number)
             + u32::try_from(count)

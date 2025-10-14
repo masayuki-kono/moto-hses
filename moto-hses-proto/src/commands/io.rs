@@ -169,7 +169,9 @@ impl ReadMultipleIo {
     /// Returns an error if the I/O number is invalid or count is invalid
     pub fn new(start_io_number: u16, count: u32) -> Result<Self, ProtocolError> {
         if !IoCategory::is_valid_io_number(start_io_number) {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Invalid I/O number: {start_io_number} (valid range: 0-999)"
+            )));
         }
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
@@ -214,7 +216,9 @@ impl WriteMultipleIo {
     /// Returns an error if the I/O number is invalid or `io_data` is invalid
     pub fn new(start_io_number: u16, io_data: Vec<u8>) -> Result<Self, ProtocolError> {
         if !IoCategory::is_valid_io_number(start_io_number) {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Invalid I/O number: {start_io_number} (valid range: 0-999)"
+            )));
         }
         let count = io_data.len();
         // Validate count (max 474, must be multiple of 2)

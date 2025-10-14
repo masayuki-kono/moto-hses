@@ -18,7 +18,7 @@ impl CommandHandler for RegisterHandler {
 
         // Validate register number range (0-999 for read, 0-559 for write)
         if reg_number > 999 {
-            return Err(proto::ProtocolError::InvalidMessage(format!(
+            return Err(proto::ProtocolError::InvalidInstance(format!(
                 "Invalid register number: {reg_number} (must be 0-999)"
             )));
         }
@@ -32,7 +32,9 @@ impl CommandHandler for RegisterHandler {
             0x10 => {
                 // Write - validate writable range (0-559)
                 if reg_number > 559 {
-                    return Err(proto::ProtocolError::InvalidCommand);
+                    return Err(proto::ProtocolError::InvalidInstance(format!(
+                        "Register {reg_number} is not writable (writable range: 0-559)"
+                    )));
                 }
 
                 if message.payload.len() != 2 {
@@ -70,7 +72,9 @@ impl CommandHandler for PluralRegisterHandler {
 
         // Validate register number range (0-999)
         if start_register > 999 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid register number: {start_register} (valid range: 0-999)"
+            )));
         }
 
         // Parse count from payload (first 4 bytes)
@@ -121,7 +125,9 @@ impl CommandHandler for PluralRegisterHandler {
 
                 // Only registers 0-559 are writable
                 if start_register > 559 || end_register > 559 {
-                    return Err(proto::ProtocolError::InvalidCommand);
+                    return Err(proto::ProtocolError::InvalidInstance(format!(
+                        "Register range {start_register}-{end_register} is not writable (writable range: 0-559)"
+                    )));
                 }
 
                 // Parse register values

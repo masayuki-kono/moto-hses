@@ -85,7 +85,9 @@ impl CommandHandler for AlarmDataHandler {
 
         // Validate instance range
         if !alarm_data_cmd.is_valid_instance() {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Invalid alarm instance: {instance} (valid range: 1-1000)"
+            )));
         }
 
         let instance_usize = instance as usize;
@@ -117,7 +119,9 @@ impl CommandHandler for AlarmInfoHandler {
 
         // Validate instance range
         if !alarm_history_cmd.is_valid_instance() {
-            return Err(ProtocolError::InvalidCommand);
+            return Err(ProtocolError::InvalidInstance(format!(
+                "Invalid alarm history instance: {instance} (valid range: 1-1000)"
+            )));
         }
 
         let category = alarm_history_cmd.get_alarm_category();

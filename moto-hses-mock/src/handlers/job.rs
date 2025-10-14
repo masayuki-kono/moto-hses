@@ -19,7 +19,9 @@ impl CommandHandler for ExecutingJobInfoHandler {
 
         // Validate task type (1-6)
         if !matches!(task_type, 1..=6) {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid task type: {task_type} (valid range: 1-6)"
+            )));
         }
 
         // Validate attribute (0-4)
@@ -54,7 +56,10 @@ impl CommandHandler for JobStartHandler {
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         // Validate instance, attribute, service
         if message.sub_header.instance != 1 {
-            return Err(proto::ProtocolError::InvalidCommand);
+            return Err(proto::ProtocolError::InvalidInstance(format!(
+                "Invalid instance: {} (expected: 1)",
+                message.sub_header.instance
+            )));
         }
         if message.sub_header.attribute != 1 {
             return Err(proto::ProtocolError::InvalidAttribute);
