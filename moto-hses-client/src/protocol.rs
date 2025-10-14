@@ -458,7 +458,7 @@ impl HsesClient {
         // Response format: Byte0-3 = count, Byte4-N = I/O data
         if response.len() < 4 {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Response too short: expected at least 4 bytes, got {}",
                     response.len()
                 )),
@@ -470,7 +470,7 @@ impl HsesClient {
 
         if response_count != count {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Count mismatch: expected {count}, got {response_count}"
                 )),
             ));
@@ -482,7 +482,7 @@ impl HsesClient {
 
         if response.len() != expected_length {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Invalid response length: expected {} bytes, got {}",
                     expected_length,
                     response.len()
@@ -578,7 +578,7 @@ impl HsesClient {
         // Response format: Byte0-3 = count, Byte4-N = register data (2 bytes each)
         if response.len() < 4 {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Response too short: expected at least 4 bytes, got {}",
                     response.len()
                 )),
@@ -590,7 +590,7 @@ impl HsesClient {
 
         if response_count != count {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Count mismatch: expected {count}, got {response_count}"
                 )),
             ));
@@ -600,7 +600,7 @@ impl HsesClient {
         let expected_len = 4 + (count as usize * 2);
         if response.len() != expected_len {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Invalid response length: expected {expected_len} bytes, got {}",
                     response.len()
                 )),
@@ -665,7 +665,7 @@ impl HsesClient {
         // Response format: Byte0-3 = count, Byte4-N = variable data (1 byte each)
         if response.len() < 4 {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Response too short: expected at least 4 bytes, got {}",
                     response.len()
                 )),
@@ -677,7 +677,7 @@ impl HsesClient {
 
         if response_count != count {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Count mismatch: expected {count}, got {response_count}"
                 )),
             ));
@@ -687,7 +687,7 @@ impl HsesClient {
         let expected_len = 4 + count as usize;
         if response.len() != expected_len {
             return Err(ClientError::ProtocolError(
-                moto_hses_proto::ProtocolError::Deserialization(format!(
+                moto_hses_proto::error::ProtocolError::Deserialization(format!(
                     "Invalid response length: expected {expected_len} bytes, got {}",
                     response.len()
                 )),
@@ -696,6 +696,7 @@ impl HsesClient {
 
         let values = response[4..].to_vec();
         Ok(values)
+    }
 
     /// Write multiple byte variables (B) (0x302 command)
     ///

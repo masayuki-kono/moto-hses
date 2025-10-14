@@ -179,8 +179,9 @@ impl WriteMultipleByteVariables {
                 "Invalid variable number: {start_variable_number} (valid range: 0-99)"
             )));
         }
-        let count_u32 = u32::try_from(count)
-            .map_err(|_| ProtocolError::InvalidMessage(format!("Values count too large: {count}")))?;
+        let count_u32 = u32::try_from(count).map_err(|_| {
+            ProtocolError::InvalidMessage(format!("Values count too large: {count}"))
+        })?;
         let end_variable = u32::from(start_variable_number) + count_u32 - 1;
         if end_variable > 99 {
             return Err(ProtocolError::InvalidMessage(format!(
