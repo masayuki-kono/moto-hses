@@ -37,9 +37,3 @@ When creating implementation plans in Plan mode, please follow these key require
   - Implementation patterns and decisions that differed from the plan
   - Any scope changes or feature additions/removals
 - This prevents plan documents from becoming outdated and ensures they remain valuable references for future implementations
-
-### 5. Implementation Completion Workflow
-- **Always include tasks for post-implementation verification and submission**
-- Follow `.cursor/commands/run-all-tests.md` to verify all check items pass
-- Follow `.cursor/commands/commit.md` to create proper commits
-- Follow `.cursor/commands/create-pr.md` to create pull requests
