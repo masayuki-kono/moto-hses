@@ -124,6 +124,25 @@ impl CommandHandler for PluralIoHandler {
 
         match service {
             0x33 => {
+                // Read - validate full range before reading
+                let count_u16 = u16::try_from(count).map_err(|_| {
+                    proto::ProtocolError::InvalidMessage("Count too large".to_string())
+                })?;
+                let end_io_number = start_io_number
+                    .checked_add(count_u16.checked_sub(1).ok_or_else(|| {
+                        proto::ProtocolError::InvalidMessage("Count is zero".to_string())
+                    })?)
+                    .ok_or_else(|| {
+                        proto::ProtocolError::InvalidMessage("I/O range overflow".to_string())
+                    })?;
+
+                // Validate that the entire range falls within the same category
+                if !IoCategory::is_valid_io_number(end_io_number) {
+                    return Err(proto::ProtocolError::InvalidMessage(
+                        "I/O range exceeds category bounds".to_string(),
+                    ));
+                }
+
                 // Read - return count + I/O data
                 let io_data = state
                     .get_multiple_io_states(start_io_number, count as usize)
