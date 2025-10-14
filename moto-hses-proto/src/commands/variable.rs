@@ -179,7 +179,10 @@ impl WriteMultipleByteVariables {
                 "Invalid variable number: {start_variable_number} (valid range: 0-99)"
             )));
         }
-        let end_variable = u32::from(start_variable_number) + u32::try_from(count).map_err(|_| ProtocolError::InvalidMessage("Count too large".to_string()))? - 1;
+        let end_variable = u32::from(start_variable_number)
+            + u32::try_from(count)
+                .map_err(|_| ProtocolError::InvalidMessage("Count too large".to_string()))?
+            - 1;
         if end_variable > 99 {
             return Err(ProtocolError::InvalidMessage(format!(
                 "Variable range exceeds maximum: {start_variable_number}-{end_variable} (max 99)"
