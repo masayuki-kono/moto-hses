@@ -179,13 +179,8 @@ test_with_logging!(test_multiple_byte_variables_validation, {
     let result = client.read_multiple_byte_variables(0, 475).await;
     assert!(result.is_err(), "Count too large should fail");
 
-    // Test range validation (start + count - 1 > 99)
-    let result = client.read_multiple_byte_variables(98, 4).await;
-    assert!(result.is_err(), "Range exceeds maximum should fail");
-
-    // Test invalid variable number
-    let result = client.read_multiple_byte_variables(100, 2).await;
-    assert!(result.is_err(), "Invalid variable number should fail");
+    // Note: Instance range validation removed to support extended settings
+    // The actual variable range is now configurable and not limited to 0-99
 
     // Test zero count (should fail)
     let result = client.read_multiple_byte_variables(0, 0).await;
