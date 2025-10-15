@@ -50,12 +50,12 @@ impl ReadMultipleRegisters {
         }
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         // Validate range doesn't exceed maximum register number
         let end_register = start_register_number as u32 + count - 1;
         if end_register > 999 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         Ok(Self { start_register_number, count })
     }
@@ -85,7 +85,7 @@ impl WriteMultipleRegisters {
         let count = values.len();
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         // Validate writable range (0-559 for writes)
         if start_register_number > 559 {
@@ -93,7 +93,7 @@ impl WriteMultipleRegisters {
         }
         let end_register = start_register_number as u32 + count as u32 - 1;
         if end_register > 559 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         Ok(Self { start_register_number, values })
     }
@@ -336,13 +336,13 @@ impl CommandHandler for PluralRegisterHandler {
         
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         
         // Validate range doesn't exceed maximum register number
         let end_register = start_register as u32 + count - 1;
         if end_register > 999 {
-            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         
         match service {

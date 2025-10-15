@@ -55,7 +55,7 @@ impl ReadMultipleIo {
         }
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         Ok(Self { start_io_number, count })
     }
@@ -89,7 +89,7 @@ impl WriteMultipleIo {
         let count = io_data.len();
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         Ok(Self { start_io_number, io_data })
     }
@@ -250,7 +250,7 @@ impl CommandHandler for PluralIoHandler {
         
         // Validate count (max 474, must be multiple of 2)
         if count > 474 || count % 2 != 0 {
-            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid data")));
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         
         match service {
@@ -404,7 +404,8 @@ assert_eq!(read_data, io_data);
 
 **Issue**: During implementation, we discovered a dangerous pattern using `unwrap_or(u16::MAX)` for type conversions.
 
-**Problem**: 
+**Problem**:
+
 ```rust
 // ❌ DANGEROUS - Silent failure with wrong value
 let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
@@ -413,6 +414,7 @@ let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
 **Impact**: This pattern can cause severe issues by silently mapping out-of-range values to `u16::MAX`, leading to incorrect I/O number calculations and potential system failures.
 
 **Solution**: Use proper error handling with `map_err`:
+
 ```rust
 // ✅ SAFE - Explicit error handling
 let offset = u16::try_from(i * 8 + bit)
