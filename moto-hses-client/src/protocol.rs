@@ -62,6 +62,50 @@ impl HsesClient {
         Ok(())
     }
 
+    /// Read multiple variables (generic)
+    ///
+    /// This method is encoding-agnostic and works with raw byte arrays for S variables.
+    /// For string handling with encoding support, use convenience methods in convenience.rs.
+    ///
+    /// # Errors
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_variables<T>(
+        &self,
+        start_variable_number: u16,
+        count: u32,
+    ) -> Result<Vec<T>, ClientError>
+    where
+        T: MultipleVariableCommandId + MultipleVariableResponse + Send + Sync,
+    {
+        let command = ReadMultipleVariables::<T>::new(start_variable_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+        T::deserialize_multiple(&response, count).map_err(ClientError::from)
+    }
+
+    /// Write multiple variables of type T
+    ///
+    /// This is a generic method that works with any type T that implements the required traits.
+    /// For type-specific convenience methods, use the methods in convenience.rs.
+    ///
+    /// # Type Parameters
+    /// - `T`: The variable type (u8, i16, i32, f32, [u8; 16])
+    ///
+    /// # Errors
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_variables<T>(
+        &self,
+        start_variable_number: u16,
+        values: Vec<T>,
+    ) -> Result<(), ClientError>
+    where
+        T: MultipleVariableCommandId + Send + Sync + Clone,
+        WriteMultipleVariables<T>: Command<Response = ()>,
+    {
+        let command = WriteMultipleVariables::<T>::new(start_variable_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
     /// Read complete status information (both Data 1 and Data 2) efficiently
     /// Uses service=0x01 (`Get_Attribute_All`) with attribute=0 to get both data in one request
     ///
@@ -1072,98 +1116,5 @@ impl HsesClient {
             }
             _ => None,
         }
-    }
-
-    /// Read multiple variables (generic)
-    ///
-    /// This method is encoding-agnostic and works with raw byte arrays for S variables.
-    /// For string handling with encoding support, use convenience methods in convenience.rs.
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn read_multiple_variables<T>(
-        &self,
-        start_variable_number: u16,
-        count: u32,
-    ) -> Result<Vec<T>, ClientError>
-    where
-        T: MultipleVariableCommandId + MultipleVariableResponse + Send + Sync,
-    {
-        let command = ReadMultipleVariables::<T>::new(start_variable_number, count)?;
-        let response = self.send_command_with_retry(command, Division::Robot).await?;
-        T::deserialize_multiple(&response, count).map_err(ClientError::from)
-    }
-
-    /// Write multiple u8 variables (B)
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn write_multiple_variables_u8(
-        &self,
-        start_variable_number: u16,
-        values: Vec<u8>,
-    ) -> Result<(), ClientError> {
-        let command = WriteMultipleVariables::<u8>::new(start_variable_number, values)?;
-        self.send_command_with_retry(command, Division::Robot).await?;
-        Ok(())
-    }
-
-    /// Write multiple i16 variables (I)
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn write_multiple_variables_i16(
-        &self,
-        start_variable_number: u16,
-        values: Vec<i16>,
-    ) -> Result<(), ClientError> {
-        let command = WriteMultipleVariables::<i16>::new(start_variable_number, values)?;
-        self.send_command_with_retry(command, Division::Robot).await?;
-        Ok(())
-    }
-
-    /// Write multiple i32 variables (D)
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn write_multiple_variables_i32(
-        &self,
-        start_variable_number: u16,
-        values: Vec<i32>,
-    ) -> Result<(), ClientError> {
-        let command = WriteMultipleVariables::<i32>::new(start_variable_number, values)?;
-        self.send_command_with_retry(command, Division::Robot).await?;
-        Ok(())
-    }
-
-    /// Write multiple f32 variables (R)
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn write_multiple_variables_f32(
-        &self,
-        start_variable_number: u16,
-        values: Vec<f32>,
-    ) -> Result<(), ClientError> {
-        let command = WriteMultipleVariables::<f32>::new(start_variable_number, values)?;
-        self.send_command_with_retry(command, Division::Robot).await?;
-        Ok(())
-    }
-
-    /// Write multiple [u8; 16] variables (S)
-    ///
-    /// This method is encoding-agnostic and works with raw byte arrays for S variables.
-    /// For string handling with encoding support, use convenience methods in convenience.rs.
-    ///
-    /// # Errors
-    /// Returns an error if communication fails or parameters are invalid
-    pub async fn write_multiple_variables_string_bytes(
-        &self,
-        start_variable_number: u16,
-        values: Vec<[u8; 16]>,
-    ) -> Result<(), ClientError> {
-        let command = WriteMultipleVariables::<[u8; 16]>::new(start_variable_number, values)?;
-        self.send_command_with_retry(command, Division::Robot).await?;
-        Ok(())
     }
 }

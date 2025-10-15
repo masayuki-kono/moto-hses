@@ -3,6 +3,24 @@
 use crate::types::{ClientError, HsesClient};
 
 impl HsesClient {
+    /// Read an 8-bit unsigned integer variable (B variable)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub async fn read_u8(&self, index: u16) -> Result<u8, ClientError> {
+        self.read_variable::<u8>(index).await
+    }
+
+    /// Write an 8-bit unsigned integer variable (B variable)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub async fn write_u8(&self, index: u16, value: u8) -> Result<(), ClientError> {
+        self.write_variable(index, value).await
+    }
+
     /// Read a 16-bit integer variable (I variable)
     ///
     /// # Errors
@@ -54,24 +72,6 @@ impl HsesClient {
     ///
     /// Returns an error if communication fails
     pub async fn write_f32(&self, index: u16, value: f32) -> Result<(), ClientError> {
-        self.write_variable(index, value).await
-    }
-
-    /// Read an 8-bit unsigned integer variable (B variable)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if communication fails
-    pub async fn read_u8(&self, index: u16) -> Result<u8, ClientError> {
-        self.read_variable::<u8>(index).await
-    }
-
-    /// Write an 8-bit unsigned integer variable (B variable)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if communication fails
-    pub async fn write_u8(&self, index: u16, value: u8) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 
@@ -130,12 +130,10 @@ impl HsesClient {
         self.write_variable(index, byte_array).await
     }
 
-    // Multiple variable operations
-
-    /// Read multiple byte variables (B)
+    /// Read multiple u8 variables (B)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_u8(
         &self,
         start_variable_number: u16,
@@ -144,22 +142,22 @@ impl HsesClient {
         self.read_multiple_variables::<u8>(start_variable_number, count).await
     }
 
-    /// Write multiple byte variables (B)
+    /// Write multiple u8 variables (B)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_u8(
         &self,
         start_variable_number: u16,
         values: Vec<u8>,
     ) -> Result<(), ClientError> {
-        self.write_multiple_variables_u8(start_variable_number, values).await
+        self.write_multiple_variables(start_variable_number, values).await
     }
 
-    /// Read multiple integer variables (I)
+    /// Read multiple i16 variables (I)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_i16(
         &self,
         start_variable_number: u16,
@@ -168,22 +166,22 @@ impl HsesClient {
         self.read_multiple_variables::<i16>(start_variable_number, count).await
     }
 
-    /// Write multiple integer variables (I)
+    /// Write multiple i16 variables (I)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_i16(
         &self,
         start_variable_number: u16,
         values: Vec<i16>,
     ) -> Result<(), ClientError> {
-        self.write_multiple_variables_i16(start_variable_number, values).await
+        self.write_multiple_variables(start_variable_number, values).await
     }
 
-    /// Read multiple double precision integer variables (D)
+    /// Read multiple i32 variables (D)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_i32(
         &self,
         start_variable_number: u16,
@@ -192,22 +190,22 @@ impl HsesClient {
         self.read_multiple_variables::<i32>(start_variable_number, count).await
     }
 
-    /// Write multiple double precision integer variables (D)
+    /// Write multiple i32 variables (D)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_i32(
         &self,
         start_variable_number: u16,
         values: Vec<i32>,
     ) -> Result<(), ClientError> {
-        self.write_multiple_variables_i32(start_variable_number, values).await
+        self.write_multiple_variables(start_variable_number, values).await
     }
 
-    /// Read multiple real type variables (R)
+    /// Read multiple f32 variables (R)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_f32(
         &self,
         start_variable_number: u16,
@@ -216,16 +214,16 @@ impl HsesClient {
         self.read_multiple_variables::<f32>(start_variable_number, count).await
     }
 
-    /// Write multiple real type variables (R)
+    /// Write multiple f32 variables (R)
     ///
     /// # Errors
-    /// Returns an error if communication fails
+    /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_f32(
         &self,
         start_variable_number: u16,
         values: Vec<f32>,
     ) -> Result<(), ClientError> {
-        self.write_multiple_variables_f32(start_variable_number, values).await
+        self.write_multiple_variables(start_variable_number, values).await
     }
 
     /// Read multiple string variables (S) with encoding support
@@ -295,6 +293,6 @@ impl HsesClient {
         }
 
         // Write raw byte arrays using protocol layer
-        self.write_multiple_variables_string_bytes(start_variable_number, byte_arrays).await
+        self.write_multiple_variables(start_variable_number, byte_arrays).await
     }
 }
