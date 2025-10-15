@@ -40,12 +40,12 @@ Add structures for Plural I Variable command (following the same pattern as 0x30
 /// Read multiple integer variables (I) command (0x303)
 #[derive(Debug, Clone)]
 pub struct ReadMultipleIntegerVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,  // Support extended variable settings (0-999)
     pub count: u32,  // Number of I variable data (max 237)
 }
 
 impl ReadMultipleIntegerVariables {
-    pub fn new(start_variable_number: u8, count: u32) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
             return Err(ProtocolError::InvalidMessage(format!(
@@ -59,7 +59,7 @@ impl ReadMultipleIntegerVariables {
 impl Command for ReadMultipleIntegerVariables {
     type Response = Vec<i16>;  // Array of I variable values
     fn command_id() -> u16 { 0x303 }
-    fn instance(&self) -> u16 { u16::from(self.start_variable_number) }
+    fn instance(&self) -> u16 { self.start_variable_number }  // Direct use since it's already u16
     fn attribute(&self) -> u8 { 0 }  // Fixed to 0 for plural commands
     fn service(&self) -> u8 { 0x33 }  // Read plural data
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
@@ -71,12 +71,12 @@ impl Command for ReadMultipleIntegerVariables {
 /// Write multiple integer variables (I) command (0x303)
 #[derive(Debug, Clone)]
 pub struct WriteMultipleIntegerVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,  // Support extended variable settings (0-999)
     pub values: Vec<i16>,  // I variable values to write
 }
 
 impl WriteMultipleIntegerVariables {
-    pub fn new(start_variable_number: u8, values: Vec<i16>) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, values: Vec<i16>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
@@ -91,7 +91,7 @@ impl WriteMultipleIntegerVariables {
 impl Command for WriteMultipleIntegerVariables {
     type Response = ();
     fn command_id() -> u16 { 0x303 }
-    fn instance(&self) -> u16 { u16::from(self.start_variable_number) }
+    fn instance(&self) -> u16 { self.start_variable_number }  // Direct use since it's already u16
     fn attribute(&self) -> u8 { 0 }  // Fixed to 0 for plural commands
     fn service(&self) -> u8 { 0x34 }  // Write plural data
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
@@ -123,7 +123,7 @@ Add client API methods:
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number
+/// * `start_variable_number` - Starting variable number (0-999 for extended settings)
 /// * `count` - Number of variables to read (max 237)
 ///
 /// # Returns
@@ -135,7 +135,7 @@ Add client API methods:
 /// Returns an error if communication fails or parameters are invalid
 pub async fn read_multiple_integer_variables(
     &self,
-    start_variable_number: u8,
+    start_variable_number: u16,
     count: u32,
 ) -> Result<Vec<i16>, ClientError> {
     let command = ReadMultipleIntegerVariables::new(start_variable_number, count)?;
@@ -179,7 +179,7 @@ pub async fn read_multiple_integer_variables(
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number
+/// * `start_variable_number` - Starting variable number (0-999 for extended settings)
 /// * `values` - Variable values to write (max 237 items)
 ///
 /// # Errors
@@ -187,7 +187,7 @@ pub async fn read_multiple_integer_variables(
 /// Returns an error if communication fails or parameters are invalid
 pub async fn write_multiple_integer_variables(
     &self,
-    start_variable_number: u8,
+    start_variable_number: u16,
     values: Vec<i16>,
 ) -> Result<(), ClientError> {
     let command = WriteMultipleIntegerVariables::new(start_variable_number, values)?;
@@ -204,12 +204,12 @@ Add batch operations for integer variables:
 
 ```rust
 /// Get multiple integer variable values
-pub fn get_multiple_integer_variables(&self, start_variable: u8, count: usize) -> Vec<i16> {
+pub fn get_multiple_integer_variables(&self, start_variable: u16, count: usize) -> Vec<i16> {
     let mut values = Vec::with_capacity(count);
     for i in 0..count {
-        let var_num = start_variable + u8::try_from(i)
-            .map_err(|_| format!("Variable index {i} exceeds u8::MAX"))
-            .expect("Variable index should fit in u8");
+        let var_num = start_variable + u16::try_from(i)
+            .map_err(|_| format!("Variable index {i} exceeds u16::MAX"))
+            .expect("Variable index should fit in u16");
         let var_data = self.get_variable(var_num);
         // I variable is 2 bytes (i16)
         let value = var_data.map_or(0_i16, |data| {
@@ -225,11 +225,11 @@ pub fn get_multiple_integer_variables(&self, start_variable: u8, count: usize) -
 }
 
 /// Set multiple integer variable values
-pub fn set_multiple_integer_variables(&mut self, start_variable: u8, values: &[i16]) {
+pub fn set_multiple_integer_variables(&mut self, start_variable: u16, values: &[i16]) {
     for (i, &value) in values.iter().enumerate() {
-        let var_num = start_variable + u8::try_from(i)
-            .map_err(|_| format!("Variable index {i} exceeds u8::MAX"))
-            .expect("Variable index should fit in u8");
+        let var_num = start_variable + u16::try_from(i)
+            .map_err(|_| format!("Variable index {i} exceeds u16::MAX"))
+            .expect("Variable index should fit in u16");
         self.set_variable(var_num, value.to_le_bytes().to_vec());
     }
 }
@@ -251,11 +251,7 @@ impl CommandHandler for PluralIntegerVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance(format!(
-                "Variable index {} exceeds u8::MAX", message.sub_header.instance
-            ))
-        })?;
+        let start_variable = message.sub_header.instance;  // Direct use since instance is u16
         let service = message.sub_header.service;
         
         // Validate attribute (should be 0)
@@ -458,6 +454,9 @@ The implementation was completed successfully with no significant issues requiri
 - No Clippy warnings after fixes
 - Documentation updated across all crates
 - Example code successfully demonstrates the new functionality
+- **Type Change**: Changed `start_variable_number` from `u8` to `u16` to support extended variable settings (0-999)
+- **Backward Compatibility**: Standard settings (0-99) remain fully supported
+- **Protocol Compliance**: Aligns with HSES protocol specification where Instance field is 2 bytes (u16)
 
 ### Recommendations
 
