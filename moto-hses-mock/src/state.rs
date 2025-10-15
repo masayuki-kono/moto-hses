@@ -251,6 +251,7 @@ impl MockState {
     /// # Panics
     ///
     /// Panics if the variable index exceeds `u8::MAX`
+    #[must_use]
     #[allow(clippy::panic)]
     pub fn get_multiple_integer_variables(&self, start_variable: u8, count: usize) -> Vec<i16> {
         let mut values = Vec::with_capacity(count);
@@ -262,11 +263,7 @@ impl MockState {
             let var_data = self.get_variable(var_num);
             // I variable is 2 bytes (i16)
             let value = var_data.map_or(0_i16, |data| {
-                if data.len() >= 2 {
-                    i16::from_le_bytes([data[0], data[1]])
-                } else {
-                    0
-                }
+                if data.len() >= 2 { i16::from_le_bytes([data[0], data[1]]) } else { 0 }
             });
             values.push(value);
         }
