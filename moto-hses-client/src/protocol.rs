@@ -4,12 +4,13 @@ use moto_hses_proto::{
     Alarm, AlarmAttribute, AlarmReset, Command, DeleteFile, Division, ExecutingJobInfo,
     HoldServoControl, HsesPayload, Position, ReadAlarmData, ReadAlarmHistory, ReadCurrentPosition,
     ReadExecutingJobInfo, ReadFileList, ReadIo, ReadStatus, ReadStatusData1, ReadStatusData2,
-    ReadVar, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId, WriteIo,
-    WriteVar,
+    ReadVariable, ReceiveFile, SendFile, Status, StatusData1, StatusData2, VariableCommandId,
+    WriteIo, WriteVariable,
     commands::{
         JobSelectCommand, JobSelectType, JobStartCommand, MultipleVariableCommandId,
         MultipleVariableResponse, ReadMultipleIo, ReadMultipleVariables, WriteMultipleIo,
-        WriteMultipleVariables, parse_file_content, parse_file_list,
+        WriteMultipleStringVariables, WriteMultipleVariables, WriteStringVar, parse_file_content,
+        parse_file_list,
     },
 };
 use std::fmt::Write;
@@ -45,7 +46,7 @@ impl HsesClient {
     where
         T: HsesPayload + VariableCommandId,
     {
-        let command = ReadVar::<T> { index, _phantom: std::marker::PhantomData };
+        let command = ReadVariable::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
         T::deserialize(&response, self.config.text_encoding).map_err(ClientError::from)
     }
@@ -57,7 +58,22 @@ impl HsesClient {
     where
         T: HsesPayload + VariableCommandId,
     {
-        let command = WriteVar::<T> { index, value };
+        let command = WriteVariable::<T> { index, value };
+        let _response = self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Write string variable with encoding support
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails
+    pub async fn write_string_variable(
+        &self,
+        index: u16,
+        value: String,
+    ) -> Result<(), ClientError> {
+        let command = WriteStringVar { index, value, text_encoding: self.config.text_encoding };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }
@@ -79,7 +95,8 @@ impl HsesClient {
     {
         let command = ReadMultipleVariables::<T>::new(start_variable_number, count)?;
         let response = self.send_command_with_retry(command, Division::Robot).await?;
-        T::deserialize_multiple(&response, count).map_err(ClientError::from)
+        T::deserialize_multiple(&response, count, self.config.text_encoding)
+            .map_err(ClientError::from)
     }
 
     /// Write multiple variables of type T
@@ -98,10 +115,28 @@ impl HsesClient {
         values: Vec<T>,
     ) -> Result<(), ClientError>
     where
-        T: MultipleVariableCommandId + Send + Sync + Clone,
+        T: MultipleVariableCommandId + Send + Sync + Clone + HsesPayload,
         WriteMultipleVariables<T>: Command<Response = ()>,
     {
         let command = WriteMultipleVariables::<T>::new(start_variable_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Write multiple string variables with encoding support
+    ///
+    /// # Errors
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_string_variables(
+        &self,
+        start_variable_number: u16,
+        values: Vec<String>,
+    ) -> Result<(), ClientError> {
+        let command = WriteMultipleStringVariables {
+            start_variable_number,
+            values,
+            text_encoding: self.config.text_encoding,
+        };
         self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

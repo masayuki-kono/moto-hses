@@ -13,8 +13,8 @@ pub use commands::{
     AlarmAttribute, AlarmReset, Command, CycleMode, CycleModeSwitchingCommand, DeleteFile,
     Division, HoldServoControl, HoldServoType, HoldServoValue, ReadAlarmData, ReadAlarmHistory,
     ReadCurrentPosition, ReadExecutingJobInfo, ReadFileList, ReadIo, ReadRegister, ReadStatus,
-    ReadStatusData1, ReadStatusData2, ReadVar, ReceiveFile, SendFile, Service, VariableCommandId,
-    WriteIo, WriteRegister, WriteVar,
+    ReadStatusData1, ReadStatusData2, ReadVariable, ReceiveFile, SendFile, Service,
+    VariableCommandId, WriteIo, WriteRegister, WriteVariable,
 };
 pub use constants::{FILE_CONTROL_PORT, ROBOT_CONTROL_PORT};
 pub use encoding::TextEncoding;

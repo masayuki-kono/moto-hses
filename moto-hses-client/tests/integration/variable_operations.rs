@@ -628,23 +628,43 @@ test_with_logging!(test_multiple_character_variables_validation, {
     // Test invalid count: 0
     let result = client.read_multiple_strings(0, 0).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 0 (must be 1-29)")
+    );
 
     // Test invalid count: > 29
     let result = client.read_multiple_strings(0, 30).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 30 (must be 1-29)")
+    );
 
     // Test invalid count for write: 0
     let result = client.write_multiple_strings(0, vec![]).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 0 (must be 1-29)")
+    );
 
     // Test invalid count for write: > 29
     let large_values: Vec<String> = (0..30).map(|i| format!("Test{i}")).collect();
     let result = client.write_multiple_strings(0, large_values).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 30 (must be 1-29)")
+    );
 
     // Test string too long when encoded
     let long_string = "This is a very long string that exceeds 16 bytes when encoded";

@@ -77,57 +77,24 @@ impl HsesClient {
 
     /// Read a string variable (S variable) with encoding support
     ///
-    /// Reads raw byte array using `read_variable<[u8; 16]>` and converts it to string
-    /// using the client's text encoding configuration.
+    /// Uses `read_variable<String>` which handles encoding/decoding in the proto layer.
     ///
     /// # Errors
     ///
     /// Returns an error if communication fails
     pub async fn read_string(&self, index: u16) -> Result<String, ClientError> {
-        // Read raw byte array from protocol layer
-        let byte_array = self.read_variable::<[u8; 16]>(index).await?;
-
-        // Find null terminator
-        let trimmed_bytes = byte_array
-            .iter()
-            .position(|&b| b == 0)
-            .map_or(&byte_array[..], |pos| &byte_array[..pos]);
-
-        // Decode using client's text encoding
-        let string = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-            trimmed_bytes,
-            self.config.text_encoding,
-        );
-
-        Ok(string)
+        self.read_variable::<String>(index).await
     }
 
     /// Write a string variable (S variable) with encoding support
     ///
-    /// Converts string to raw byte array using the client's text encoding configuration,
-    /// then writes it using `write_variable<[u8; 16]>`.
+    /// Uses `write_string_variable` which handles encoding with client's text encoding setting.
     ///
     /// # Errors
     ///
     /// Returns an error if communication fails or if string exceeds 16 bytes when encoded
     pub async fn write_string(&self, index: u16, value: String) -> Result<(), ClientError> {
-        // Convert string to byte array with encoding
-        let encoded_bytes =
-            moto_hses_proto::encoding_utils::encode_string(&value, self.config.text_encoding);
-
-        if encoded_bytes.len() > 16 {
-            return Err(ClientError::SystemError(format!(
-                "String exceeds 16 bytes when encoded: {} bytes",
-                encoded_bytes.len()
-            )));
-        }
-
-        // Pad to 16 bytes with null terminator
-        let mut byte_array = [0u8; 16];
-        byte_array[..encoded_bytes.len()].copy_from_slice(&encoded_bytes);
-
-        // Write raw byte array using protocol layer
-        self.write_variable(index, byte_array).await
+        self.write_string_variable(index, value).await
     }
 
     /// Read multiple u8 variables (B)
@@ -228,8 +195,7 @@ impl HsesClient {
 
     /// Read multiple string variables (S) with encoding support
     ///
-    /// Reads raw byte arrays using `read_multiple_variables<[u8; 16]>` and converts them to strings
-    /// using the client's text encoding configuration.
+    /// Uses `read_multiple_variables<String>` which handles encoding/decoding in the proto layer.
     ///
     /// # Errors
     /// Returns an error if communication fails
@@ -238,34 +204,12 @@ impl HsesClient {
         start_variable_number: u16,
         count: u32,
     ) -> Result<Vec<String>, ClientError> {
-        // Read raw byte arrays from protocol layer
-        let byte_arrays =
-            self.read_multiple_variables::<[u8; 16]>(start_variable_number, count).await?;
-
-        // Convert byte arrays to strings with encoding
-        let mut strings = Vec::with_capacity(byte_arrays.len());
-        for byte_array in byte_arrays {
-            // Find null terminator
-            let trimmed_bytes = byte_array
-                .iter()
-                .position(|&b| b == 0)
-                .map_or(&byte_array[..], |pos| &byte_array[..pos]);
-
-            // Decode using client's text encoding
-            let string = moto_hses_proto::encoding_utils::decode_string_with_fallback(
-                trimmed_bytes,
-                self.config.text_encoding,
-            );
-            strings.push(string);
-        }
-
-        Ok(strings)
+        self.read_multiple_variables::<String>(start_variable_number, count).await
     }
 
     /// Write multiple string variables (S) with encoding support
     ///
-    /// Converts strings to raw byte arrays using the client's text encoding configuration,
-    /// then writes them using `write_multiple_variables<[u8; 16]>`.
+    /// Uses `write_multiple_string_variables` which handles encoding with client's text encoding setting.
     ///
     /// # Errors
     /// Returns an error if communication fails or if any string exceeds 16 bytes when encoded
@@ -274,25 +218,6 @@ impl HsesClient {
         start_variable_number: u16,
         values: Vec<String>,
     ) -> Result<(), ClientError> {
-        // Convert strings to byte arrays with encoding
-        let mut byte_arrays = Vec::with_capacity(values.len());
-        for (i, value) in values.iter().enumerate() {
-            let encoded_bytes =
-                moto_hses_proto::encoding_utils::encode_string(value, self.config.text_encoding);
-
-            if encoded_bytes.len() > 16 {
-                return Err(ClientError::SystemError(format!(
-                    "String at index {i} exceeds 16 bytes when encoded: {} bytes",
-                    encoded_bytes.len()
-                )));
-            }
-
-            let mut byte_array = [0u8; 16];
-            byte_array[..encoded_bytes.len()].copy_from_slice(&encoded_bytes);
-            byte_arrays.push(byte_array);
-        }
-
-        // Write raw byte arrays using protocol layer
-        self.write_multiple_variables(start_variable_number, byte_arrays).await
+        self.write_multiple_string_variables(start_variable_number, values).await
     }
 }
