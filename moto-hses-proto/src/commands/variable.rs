@@ -309,6 +309,114 @@ impl Command for WriteMultipleIntegerVariables {
     }
 }
 
+/// Read multiple double precision integer variables (D) command (0x304)
+#[derive(Debug, Clone)]
+pub struct ReadMultipleDoubleVariables {
+    pub start_variable_number: u16, // Support extended variable settings (0-999)
+    pub count: u32,                 // Number of D variable data (max 118)
+}
+
+impl ReadMultipleDoubleVariables {
+    /// Create a new `ReadMultipleDoubleVariables` command
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number
+    /// * `count` - Number of variables to read (max 118)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parameters are invalid
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
+        // Validate count (max 118, must be > 0)
+        if count == 0 || count > 118 {
+            return Err(ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-118)"
+            )));
+        }
+        Ok(Self { start_variable_number, count })
+    }
+}
+
+impl Command for ReadMultipleDoubleVariables {
+    type Response = Vec<i32>; // Array of D variable values
+    fn command_id() -> u16 {
+        0x304
+    }
+    fn instance(&self) -> u16 {
+        self.start_variable_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Fixed to 0 for plural commands
+    fn service(&self) -> u8 {
+        0x33
+    } // Read plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // Only send count (4 bytes, little-endian)
+        Ok(self.count.to_le_bytes().to_vec())
+    }
+}
+
+/// Write multiple double precision integer variables (D) command (0x304)
+#[derive(Debug, Clone)]
+pub struct WriteMultipleDoubleVariables {
+    pub start_variable_number: u16, // Support extended variable settings (0-999)
+    pub values: Vec<i32>,           // D variable values to write
+}
+
+impl WriteMultipleDoubleVariables {
+    /// Create a new `WriteMultipleDoubleVariables` command
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number
+    /// * `values` - Variable values to write (max 118 items)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parameters are invalid
+    pub fn new(start_variable_number: u16, values: Vec<i32>) -> Result<Self, ProtocolError> {
+        let count = values.len();
+        // Validate count (max 118, must be > 0)
+        if count == 0 || count > 118 {
+            return Err(ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-118)"
+            )));
+        }
+        Ok(Self { start_variable_number, values })
+    }
+}
+
+impl Command for WriteMultipleDoubleVariables {
+    type Response = ();
+    fn command_id() -> u16 {
+        0x304
+    }
+    fn instance(&self) -> u16 {
+        self.start_variable_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Fixed to 0 for plural commands
+    fn service(&self) -> u8 {
+        0x34
+    } // Write plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        let count = u32::try_from(self.values.len()).map_err(|_| {
+            ProtocolError::InvalidMessage(format!(
+                "Values count {} exceeds u32::MAX",
+                self.values.len()
+            ))
+        })?;
+        let mut payload = count.to_le_bytes().to_vec();
+        for &value in &self.values {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }
+        Ok(payload)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -559,6 +667,128 @@ mod tests {
         let serialized = cmd.serialize().expect("Serialization should not fail");
 
         // Expected: count (4 bytes) + values (2 bytes each)
+        let mut expected = vec![3, 0, 0, 0]; // 3 in little-endian
+        for value in values {
+            expected.extend_from_slice(&value.to_le_bytes());
+        }
+        assert_eq!(serialized, expected);
+    }
+
+    // Tests for ReadMultipleDoubleVariables (0x304)
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_double_variables_creation() {
+        // Valid cases
+        let cmd = ReadMultipleDoubleVariables::new(0, 1).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.count, 1);
+
+        let cmd = ReadMultipleDoubleVariables::new(50, 4).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 50);
+        assert_eq!(cmd.count, 4);
+
+        // Maximum valid count
+        let cmd = ReadMultipleDoubleVariables::new(0, 118).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.count, 118);
+
+        // Valid case with any start variable number
+        let cmd = ReadMultipleDoubleVariables::new(255, 1).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 255);
+        assert_eq!(cmd.count, 1);
+    }
+
+    #[test]
+    fn test_read_multiple_double_variables_validation() {
+        // Invalid count: zero
+        assert!(ReadMultipleDoubleVariables::new(0, 0).is_err());
+
+        // Invalid count: too large
+        assert!(ReadMultipleDoubleVariables::new(0, 119).is_err());
+        assert!(ReadMultipleDoubleVariables::new(0, 1000).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_double_variables_command_trait() {
+        let cmd = ReadMultipleDoubleVariables::new(10, 4).expect("Valid command should not fail");
+        assert_eq!(ReadMultipleDoubleVariables::command_id(), 0x304);
+        assert_eq!(cmd.instance(), 10);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x33);
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_double_variables_serialization() {
+        let cmd = ReadMultipleDoubleVariables::new(5, 3).expect("Valid command should not fail");
+        let serialized = cmd.serialize().expect("Serialization should not fail");
+        assert_eq!(serialized, vec![3, 0, 0, 0]); // 3 in little-endian
+    }
+
+    // Tests for WriteMultipleDoubleVariables (0x304)
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_write_multiple_double_variables_creation() {
+        // Valid cases
+        let values = vec![1_000_000];
+        let cmd = WriteMultipleDoubleVariables::new(0, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.values, values);
+
+        let values = vec![1, -2, 3, -4];
+        let cmd = WriteMultipleDoubleVariables::new(50, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 50);
+        assert_eq!(cmd.values, values);
+
+        // Maximum valid count
+        let values: Vec<i32> = (0..118).map(|i| i * 1000).collect();
+        let cmd =
+            WriteMultipleDoubleVariables::new(0, values).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.values.len(), 118);
+
+        // Valid case with any start variable number
+        let values = vec![1_000_000, -2_000_000];
+        let cmd = WriteMultipleDoubleVariables::new(255, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 255);
+        assert_eq!(cmd.values, values);
+    }
+
+    #[test]
+    fn test_write_multiple_double_variables_validation() {
+        // Invalid count: empty
+        assert!(WriteMultipleDoubleVariables::new(0, vec![]).is_err());
+
+        // Invalid count: too large
+        let large_values: Vec<i32> = vec![0; 119];
+        assert!(WriteMultipleDoubleVariables::new(0, large_values).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_write_multiple_double_variables_command_trait() {
+        let values = vec![1_000_000, -2_000_000, 3_000_000, -4_000_000];
+        let cmd =
+            WriteMultipleDoubleVariables::new(10, values).expect("Valid command should not fail");
+        assert_eq!(WriteMultipleDoubleVariables::command_id(), 0x304);
+        assert_eq!(cmd.instance(), 10);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x34);
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_write_multiple_double_variables_serialization() {
+        let values = vec![1_000_000, -2_000_000, 3_000_000];
+        let cmd = WriteMultipleDoubleVariables::new(5, values.clone())
+            .expect("Valid command should not fail");
+        let serialized = cmd.serialize().expect("Serialization should not fail");
+
+        // Expected: count (4 bytes) + values (4 bytes each)
         let mut expected = vec![3, 0, 0, 0]; // 3 in little-endian
         for value in values {
             expected.extend_from_slice(&value.to_le_bytes());
