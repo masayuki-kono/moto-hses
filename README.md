@@ -52,7 +52,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x300 | Plural I/O Data Reading / Writing Command |
 | 0x301 | Plural Register Data Reading / Writing Command |
 | 0x302 | Plural Byte Type Variable (B) Reading / Writing Command |
-|| 0x303 | Plural Integer Type Variable (I) Reading / Writing Command |
+| 0x303 | Plural Integer Type Variable (I) Reading / Writing Command |
 
 ### File Control Commands
 
