@@ -77,7 +77,7 @@ impl HsesClient {
 
     /// Read a string variable (S variable) with encoding support
     ///
-    /// Reads raw byte array using `read_variable<Vec<u8>>` and converts it to string
+    /// Reads raw byte array using `read_variable<[u8; 16]>` and converts it to string
     /// using the client's text encoding configuration.
     ///
     /// # Errors
