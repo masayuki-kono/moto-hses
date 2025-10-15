@@ -41,7 +41,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
+    pub async fn read_variable<T>(&self, index: u16) -> Result<T, ClientError>
     where
         T: HsesPayload + VariableCommandId,
     {
@@ -53,7 +53,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
+    pub async fn write_variable<T>(&self, index: u16, value: T) -> Result<(), ClientError>
     where
         T: HsesPayload + VariableCommandId,
     {

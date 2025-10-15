@@ -8,7 +8,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_i16(&self, index: u8) -> Result<i16, ClientError> {
+    pub async fn read_i16(&self, index: u16) -> Result<i16, ClientError> {
         self.read_variable::<i16>(index).await
     }
 
@@ -17,7 +17,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_i16(&self, index: u8, value: i16) -> Result<(), ClientError> {
+    pub async fn write_i16(&self, index: u16, value: i16) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 
@@ -26,7 +26,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_i32(&self, index: u8) -> Result<i32, ClientError> {
+    pub async fn read_i32(&self, index: u16) -> Result<i32, ClientError> {
         self.read_variable::<i32>(index).await
     }
 
@@ -35,7 +35,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_i32(&self, index: u8, value: i32) -> Result<(), ClientError> {
+    pub async fn write_i32(&self, index: u16, value: i32) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 
@@ -44,7 +44,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_f32(&self, index: u8) -> Result<f32, ClientError> {
+    pub async fn read_f32(&self, index: u16) -> Result<f32, ClientError> {
         self.read_variable::<f32>(index).await
     }
 
@@ -53,7 +53,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_f32(&self, index: u8, value: f32) -> Result<(), ClientError> {
+    pub async fn write_f32(&self, index: u16, value: f32) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 
@@ -62,7 +62,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_u8(&self, index: u8) -> Result<u8, ClientError> {
+    pub async fn read_u8(&self, index: u16) -> Result<u8, ClientError> {
         self.read_variable::<u8>(index).await
     }
 
@@ -71,7 +71,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_u8(&self, index: u8, value: u8) -> Result<(), ClientError> {
+    pub async fn write_u8(&self, index: u16, value: u8) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 
@@ -80,7 +80,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_string(&self, index: u8) -> Result<Vec<u8>, ClientError> {
+    pub async fn read_string(&self, index: u16) -> Result<Vec<u8>, ClientError> {
         self.read_variable::<Vec<u8>>(index).await
     }
 
@@ -89,7 +89,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_string(&self, index: u8, value: Vec<u8>) -> Result<(), ClientError> {
+    pub async fn write_string(&self, index: u16, value: Vec<u8>) -> Result<(), ClientError> {
         self.write_variable(index, value).await
     }
 }

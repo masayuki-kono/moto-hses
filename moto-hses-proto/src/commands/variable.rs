@@ -41,7 +41,7 @@ impl VariableCommandId for Vec<u8> {
 }
 
 pub struct ReadVar<T: HsesPayload + VariableCommandId> {
-    pub index: u8,
+    pub index: u16, // Support extended variable settings (0-999)
     pub _phantom: PhantomData<T>,
 }
 
@@ -54,7 +54,7 @@ impl<T: HsesPayload + VariableCommandId> Command for ReadVar<T> {
         Ok(Vec::new())
     }
     fn instance(&self) -> u16 {
-        u16::from(self.index) // Variable number (0-99 for byte, 0-999 for int/real)
+        self.index // Direct use since it's already u16
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
@@ -65,7 +65,7 @@ impl<T: HsesPayload + VariableCommandId> Command for ReadVar<T> {
 }
 
 pub struct WriteVar<T: HsesPayload + VariableCommandId> {
-    pub index: u8,
+    pub index: u16, // Support extended variable settings (0-999)
     pub value: T,
 }
 
@@ -80,7 +80,7 @@ impl<T: HsesPayload + VariableCommandId> Command for WriteVar<T> {
         self.value.serialize(crate::encoding::TextEncoding::Utf8)
     }
     fn instance(&self) -> u16 {
-        u16::from(self.index) // Variable number (0-99 for byte, 0-999 for int/real)
+        self.index // Direct use since it's already u16
     }
     fn attribute(&self) -> u8 {
         1 // Fixed to 1 according to specification
