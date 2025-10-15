@@ -1400,7 +1400,7 @@ impl HsesClient {
     ///
     /// # Returns
     ///
-    /// Vector of variable values (16-byte arrays)
+    /// Vector of variable values as strings decoded with the client's text encoding
     ///
     /// # Errors
     ///
@@ -1409,7 +1409,7 @@ impl HsesClient {
         &self,
         start_variable_number: u16,
         count: u32,
-    ) -> Result<Vec<[u8; 16]>, ClientError> {
+    ) -> Result<Vec<String>, ClientError> {
         let command = ReadMultipleCharacterVariables::new(start_variable_number, count)?;
         let response = self.send_command_with_retry(command, Division::Robot).await?;
 
@@ -1442,9 +1442,20 @@ impl HsesClient {
         let mut values = Vec::with_capacity(count as usize);
         for i in 0..count as usize {
             let offset = 4 + i * 16;
-            let mut value = [0u8; 16];
-            value.copy_from_slice(&response[offset..offset + 16]);
-            values.push(value);
+            let value_bytes = &response[offset..offset + 16];
+
+            // Decode bytes to string using client's text encoding
+            // Remove null bytes from the end
+            let trimmed_bytes = value_bytes
+                .iter()
+                .position(|&b| b == 0)
+                .map_or(value_bytes, |pos| &value_bytes[..pos]);
+
+            let value_string = moto_hses_proto::encoding_utils::decode_string_with_fallback(
+                trimmed_bytes,
+                self.config.text_encoding,
+            );
+            values.push(value_string);
         }
         Ok(values)
     }
@@ -1454,17 +1465,34 @@ impl HsesClient {
     /// # Arguments
     ///
     /// * `start_variable_number` - Starting variable number (0-99 for standard settings)
-    /// * `values` - Variable values to write (16-byte arrays, max 29 items)
+    /// * `values` - Variable values to write as strings (max 29 items, each up to 16 bytes when encoded)
     ///
     /// # Errors
     ///
-    /// Returns an error if communication fails or parameters are invalid
+    /// Returns an error if communication fails, parameters are invalid, or strings exceed 16 bytes when encoded
     pub async fn write_multiple_character_variables(
         &self,
         start_variable_number: u16,
-        values: Vec<[u8; 16]>,
+        values: Vec<String>,
     ) -> Result<(), ClientError> {
-        let command = WriteMultipleCharacterVariables::new(start_variable_number, values)?;
+        // Convert strings to 16-byte arrays with proper encoding
+        let mut encoded_values = Vec::with_capacity(values.len());
+        for (i, value) in values.iter().enumerate() {
+            let encoded_bytes =
+                moto_hses_proto::encoding_utils::encode_string(value, self.config.text_encoding);
+            if encoded_bytes.len() > 16 {
+                return Err(ClientError::SystemError(format!(
+                    "String at index {i} exceeds 16 bytes when encoded: {} bytes",
+                    encoded_bytes.len()
+                )));
+            }
+
+            let mut value_array = [0u8; 16];
+            value_array[..encoded_bytes.len()].copy_from_slice(&encoded_bytes);
+            encoded_values.push(value_array);
+        }
+
+        let command = WriteMultipleCharacterVariables::new(start_variable_number, encoded_values)?;
         self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

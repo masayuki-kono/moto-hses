@@ -82,13 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Multiple Character Variable Operations (0x306) ---");
 
     // Write multiple character type variables
-    let mut value1 = [0u8; 16];
-    value1[..5].copy_from_slice(b"Hello");
-    let mut value2 = [0u8; 16];
-    value2[..5].copy_from_slice(b"World");
-    let mut value3 = [0u8; 16];
-    value3[..8].copy_from_slice(b"Test1234");
-    let character_values = vec![value1, value2, value3];
+    let character_values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
 
     match client.write_multiple_character_variables(0, character_values.clone()).await {
         Ok(()) => info!("✓ Wrote {} character variables to S000-S002", character_values.len()),
@@ -100,8 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(read_values) => {
             info!("✓ Read {} character variables from S000-S002:", read_values.len());
             for (i, value) in read_values.iter().enumerate() {
-                let string_value = String::from_utf8_lossy(value);
-                info!("  S{i:03} = '{string_value}'");
+                info!("  S{i:03} = '{value}'");
             }
 
             // Verify that read values match written values
@@ -113,9 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     character_values.iter().zip(read_values.iter()).enumerate()
                 {
                     if written != read {
-                        let written_str = String::from_utf8_lossy(written);
-                        let read_str = String::from_utf8_lossy(read);
-                        info!("  S{i:03}: written='{written_str}', read='{read_str}'");
+                        info!("  S{i:03}: written='{written}', read='{read}'");
                     }
                 }
             }

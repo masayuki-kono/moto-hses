@@ -572,13 +572,7 @@ test_with_logging!(test_multiple_character_variables_operations, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test writing multiple character type variables
-    let mut val1 = [0u8; 16];
-    val1[..5].copy_from_slice(b"Hello");
-    let mut val2 = [0u8; 16];
-    val2[..5].copy_from_slice(b"World");
-    let mut val3 = [0u8; 16];
-    val3[..8].copy_from_slice(b"Test1234");
-    let values = vec![val1, val2, val3];
+    let values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
 
     client
         .write_multiple_character_variables(0, values.clone())
@@ -595,9 +589,7 @@ test_with_logging!(test_multiple_character_variables_operations, {
     assert_eq!(read_values, values);
 
     // Test boundary conditions (count = 1)
-    let mut single_value = [0u8; 16];
-    single_value[..4].copy_from_slice(b"Test");
-    let single_values = vec![single_value];
+    let single_values = vec!["Test".to_string()];
 
     client
         .write_multiple_character_variables(10, single_values.clone())
@@ -613,17 +605,7 @@ test_with_logging!(test_multiple_character_variables_operations, {
     assert_eq!(read_single, single_values);
 
     // Test maximum count (29)
-    let max_values: Vec<[u8; 16]> = (0..29)
-        .map(|i| {
-            let mut val = [0u8; 16];
-            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            {
-                val[0] = i as u8;
-                val[1] = (i + 1) as u8;
-            }
-            val
-        })
-        .collect();
+    let max_values: Vec<String> = (0..29).map(|i| format!("Test{i:02}")).collect();
 
     client
         .write_multiple_character_variables(20, max_values.clone())
@@ -638,16 +620,9 @@ test_with_logging!(test_multiple_character_variables_operations, {
         .expect("Failed to read maximum count character variables");
     assert_eq!(read_max, max_values);
 
-    // Test with various byte patterns
-    let mut ascii_value = [0u8; 16];
-    ascii_value[..12].copy_from_slice(b"ASCII_STRING");
-    let mut utf8_value = [0u8; 16];
-    let utf8_bytes = "こんにちは".as_bytes();
-    let copy_len = utf8_bytes.len().min(16);
-    utf8_value[..copy_len].copy_from_slice(&utf8_bytes[..copy_len]);
-    let mut binary_value = [0u8; 16];
-    binary_value[..8].copy_from_slice(&[0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD, 0xFC]);
-    let pattern_values = vec![ascii_value, utf8_value, binary_value];
+    // Test with various string patterns
+    let pattern_values =
+        vec!["ASCII_STRING".to_string(), "こんにちは".to_string(), "Binary123".to_string()];
 
     client
         .write_multiple_character_variables(50, pattern_values.clone())
@@ -685,8 +660,17 @@ test_with_logging!(test_multiple_character_variables_validation, {
     assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
 
     // Test invalid count for write: > 29
-    let large_values: Vec<[u8; 16]> = (0..30).map(|_| [0u8; 16]).collect();
+    let large_values: Vec<String> = (0..30).map(|i| format!("Test{i}")).collect();
     let result = client.write_multiple_character_variables(0, large_values).await;
     assert!(result.is_err());
     assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+
+    // Test string too long when encoded
+    let long_string = "This is a very long string that exceeds 16 bytes when encoded";
+    let long_values = vec![long_string.to_string()];
+    let result = client.write_multiple_character_variables(0, long_values).await;
+    assert!(result.is_err());
+    assert!(
+        result.expect_err("Should be error").to_string().contains("exceeds 16 bytes when encoded")
+    );
 });
