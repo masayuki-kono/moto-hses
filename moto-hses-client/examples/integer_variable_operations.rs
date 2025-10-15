@@ -5,6 +5,7 @@ use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
@@ -12,8 +13,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (host, robot_port) = match args.as_slice() {
         [_, host, robot_port] => {
             // Format: [host] [robot_port]
-            let robot_port: u16 =
-                robot_port.parse().map_err(|_| format!("Invalid robot port: {robot_port}"))?;
+            let robot_port: u16 = robot_port
+                .parse()
+                .map_err(|e| format!("Invalid robot port: {robot_port} - {e}"))?;
 
             (host.to_string(), robot_port)
         }

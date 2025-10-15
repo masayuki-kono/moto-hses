@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         [_, host, file_port] => {
             // Format: [host] [file_port]
             let file_port: u16 =
-                file_port.parse().map_err(|_| format!("Invalid file port: {file_port}"))?;
+                file_port.parse().map_err(|e| format!("Invalid file port: {file_port} - {e}"))?;
 
             (host.to_string(), file_port)
         }
