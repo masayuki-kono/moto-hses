@@ -93,7 +93,7 @@ impl<T: HsesPayload + VariableCommandId> Command for WriteVar<T> {
 /// Read multiple byte variables (B) command (0x302)
 #[derive(Debug, Clone)]
 pub struct ReadMultipleByteVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,
     pub count: u32, // Number of B variable data (max 474, must be multiple of 2)
 }
 
@@ -108,7 +108,7 @@ impl ReadMultipleByteVariables {
     /// # Errors
     ///
     /// Returns an error if parameters are invalid
-    pub fn new(start_variable_number: u8, count: u32) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 {
             return Err(ProtocolError::InvalidMessage(format!(
@@ -130,7 +130,7 @@ impl Command for ReadMultipleByteVariables {
         0x302
     }
     fn instance(&self) -> u16 {
-        u16::from(self.start_variable_number)
+        self.start_variable_number
     }
     fn attribute(&self) -> u8 {
         0
@@ -147,7 +147,7 @@ impl Command for ReadMultipleByteVariables {
 /// Write multiple byte variables (B) command (0x302)
 #[derive(Debug, Clone)]
 pub struct WriteMultipleByteVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,
     pub values: Vec<u8>, // B variable values to write
 }
 
@@ -162,7 +162,7 @@ impl WriteMultipleByteVariables {
     /// # Errors
     ///
     /// Returns an error if parameters are invalid
-    pub fn new(start_variable_number: u8, values: Vec<u8>) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, values: Vec<u8>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 || !count.is_multiple_of(2) {
@@ -180,7 +180,7 @@ impl Command for WriteMultipleByteVariables {
         0x302
     }
     fn instance(&self) -> u16 {
-        u16::from(self.start_variable_number)
+        self.start_variable_number
     }
     fn attribute(&self) -> u8 {
         0
@@ -204,7 +204,7 @@ impl Command for WriteMultipleByteVariables {
 /// Read multiple integer variables (I) command (0x303)
 #[derive(Debug, Clone)]
 pub struct ReadMultipleIntegerVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,
     pub count: u32, // Number of I variable data (max 237)
 }
 
@@ -219,7 +219,7 @@ impl ReadMultipleIntegerVariables {
     /// # Errors
     ///
     /// Returns an error if parameters are invalid
-    pub fn new(start_variable_number: u8, count: u32) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
             return Err(ProtocolError::InvalidMessage(format!(
@@ -236,7 +236,7 @@ impl Command for ReadMultipleIntegerVariables {
         0x303
     }
     fn instance(&self) -> u16 {
-        u16::from(self.start_variable_number)
+        self.start_variable_number
     }
     fn attribute(&self) -> u8 {
         0
@@ -253,7 +253,7 @@ impl Command for ReadMultipleIntegerVariables {
 /// Write multiple integer variables (I) command (0x303)
 #[derive(Debug, Clone)]
 pub struct WriteMultipleIntegerVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,
     pub values: Vec<i16>, // I variable values to write
 }
 
@@ -268,7 +268,7 @@ impl WriteMultipleIntegerVariables {
     /// # Errors
     ///
     /// Returns an error if parameters are invalid
-    pub fn new(start_variable_number: u8, values: Vec<i16>) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, values: Vec<i16>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
@@ -286,7 +286,7 @@ impl Command for WriteMultipleIntegerVariables {
         0x303
     }
     fn instance(&self) -> u16 {
-        u16::from(self.start_variable_number)
+        self.start_variable_number
     }
     fn attribute(&self) -> u8 {
         0

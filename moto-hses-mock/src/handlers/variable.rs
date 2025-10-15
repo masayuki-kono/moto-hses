@@ -28,7 +28,7 @@ impl CommandHandler for ByteVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(var_index.into()).map_or_else(
                     || {
                         // B variable: 1 byte (actual data type size)
                         Ok(vec![0])
@@ -46,7 +46,7 @@ impl CommandHandler for ByteVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(var_index.into(), message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -79,7 +79,7 @@ impl CommandHandler for IntegerVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(var_index.into()).map_or_else(
                     || {
                         // I variable: 2 bytes (actual data type size)
                         Ok(vec![0, 0])
@@ -97,7 +97,7 @@ impl CommandHandler for IntegerVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(var_index.into(), message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -130,7 +130,7 @@ impl CommandHandler for DoubleVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(var_index.into()).map_or_else(
                     || {
                         // Return 4 bytes for 32-bit integer variable
                         Ok(vec![0, 0, 0, 0])
@@ -148,7 +148,7 @@ impl CommandHandler for DoubleVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(var_index.into(), message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -181,7 +181,7 @@ impl CommandHandler for RealVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(var_index.into()).map_or_else(
                     || {
                         // Return 4 bytes for real variable as expected by Python client
                         Ok(vec![0, 0, 0, 0])
@@ -202,7 +202,7 @@ impl CommandHandler for RealVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(var_index.into(), message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -235,7 +235,7 @@ impl CommandHandler for StringVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(var_index.into()).map_or_else(
                     || {
                         // Return 16 bytes for uninitialized variables (all zeros)
                         Ok(vec![0u8; 16])
@@ -256,13 +256,13 @@ impl CommandHandler for StringVarHandler {
                     // Store the full 16-byte S variable data, but trim trailing nulls for storage
                     let data = &message.payload[..16];
                     let trimmed_len = data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                    state.set_variable(var_index, data[..trimmed_len].to_vec());
+                    state.set_variable(var_index.into(), data[..trimmed_len].to_vec());
                 } else if !message.payload.is_empty() {
                     // Handle shorter payloads by padding with zeros
                     let mut data = message.payload.clone();
                     data.resize(16, 0); // Pad to 16 bytes
                     let trimmed_len = data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                    state.set_variable(var_index, data[..trimmed_len].to_vec());
+                    state.set_variable(var_index.into(), data[..trimmed_len].to_vec());
                 }
                 Ok(vec![])
             }
@@ -280,12 +280,7 @@ impl CommandHandler for PluralByteVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance(format!(
-                "Variable index {} too large for u8 conversion",
-                message.sub_header.instance
-            ))
-        })?;
+        let start_variable = message.sub_header.instance;
         let service = message.sub_header.service;
 
         // Validate attribute (should be 0)
@@ -355,12 +350,7 @@ impl CommandHandler for PluralIntegerVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance(format!(
-                "Variable index {} exceeds u8::MAX",
-                message.sub_header.instance
-            ))
-        })?;
+        let start_variable = message.sub_header.instance;
         let service = message.sub_header.service;
 
         // Validate attribute (should be 0)

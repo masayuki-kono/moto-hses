@@ -337,7 +337,7 @@ impl MockServer {
     }
 
     /// Set a variable in the server state
-    pub async fn set_variable(&self, index: u8, value: Vec<u8>) {
+    pub async fn set_variable(&self, index: u16, value: Vec<u8>) {
         let mut state = self.state.write().await;
         state.set_variable(index, value);
     }
@@ -457,7 +457,7 @@ impl MockServerBuilder {
     }
 
     #[must_use]
-    pub fn with_variables(mut self, variables: std::collections::HashMap<u8, Vec<u8>>) -> Self {
+    pub fn with_variables(mut self, variables: std::collections::HashMap<u16, Vec<u8>>) -> Self {
         self.config.variables = variables;
         self
     }

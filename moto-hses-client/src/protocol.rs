@@ -78,7 +78,7 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_byte_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         count: u32,
     ) -> Result<Vec<u8>, ClientError> {
         let command = ReadMultipleByteVariables::new(start_variable_number, count)?;
@@ -127,7 +127,7 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_byte_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         values: Vec<u8>,
     ) -> Result<(), ClientError> {
         let command = WriteMultipleByteVariables::new(start_variable_number, values)?;
@@ -151,7 +151,7 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_integer_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         count: u32,
     ) -> Result<Vec<i16>, ClientError> {
         let command = ReadMultipleIntegerVariables::new(start_variable_number, count)?;
@@ -204,7 +204,7 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_integer_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         values: Vec<i16>,
     ) -> Result<(), ClientError> {
         let command = WriteMultipleIntegerVariables::new(start_variable_number, values)?;

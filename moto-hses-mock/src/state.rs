@@ -20,7 +20,7 @@ pub struct MockState {
     pub text_encoding: proto::TextEncoding,
     pub status: proto::Status,
     pub position: proto::Position,
-    pub variables: HashMap<u8, Vec<u8>>,
+    pub variables: HashMap<u16, Vec<u8>>,
     pub io_states: HashMap<u16, bool>,
     pub registers: HashMap<u16, i16>,
     pub alarms: Vec<proto::Alarm>,
@@ -201,12 +201,12 @@ impl MockState {
     }
     /// Get variable value
     #[must_use]
-    pub fn get_variable(&self, index: u8) -> Option<&Vec<u8>> {
+    pub fn get_variable(&self, index: u16) -> Option<&Vec<u8>> {
         self.variables.get(&index)
     }
 
     /// Set variable value
-    pub fn set_variable(&mut self, index: u8, value: Vec<u8>) {
+    pub fn set_variable(&mut self, index: u16, value: Vec<u8>) {
         self.variables.insert(index, value);
     }
 
@@ -214,15 +214,15 @@ impl MockState {
     ///
     /// # Panics
     ///
-    /// Panics if the variable index exceeds `u8::MAX`
+    /// Panics if the variable index exceeds `u16::MAX`
     #[must_use]
     #[allow(clippy::panic)]
-    pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> Vec<u8> {
+    pub fn get_multiple_byte_variables(&self, start_variable: u16, count: usize) -> Vec<u8> {
         let mut values = Vec::with_capacity(count);
         for i in 0..count {
             let var_num = start_variable
-                + u8::try_from(i).unwrap_or_else(|_| {
-                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
             let var_data = self.get_variable(var_num);
             values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
@@ -234,13 +234,13 @@ impl MockState {
     ///
     /// # Panics
     ///
-    /// Panics if the variable index exceeds `u8::MAX`
+    /// Panics if the variable index exceeds `u16::MAX`
     #[allow(clippy::panic)]
-    pub fn set_multiple_byte_variables(&mut self, start_variable: u8, values: &[u8]) {
+    pub fn set_multiple_byte_variables(&mut self, start_variable: u16, values: &[u8]) {
         for (i, &value) in values.iter().enumerate() {
             let var_num = start_variable
-                + u8::try_from(i).unwrap_or_else(|_| {
-                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
             self.set_variable(var_num, vec![value]);
         }
@@ -250,15 +250,15 @@ impl MockState {
     ///
     /// # Panics
     ///
-    /// Panics if the variable index exceeds `u8::MAX`
+    /// Panics if the variable index exceeds `u16::MAX`
     #[must_use]
     #[allow(clippy::panic)]
-    pub fn get_multiple_integer_variables(&self, start_variable: u8, count: usize) -> Vec<i16> {
+    pub fn get_multiple_integer_variables(&self, start_variable: u16, count: usize) -> Vec<i16> {
         let mut values = Vec::with_capacity(count);
         for i in 0..count {
             let var_num = start_variable
-                + u8::try_from(i).unwrap_or_else(|_| {
-                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
             let var_data = self.get_variable(var_num);
             // I variable is 2 bytes (i16)
@@ -274,13 +274,13 @@ impl MockState {
     ///
     /// # Panics
     ///
-    /// Panics if the variable index exceeds `u8::MAX`
+    /// Panics if the variable index exceeds `u16::MAX`
     #[allow(clippy::panic)]
-    pub fn set_multiple_integer_variables(&mut self, start_variable: u8, values: &[i16]) {
+    pub fn set_multiple_integer_variables(&mut self, start_variable: u16, values: &[i16]) {
         for (i, &value) in values.iter().enumerate() {
             let var_num = start_variable
-                + u8::try_from(i).unwrap_or_else(|_| {
-                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
             self.set_variable(var_num, value.to_le_bytes().to_vec());
         }
