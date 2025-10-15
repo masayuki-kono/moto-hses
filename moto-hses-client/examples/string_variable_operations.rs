@@ -5,6 +5,7 @@ use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]
+#[allow(clippy::too_many_lines, clippy::similar_names)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
@@ -75,6 +76,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Err(e) => info!("✗ Failed to read S000: {e}"),
+    }
+
+    // Multiple Character Variable Operations (0x306 command)
+    info!("\n--- Multiple Character Variable Operations (0x306) ---");
+
+    // Write multiple character type variables
+    let mut value1 = [0u8; 16];
+    value1[..5].copy_from_slice(b"Hello");
+    let mut value2 = [0u8; 16];
+    value2[..5].copy_from_slice(b"World");
+    let mut value3 = [0u8; 16];
+    value3[..8].copy_from_slice(b"Test1234");
+    let character_values = vec![value1, value2, value3];
+
+    match client.write_multiple_character_variables(0, character_values.clone()).await {
+        Ok(()) => info!("✓ Wrote {} character variables to S000-S002", character_values.len()),
+        Err(e) => info!("✗ Failed to write multiple character variables: {e}"),
+    }
+
+    // Read multiple character type variables and verify
+    match client.read_multiple_character_variables(0, 3).await {
+        Ok(read_values) => {
+            info!("✓ Read {} character variables from S000-S002:", read_values.len());
+            for (i, value) in read_values.iter().enumerate() {
+                let string_value = String::from_utf8_lossy(value);
+                info!("  S{i:03} = '{string_value}'");
+            }
+
+            // Verify that read values match written values
+            if read_values == character_values {
+                info!("✓ Verification successful: Read values match written values");
+            } else {
+                info!("✗ Verification failed: Read values do not match written values");
+                for (i, (written, read)) in
+                    character_values.iter().zip(read_values.iter()).enumerate()
+                {
+                    if written != read {
+                        let written_str = String::from_utf8_lossy(written);
+                        let read_str = String::from_utf8_lossy(read);
+                        info!("  S{i:03}: written='{written_str}', read='{read_str}'");
+                    }
+                }
+            }
+        }
+        Err(e) => info!("✗ Failed to read multiple character variables: {e}"),
     }
 
     info!("\n--- String Variable Operations Example completed successfully ---");

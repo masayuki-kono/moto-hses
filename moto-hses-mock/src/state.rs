@@ -388,6 +388,52 @@ impl MockState {
         }
     }
 
+    /// Get multiple character type variable values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u16::MAX`
+    #[must_use]
+    #[allow(clippy::panic)]
+    pub fn get_multiple_character_variables(
+        &self,
+        start_variable: u16,
+        count: usize,
+    ) -> Vec<[u8; 16]> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            let var_num = start_variable
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
+                });
+            let var_data = self.get_variable(var_num);
+            // S variable is 16 bytes
+            let mut value = [0u8; 16];
+            if let Some(data) = var_data {
+                let copy_len = data.len().min(16);
+                value[..copy_len].copy_from_slice(&data[..copy_len]);
+            }
+            values.push(value);
+        }
+        values
+    }
+
+    /// Set multiple character type variable values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u16::MAX`
+    #[allow(clippy::panic)]
+    pub fn set_multiple_character_variables(&mut self, start_variable: u16, values: &[[u8; 16]]) {
+        for (i, value) in values.iter().enumerate() {
+            let var_num = start_variable
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
+                });
+            self.set_variable(var_num, value.to_vec());
+        }
+    }
+
     /// Get I/O state
     #[must_use]
     pub fn get_io_state(&self, io_number: u16) -> bool {
