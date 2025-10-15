@@ -55,7 +55,7 @@ impl ReadMultipleIo {
         }
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         Ok(Self { start_io_number, count })
     }
@@ -89,7 +89,7 @@ impl WriteMultipleIo {
         let count = io_data.len();
         // Validate count (max 474, must be multiple of 2)
         if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         Ok(Self { start_io_number, io_data })
     }
@@ -102,7 +102,8 @@ impl Command for WriteMultipleIo {
     fn attribute(&self) -> u8 { 0 }  // Different from 0x78 (which uses 1)
     fn service(&self) -> u8 { 0x34 }  // Write plural data
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let count = self.io_data.len() as u32;
+        let count = u32::try_from(self.io_data.len())
+            .map_err(|_| ProtocolError::InvalidMessage(format!("I/O data count {} too large for u32 conversion", self.io_data.len())))?;
         let mut payload = count.to_le_bytes().to_vec();
         payload.extend_from_slice(&self.io_data);
         Ok(payload)
@@ -146,7 +147,7 @@ pub async fn read_multiple_io(
     // Response format: Byte0-3 = count, Byte4-N = I/O data
     if response.len() < 4 {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Response too short".to_string())
+            ProtocolError::Deserialization(format!("Response too short: {} bytes (need at least 4)", response.len()))
         ));
     }
     
@@ -156,7 +157,7 @@ pub async fn read_multiple_io(
     
     if response_count != count {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Count mismatch".to_string())
+            ProtocolError::Deserialization(format!("Count mismatch: expected {count}, got {response_count}"))
         ));
     }
     
@@ -234,7 +235,10 @@ impl CommandHandler for PluralIoHandler {
         
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
-            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: {} bytes for start_io {} (need at least 4 bytes)", 
+                message.payload.len(), start_io_number
+            )));
         }
         
         let count = u32::from_le_bytes([
@@ -246,7 +250,7 @@ impl CommandHandler for PluralIoHandler {
         
         // Validate count (max 474, must be multiple of 2)
         if count > 474 || count % 2 != 0 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-474 and multiple of 2)")));
         }
         
         match service {
@@ -261,7 +265,9 @@ impl CommandHandler for PluralIoHandler {
                 // Write - validate payload length and update state
                 let expected_len = 4 + count as usize;
                 if message.payload.len() != expected_len {
-                    return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length: got {} bytes, expected {}", message.payload.len(), expected_len
+                    )));
                 }
                 
                 // Only network input signals are writable
@@ -398,7 +404,8 @@ assert_eq!(read_data, io_data);
 
 **Issue**: During implementation, we discovered a dangerous pattern using `unwrap_or(u16::MAX)` for type conversions.
 
-**Problem**: 
+**Problem**:
+
 ```rust
 // ❌ DANGEROUS - Silent failure with wrong value
 let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
@@ -407,6 +414,7 @@ let offset = u16::try_from(i * 8 + bit).unwrap_or(u16::MAX);
 **Impact**: This pattern can cause severe issues by silently mapping out-of-range values to `u16::MAX`, leading to incorrect I/O number calculations and potential system failures.
 
 **Solution**: Use proper error handling with `map_err`:
+
 ```rust
 // ✅ SAFE - Explicit error handling
 let offset = u16::try_from(i * 8 + bit)

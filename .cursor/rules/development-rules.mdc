@@ -1,0 +1,31 @@
+---
+description: "Implementation rules for Moto-HSES Rust Client. USE WHEN: implementing features, running tests, or reviewing code."
+globs: "**/*"
+alwaysApply: true
+---
+
+# Moto-HSES Rust Client Library Development Rules
+
+## Development Approach
+
+This project implements features step by step, ensuring that unit tests pass at each stage of development.
+
+## Incremental Implementation Principle
+
+- Run unit tests after each step completion and ensure all tests pass
+- If tests fail, do not proceed to the next step until fixes are complete
+- For testing, refer to `.cursor/commands/run-all-tests.md`
+- **CRITICAL**: Always run `cargo clippy --all-features --workspace` to resolve warnings
+- **CRITICAL**: Always run `cargo fmt` to standardize code formatting
+
+## Specification Reference Priority
+
+When there are unclear points, refer to specifications in the following order:
+
+1. `docs/design/protocol-commands.md` - HSES Protocol Command Reference
+2. `docs/design/architecture.md` - Architecture Design
+3. `docs/specs/hses-protocol.md` - HSES Protocol Specification
+
+## Code Quality Rules
+
+**See**: `.cursor/rules/coding-standards.mdc` for detailed coding standards and quality rules.

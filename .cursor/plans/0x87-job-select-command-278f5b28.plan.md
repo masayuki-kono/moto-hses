@@ -104,12 +104,12 @@ pub async fn select_job(
     
     // Validate job name length (max 32 characters)
     if job_name.len() > 32 {
-        return Err(ClientError::InvalidParameter("Job name exceeds 32 characters".to_string()));
+        return Err(ClientError::InvalidParameter(format!("Job name exceeds 32 characters: {} bytes", job_name.len())));
     }
     
     // Validate line number (0 to 9999)
     if line_number > 9999 {
-        return Err(ClientError::InvalidParameter("Line number must be 0-9999".to_string()));
+        return Err(ClientError::InvalidParameter(format!("Line number must be 0-9999: got {line_number}")));
     }
     
     let command = JobSelectCommand::new(select_type, job_name, line_number);
@@ -181,7 +181,9 @@ impl CommandHandler for JobSelectHandler {
         
         // Validate payload (should be 36 bytes: 32 bytes for job name + 4 bytes for line number)
         if message.payload.len() != 36 {
-            return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid payload length: got {} bytes, expected {}", message.payload.len(), expected_len
+            )));
         }
         
         // Parse job name (first 32 bytes, fixed length)
@@ -199,7 +201,9 @@ impl CommandHandler for JobSelectHandler {
         
         // Validate line number (0 to 9999)
         if line_number > 9999 {
-            return Err(proto::ProtocolError::InvalidMessage("Line number out of range".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Line number out of range: {line_number} (must be 0-9999)"
+            )));
         }
         
         // Update state

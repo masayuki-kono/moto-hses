@@ -50,12 +50,12 @@ impl ReadMultipleRegisters {
         }
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         // Validate range doesn't exceed maximum register number
         let end_register = start_register_number as u32 + count - 1;
         if end_register > 999 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         Ok(Self { start_register_number, count })
     }
@@ -85,7 +85,7 @@ impl WriteMultipleRegisters {
         let count = values.len();
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         // Validate writable range (0-559 for writes)
         if start_register_number > 559 {
@@ -93,7 +93,7 @@ impl WriteMultipleRegisters {
         }
         let end_register = start_register_number as u32 + count as u32 - 1;
         if end_register > 559 {
-            return Err(ProtocolError::InvalidData);
+            return Err(ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         Ok(Self { start_register_number, values })
     }
@@ -106,7 +106,8 @@ impl Command for WriteMultipleRegisters {
     fn attribute(&self) -> u8 { 0 }  // Different from 0x79 (which uses 1)
     fn service(&self) -> u8 { 0x34 }  // Write plural data
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
-        let count = self.values.len() as u32;
+        let count = u32::try_from(self.values.len())
+            .map_err(|_| ProtocolError::InvalidMessage(format!("Register values count {} too large for u32 conversion", self.values.len())))?;
         let mut payload = count.to_le_bytes().to_vec();
         for value in &self.values {
             payload.extend_from_slice(&value.to_le_bytes());
@@ -152,7 +153,7 @@ pub async fn read_multiple_registers(
     // Response format: Byte0-3 = count, Byte4-N = register data (2 bytes each)
     if response.len() < 4 {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Response too short".to_string())
+            ProtocolError::Deserialization(format!("Response too short: {} bytes (need at least 4)", response.len()))
         ));
     }
     
@@ -162,7 +163,7 @@ pub async fn read_multiple_registers(
     
     if response_count != count {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Count mismatch".to_string())
+            ProtocolError::Deserialization(format!("Count mismatch: expected {count}, got {response_count}"))
         ));
     }
     
@@ -170,7 +171,7 @@ pub async fn read_multiple_registers(
     let expected_len = 4 + (count as usize * 2);
     if response.len() != expected_len {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Invalid response length".to_string())
+            ProtocolError::Deserialization(format!("Invalid response length: got {} bytes, expected {}", response.len(), expected_len))
         ));
     }
     
@@ -320,7 +321,10 @@ impl CommandHandler for PluralRegisterHandler {
         
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
-            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: {} bytes for start_register {} (need at least 4 bytes)", 
+                message.payload.len(), start_register
+            )));
         }
         
         let count = u32::from_le_bytes([
@@ -332,13 +336,13 @@ impl CommandHandler for PluralRegisterHandler {
         
         // Validate count (max 237, must be > 0)
         if count == 0 || count > 237 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         
         // Validate range doesn't exceed maximum register number
         let end_register = start_register as u32 + count - 1;
         if end_register > 999 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid count: {count} (must be 1-237 and multiple of 2)")));
         }
         
         match service {
@@ -355,7 +359,9 @@ impl CommandHandler for PluralRegisterHandler {
                 // Write - validate payload length and update state
                 let expected_len = 4 + (count as usize * 2);
                 if message.payload.len() != expected_len {
-                    return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length: got {} bytes, expected {}", message.payload.len(), expected_len
+                    )));
                 }
                 
                 // Only registers 0-559 are writable

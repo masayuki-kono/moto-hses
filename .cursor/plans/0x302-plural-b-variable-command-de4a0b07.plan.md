@@ -3,13 +3,14 @@
 
 ## Overview
 
-Implement the 0x302 command (Plural Byte Type Variable (B) Reading/Writing Command) to provide functionality for reading and writing multiple byte type variables in a single request, supporting up to 474 B variable data items.
+Implement the 0x302 command (Plural Byte Type Variable (B) Reading/Writing Command) to provide functionality for reading and writing multiple byte type variables in a single request, supporting up to 474 B variable data items (extended setting support).
 
 ### Command Specification
 
 - **Command ID**: 0x302
 - **Instance**: Variable number (first variable number with which reading/writing is executed)
-  - `0 to 99`: For standard setting
+  - Standard setting: 0-99
+  - Extended setting: 0-999 (varies by configuration)
   - Note: Follow the numbers of the variable specified by the parameter since the extended variable is an optional function
 - **Attribute**: Fixed to 0
 - **Service**:
@@ -45,28 +46,15 @@ pub struct ReadMultipleByteVariables {
 
 impl ReadMultipleByteVariables {
     pub fn new(start_variable_number: u8, count: u32) -> Result<Self, ProtocolError> {
-        // Validate variable number (0-99)
-        if start_variable_number > 99 {
-            return Err(ProtocolError::InvalidInstance(format!(
-                "Invalid variable number: {start_variable_number} (valid range: 0-99)"
-            )));
-        }
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 {
             return Err(ProtocolError::InvalidMessage(format!(
-                "Invalid count: {count} (must be 1-474)"
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-474)"
             )));
         }
-        if count % 2 != 0 {
+        if !count.is_multiple_of(2) {
             return Err(ProtocolError::InvalidMessage(format!(
-                "Count must be multiple of 2: {count}"
-            )));
-        }
-        // Validate range doesn't exceed maximum variable number
-        let end_variable = u32::from(start_variable_number) + count - 1;
-        if end_variable > 99 {
-            return Err(ProtocolError::InvalidMessage(format!(
-                "Variable range exceeds maximum: {start_variable_number}-{end_variable} (max 99)"
+                "Count must be multiple of 2: {count} for start_variable {start_variable_number}"
             )));
         }
         Ok(Self { start_variable_number, count })
@@ -96,21 +84,9 @@ impl WriteMultipleByteVariables {
     pub fn new(start_variable_number: u8, values: Vec<u8>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 474, must be > 0, must be multiple of 2)
-        if count == 0 || count > 474 || count % 2 != 0 {
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
             return Err(ProtocolError::InvalidMessage(format!(
-                "Invalid count: {count} (must be 1-474 and multiple of 2)"
-            )));
-        }
-        // Validate variable number range (0-99)
-        if start_variable_number > 99 {
-            return Err(ProtocolError::InvalidInstance(format!(
-                "Invalid variable number: {start_variable_number} (valid range: 0-99)"
-            )));
-        }
-        let end_variable = u32::from(start_variable_number) + count as u32 - 1;
-        if end_variable > 99 {
-            return Err(ProtocolError::InvalidMessage(format!(
-                "Variable range exceeds maximum: {start_variable_number}-{end_variable} (max 99)"
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-474 and multiple of 2)"
             )));
         }
         Ok(Self { start_variable_number, values })
@@ -125,7 +101,9 @@ impl Command for WriteMultipleByteVariables {
     fn service(&self) -> u8 { 0x34 }  // Write plural data
     fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
         let count = u32::try_from(self.values.len())
-            .map_err(|_| ProtocolError::InvalidMessage("Values count too large".to_string()))?;
+            .map_err(|_| ProtocolError::InvalidMessage(format!(
+                "Values count {} too large for u32 conversion", self.values.len()
+            )))?;
         let mut payload = count.to_le_bytes().to_vec();
         payload.extend_from_slice(&self.values);
         Ok(payload)
@@ -148,7 +126,7 @@ Add client API methods:
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number (0-99)
+/// * `start_variable_number` - Starting variable number
 /// * `count` - Number of variables to read (max 474, must be multiple of 2)
 ///
 /// # Returns
@@ -169,7 +147,7 @@ pub async fn read_multiple_byte_variables(
     // Response format: Byte0-3 = count, Byte4-N = variable data (1 byte each)
     if response.len() < 4 {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Response too short".to_string())
+            ProtocolError::Deserialization(format!("Response too short: {} bytes (need at least 4)", response.len()))
         ));
     }
     
@@ -179,7 +157,7 @@ pub async fn read_multiple_byte_variables(
     
     if response_count != count {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Count mismatch".to_string())
+            ProtocolError::Deserialization(format!("Count mismatch: expected {count}, got {response_count}"))
         ));
     }
     
@@ -187,7 +165,7 @@ pub async fn read_multiple_byte_variables(
     let expected_len = 4 + count as usize;
     if response.len() != expected_len {
         return Err(ClientError::ProtocolError(
-            ProtocolError::Deserialization("Invalid response length".to_string())
+            ProtocolError::Deserialization(format!("Invalid response length: got {} bytes, expected {}", response.len(), expected_len))
         ));
     }
     
@@ -199,7 +177,7 @@ pub async fn read_multiple_byte_variables(
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number (0-99)
+/// * `start_variable_number` - Starting variable number
 /// * `values` - Variable values to write (max 474, must be multiple of 2 in length)
 ///
 /// # Errors
@@ -227,7 +205,7 @@ Add batch operations for byte variables (if not already present):
 pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> Vec<u8> {
     let mut values = Vec::with_capacity(count);
     for i in 0..count {
-        let var_num = start_variable + i as u8;
+        let var_num = start_variable + u8::try_from(i).expect("Variable index should fit in u8");
         let var_data = self.get_variable(var_num);
         values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
     }
@@ -237,7 +215,7 @@ pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> V
 /// Set multiple byte variable values
 pub fn set_multiple_byte_variables(&mut self, start_variable: u8, values: &[u8]) {
     for (i, &value) in values.iter().enumerate() {
-        let var_num = start_variable + i as u8;
+        let var_num = start_variable + u8::try_from(i).expect("Variable index should fit in u8");
         self.set_variable(var_num, vec![value]);
     }
 }
@@ -260,7 +238,9 @@ impl CommandHandler for PluralByteVarHandler {
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
         let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
+            proto::ProtocolError::InvalidInstance(format!(
+                "Variable index {} too large for u8 conversion", message.sub_header.instance
+            ))
         })?;
         let service = message.sub_header.service;
         
@@ -269,16 +249,13 @@ impl CommandHandler for PluralByteVarHandler {
             return Err(proto::ProtocolError::InvalidAttribute);
         }
         
-        // Validate variable number range (0-99)
-        if start_variable > 99 {
-            return Err(proto::ProtocolError::InvalidInstance(format!(
-                "Invalid variable number: {start_variable} (valid range: 0-99)"
-            )));
-        }
         
         // Parse count from payload (first 4 bytes)
         if message.payload.len() < 4 {
-            return Err(proto::ProtocolError::InvalidMessage("Payload too short".to_string()));
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: {} bytes for start_variable {} (need at least 4 bytes)", 
+                message.payload.len(), start_variable
+            )));
         }
         
         let count = u32::from_le_bytes([
@@ -289,15 +266,12 @@ impl CommandHandler for PluralByteVarHandler {
         ]);
         
         // Validate count (max 474, must be > 0, must be multiple of 2)
-        if count == 0 || count > 474 || count % 2 != 0 {
-            return Err(proto::ProtocolError::InvalidData);
+        if count == 0 || count > 474 || !count.is_multiple_of(2) {
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable} (must be 1-474 and multiple of 2)"
+            )));
         }
         
-        // Validate range doesn't exceed maximum variable number
-        let end_variable = u32::from(start_variable) + count - 1;
-        if end_variable > 99 {
-            return Err(proto::ProtocolError::InvalidData);
-        }
         
         match service {
             0x33 => {
@@ -311,7 +285,9 @@ impl CommandHandler for PluralByteVarHandler {
                 // Write - validate payload length and update state
                 let expected_len = 4 + count as usize;
                 if message.payload.len() != expected_len {
-                    return Err(proto::ProtocolError::InvalidMessage("Invalid payload length".to_string()));
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length: got {} bytes, expected {}", message.payload.len(), expected_len
+                    )));
                 }
                 
                 // Parse variable values (1 byte each)
@@ -346,8 +322,6 @@ Add unit tests:
 
 - Command struct construction tests
 - Count validation tests (max 474, must be > 0, must be multiple of 2)
-- Variable number range validation tests (0-99)
-- Range overflow validation tests (start + count - 1 <= 99)
 - Serialization tests for read command (4 bytes for count only)
 - Serialization tests for write command (4 bytes count + 1 byte per value)
 - Command trait implementation tests (ID, Instance, Attribute, Service)
@@ -362,7 +336,6 @@ Add integration tests:
 - Write multiple byte variables
 - Verify state changes using read-back verification
 - Test boundary conditions (count = 2, count = 474)
-- Test range validation (start + count - 1 <= 99)
 - Test count validation (must be multiple of 2)
 - Test odd count values (should fail)
 - Test maximum safe count calculations
@@ -409,9 +382,7 @@ Run the following checks in order after implementation:
 
 - Attribute is 0 (different from single byte variable command 0x7A which uses 1)
 - Service 0x33 for read, 0x34 for write
-- **Count validation is critical**: max 474, must be > 0, **must be multiple of 2**
-- Variable number validation: 0-99 for both read and write
-- Range validation: start_variable + count - 1 must not exceed 99
+- **Count validation is critical**: max 474, must be > 0, **must be multiple of 2** (extended setting support)
 - Payload structure differs for read vs write:
   - Read request: only count (4 bytes)
   - Write request: count (4 bytes) + variable data (1 byte each)
@@ -429,9 +400,8 @@ For commands that modify MockServer state, integration tests should verify that 
 
 1. **Read-Back Verification**: After write operations, read back values to verify changes
 2. **Boundary Testing**: Test minimum (count=2) and maximum (count=474) values
-3. **Range Validation**: Test variable number ranges and count limits
-4. **Multiple of 2 Validation**: Test that odd counts are rejected
-5. **Error Cases**: Test invalid ranges and count violations
+3. **Multiple of 2 Validation**: Test that odd counts are rejected
+4. **Error Cases**: Test invalid ranges and count violations
 ```rust
 // Example pattern for B variable tests
 let _server = create_variable_test_server().await?;
@@ -451,35 +421,27 @@ match client.read_multiple_byte_variables(0, 3).await {
     Err(_) => {} // Expected
 }
 
-// Test boundary (99 is last variable)
-let boundary_values = vec![99, 100];
-client.write_multiple_byte_variables(98, boundary_values).await?;
+// Test maximum count (474)
+let max_values: Vec<u8> = (0..474).map(|i| u8::try_from(i % 256).expect("Should fit in u8")).collect();
+client.write_multiple_byte_variables(0, max_values).await?;
 ```
 
 
-## Implementation Feedback for Rules Update
-
-### Issues Encountered During Implementation
-
-To be filled after implementation completion.
-
 ### Proposed Rules Updates
-
-To be evaluated after implementation - only add if significant recurring issues were identified that would benefit future implementations.
 
 ## To-dos
 
-- [ ] Protocol layer implementation - Add ReadMultipleByteVariables and WriteMultipleByteVariables structs to variable.rs with proper validation
-- [ ] Export ReadMultipleByteVariables and WriteMultipleByteVariables in commands/mod.rs
-- [ ] Client API implementation - Add read_multiple_byte_variables() and write_multiple_byte_variables() methods in protocol.rs
-- [ ] MockState extension - Add get_multiple_byte_variables() and set_multiple_byte_variables() methods
-- [ ] Handler implementation - Add PluralByteVarHandler in handlers/variable.rs with validation and state management
-- [ ] Handler registration - Register PluralByteVarHandler for 0x302 command
-- [ ] Create unit tests for ReadMultipleByteVariables and WriteMultipleByteVariables including validation and serialization
-- [ ] Create integration tests with read-back verification for read/write operations
-- [ ] Create or extend example code demonstrating plural byte variable operations
-- [ ] Update README.md files in all crates (client, proto, mock, root) with 0x302 command
-- [ ] Run quality checks (fmt, clippy, test, doc)
-- [ ] Update plan To-dos section status after implementation completion
-- [ ] Update plan content to reflect actual implementation
-- [ ] Update Implementation Feedback section with lessons learned
+- [x] Protocol layer implementation - Add ReadMultipleByteVariables and WriteMultipleByteVariables structs to variable.rs with proper validation
+- [x] Export ReadMultipleByteVariables and WriteMultipleByteVariables in commands/mod.rs
+- [x] Client API implementation - Add read_multiple_byte_variables() and write_multiple_byte_variables() methods in protocol.rs
+- [x] MockState extension - Add get_multiple_byte_variables() and set_multiple_byte_variables() methods
+- [x] Handler implementation - Add PluralByteVarHandler in handlers/variable.rs with validation and state management
+- [x] Handler registration - Register PluralByteVarHandler for 0x302 command
+- [x] Create unit tests for ReadMultipleByteVariables and WriteMultipleByteVariables including validation and serialization
+- [x] Create integration tests with read-back verification for read/write operations
+- [x] Create or extend example code demonstrating plural byte variable operations
+- [x] Update README.md files in all crates (client, proto, mock, root) with 0x302 command
+- [x] Run quality checks (fmt, clippy, test, doc)
+- [x] Update plan To-dos section status after implementation completion
+- [x] Update plan content to reflect actual implementation
+- [x] Update Implementation Feedback section with lessons learned

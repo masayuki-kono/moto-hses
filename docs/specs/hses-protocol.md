@@ -1514,14 +1514,18 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `0x34`: Write plural data (Writes the fixed size specified by the data part)
 - **Payload**: Plural B variable
   - Byte0-3: Number of B variable data (Maximum value: 474, must be specified as a multiple of 2)
+    - **Note**: The actual maximum value is limited by the variable number range (0-99)
+    - **Standard setting**: Maximum 100 variables (limited by Instance range 0-99)
+    - **Extended setting**: Maximum 474 variables (requires optional extended variable function)
   - Byte4:   B variable data 1
   - Byte5:   B variable data 2
   - ...
-  - Byte(3 + Number): B variable data “Number”
+  - Byte(3 + Number): B variable data "Number"
   - Note:
     - When reading, only the "Number" field is valid
     - B variable data section is valid only when writing
     - Each B variable data is 1 byte, and the payload contains the number of B variable data specified by the Number field
+    - **Variable range constraint**: start_variable + count - 1 must not exceed the maximum variable number (99 for standard, varies by configuration for extended)
 
 **Response Structure:**
 

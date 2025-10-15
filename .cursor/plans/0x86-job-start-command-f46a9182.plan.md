@@ -99,7 +99,7 @@ impl CommandHandler for JobStartHandler {
         
         // Validate payload (should be 4 bytes with value 1)
         if message.payload.len() != 4 {
-            return Err(proto::ProtocolError::InvalidData);
+            return Err(proto::ProtocolError::InvalidMessage(format!("Invalid payload length: got {} bytes, expected 4", message.payload.len())));
         }
         
         state.set_running(true);

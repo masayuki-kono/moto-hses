@@ -123,3 +123,89 @@ test_with_logging!(test_invalid_variable_handling, {
     let result: Result<(), _> = client.write_string(255, b"test".to_vec()).await;
     assert!(result.is_err(), "Invalid string variable index write should return error");
 });
+
+test_with_logging!(test_multiple_byte_variables_read_write, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test reading multiple byte variables (count must be multiple of 2)
+    let values = vec![10, 20, 30, 40];
+    client
+        .write_multiple_byte_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple byte variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_byte_variables(0, 4)
+        .await
+        .expect("Failed to read multiple byte variables");
+    assert_eq!(read_values, values);
+
+    // Test boundary conditions
+    let boundary_values = vec![99, 100];
+    client
+        .write_multiple_byte_variables(98, boundary_values.clone())
+        .await
+        .expect("Failed to write boundary byte variables");
+
+    wait_for_operation().await;
+
+    let read_boundary = client
+        .read_multiple_byte_variables(98, 2)
+        .await
+        .expect("Failed to read boundary byte variables");
+    assert_eq!(read_boundary, boundary_values);
+});
+
+test_with_logging!(test_multiple_byte_variables_validation, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test count must be multiple of 2 (should fail)
+    let result = client.read_multiple_byte_variables(0, 3).await;
+    assert!(result.is_err(), "Odd count should fail");
+
+    let result = client.write_multiple_byte_variables(0, vec![1, 2, 3]).await;
+    assert!(result.is_err(), "Odd count write should fail");
+
+    // Test count too large (should fail)
+    let result = client.read_multiple_byte_variables(0, 475).await;
+    assert!(result.is_err(), "Count too large should fail");
+
+    // Note: Instance range validation removed to support extended settings
+    // The actual variable range is now configurable and not limited to 0-99
+
+    // Test zero count (should fail)
+    let result = client.read_multiple_byte_variables(0, 0).await;
+    assert!(result.is_err(), "Zero count should fail");
+});
+
+test_with_logging!(test_multiple_byte_variables_large_batch, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test maximum safe count (limited by variable number range 0-99)
+    let large_values: Vec<u8> =
+        (0..100).map(|i| u8::try_from(i % 256).expect("Should fit in u8")).collect();
+    client
+        .write_multiple_byte_variables(0, large_values.clone())
+        .await
+        .expect("Failed to write large batch of byte variables");
+
+    wait_for_operation().await;
+
+    let read_large = client
+        .read_multiple_byte_variables(0, 100)
+        .await
+        .expect("Failed to read large batch of byte variables");
+    assert_eq!(read_large, large_values);
+});
