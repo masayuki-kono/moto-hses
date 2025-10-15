@@ -127,13 +127,6 @@ The crate includes comprehensive examples in the `examples/` directory:
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run --example alarm_operations -- 192.168.0.3 10040
-
-# Run variable operation examples
-RUST_LOG=info cargo run --example byte_variable_operations -- 192.168.0.3 10040
-RUST_LOG=info cargo run --example integer_variable_operations -- 192.168.0.3 10040
-RUST_LOG=info cargo run --example double_variable_operations -- 192.168.0.3 10040
-RUST_LOG=info cargo run --example real_variable_operations -- 192.168.0.3 10040
-RUST_LOG=info cargo run --example string_variable_operations -- 192.168.0.3 10040
 ```
 
 ## Testing

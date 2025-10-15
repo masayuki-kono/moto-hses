@@ -29,3 +29,23 @@ When there are unclear points, refer to specifications in the following order:
 ## Code Quality Rules
 
 **See**: `.cursor/rules/coding-standards.mdc` for detailed coding standards and quality rules.
+
+## Documentation Rules
+
+### README.md Updates
+
+When implementing new commands or features, **CRITICAL** documentation rules:
+
+- **Update ALL README.md files**: Always update README.md files in ALL crates (client, proto, mock, root)
+- **"Running Examples" Section**: 
+  - **⚠️ CRITICAL**: Do NOT add example execution commands to "Running Examples" section
+  - The "Running Examples" section should only contain `alarm_operations` example
+  - This prevents README.md from becoming cluttered with unnecessary example calls
+  - New examples should be documented in the "Examples" section, not "Running Examples"
+- **"Supported Commands" Section**: Add new commands to the "Supported Commands" section in all README.md files
+
+**Files to update for new commands**:
+- `moto-hses-client/README.md`
+- `moto-hses-proto/README.md` 
+- `moto-hses-mock/README.md`
+- Root `README.md`
