@@ -209,3 +209,105 @@ test_with_logging!(test_multiple_byte_variables_large_batch, {
         .expect("Failed to read large batch of byte variables");
     assert_eq!(read_large, large_values);
 });
+
+test_with_logging!(test_multiple_integer_variables_operations, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test writing multiple integer variables
+    let values = vec![100, -200, 300, -400];
+    client
+        .write_multiple_integer_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple integer variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_integer_variables(0, 4)
+        .await
+        .expect("Failed to read multiple integer variables");
+    assert_eq!(read_values, values);
+
+    // Test boundary conditions
+    let boundary_values = vec![99, -100];
+    client
+        .write_multiple_integer_variables(98, boundary_values.clone())
+        .await
+        .expect("Failed to write boundary integer variables");
+
+    wait_for_operation().await;
+
+    let read_boundary = client
+        .read_multiple_integer_variables(98, 2)
+        .await
+        .expect("Failed to read boundary integer variables");
+    assert_eq!(read_boundary, boundary_values);
+});
+
+test_with_logging!(test_multiple_integer_variables_validation, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test count too large (should fail)
+    let result = client.read_multiple_integer_variables(0, 238).await;
+    assert!(result.is_err(), "Count too large should fail");
+
+    // Test zero count (should fail)
+    let result = client.read_multiple_integer_variables(0, 0).await;
+    assert!(result.is_err(), "Zero count should fail");
+
+    // Test empty values write (should fail)
+    let result = client.write_multiple_integer_variables(0, vec![]).await;
+    assert!(result.is_err(), "Empty values should fail");
+});
+
+test_with_logging!(test_multiple_integer_variables_large_batch, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test maximum safe count (limited by variable number range 0-99)
+    let large_values: Vec<i16> =
+        (0..100).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
+    client
+        .write_multiple_integer_variables(0, large_values.clone())
+        .await
+        .expect("Failed to write large batch of integer variables");
+
+    wait_for_operation().await;
+
+    let read_large = client
+        .read_multiple_integer_variables(0, 100)
+        .await
+        .expect("Failed to read large batch of integer variables");
+    assert_eq!(read_large, large_values);
+});
+
+test_with_logging!(test_multiple_integer_variables_maximum_count, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test maximum count (237) - this tests the protocol limit
+    let max_values: Vec<i16> = (0..237).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
+    client
+        .write_multiple_integer_variables(0, max_values.clone())
+        .await
+        .expect("Failed to write maximum count integer variables");
+
+    wait_for_operation().await;
+
+    let read_max = client
+        .read_multiple_integer_variables(0, 237)
+        .await
+        .expect("Failed to read maximum count integer variables");
+    assert_eq!(read_max, max_values);
+});

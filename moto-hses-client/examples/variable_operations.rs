@@ -263,6 +263,67 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    // Test plural integer variable operations (0x303 command)
+    info!("\n--- Plural Integer Variable Operations (0x303) ---");
+
+    // Read multiple integer variables
+    match client.read_multiple_integer_variables(0, 4).await {
+        Ok(values) => {
+            info!("✓ Read 4 integer variables starting from I000:");
+            for (i, value) in values.iter().enumerate() {
+                info!("  I{i:03} = {value}");
+            }
+        }
+        Err(e) => {
+            info!("✗ Failed to read multiple integer variables: {e}");
+        }
+    }
+
+    // Write multiple integer variables
+    let test_int_values = vec![100, -200, 300, -400];
+    match client.write_multiple_integer_variables(0, test_int_values.clone()).await {
+        Ok(()) => {
+            info!("✓ Wrote {} integer variables starting from I000:", test_int_values.len());
+            for (i, value) in test_int_values.iter().enumerate() {
+                info!("  I{i:03} = {value}");
+            }
+        }
+        Err(e) => {
+            info!("✗ Failed to write multiple integer variables: {e}");
+        }
+    }
+
+    // Verify written values
+    #[allow(clippy::expect_used)]
+    match client
+        .read_multiple_integer_variables(
+            0,
+            u32::try_from(test_int_values.len()).expect("Count should fit in u32"),
+        )
+        .await
+    {
+        Ok(values) => {
+            info!("✓ Verification - Read back {} integer variables:", values.len());
+            let mut all_match = true;
+            for (i, (expected, actual)) in test_int_values.iter().zip(values.iter()).enumerate() {
+                if expected == actual {
+                    info!("  I{i:03} = {actual} ✓");
+                } else {
+                    info!("  I{i:03} = {actual} ✗ (expected: {expected})");
+                    all_match = false;
+                }
+            }
+            if all_match {
+                info!("✓ All values match!");
+            } else {
+                info!("✗ Some values don't match!");
+            }
+        }
+        Err(e) => {
+            info!("✗ Failed to verify written values: {e}");
+        }
+    }
+
     info!("\n--- Variable Operations Example completed successfully ---");
     Ok(())
 }
