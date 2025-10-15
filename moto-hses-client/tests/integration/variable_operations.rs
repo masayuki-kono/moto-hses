@@ -310,3 +310,93 @@ test_with_logging!(test_multiple_integer_variables_maximum_count, {
         .expect("Failed to read maximum count integer variables");
     assert_eq!(read_max, max_values);
 });
+
+test_with_logging!(test_plural_double_variable_operations, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test reading multiple double precision integer variables
+    let read_values = client
+        .read_multiple_double_variables(0, 4)
+        .await
+        .expect("Failed to read multiple double variables");
+    assert_eq!(read_values.len(), 4);
+    assert_eq!(read_values, vec![0, 0, 0, 0]); // Default values
+
+    // Test writing multiple double precision integer variables
+    let values = vec![1_000_000, -2_000_000, 2_147_483_647, -2_147_483_648];
+    client
+        .write_multiple_double_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple double variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_double_variables(0, 4)
+        .await
+        .expect("Failed to read back multiple double variables");
+    assert_eq!(read_values, values);
+
+    // Test with different start variable
+    let values2 = vec![500_000, -1_500_000];
+    client
+        .write_multiple_double_variables(10, values2.clone())
+        .await
+        .expect("Failed to write multiple double variables at offset 10");
+
+    wait_for_operation().await;
+
+    let read_values2 = client
+        .read_multiple_double_variables(10, 2)
+        .await
+        .expect("Failed to read multiple double variables at offset 10");
+    assert_eq!(read_values2, values2);
+});
+
+test_with_logging!(test_plural_double_variable_validation, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid count: zero
+    let result: Result<Vec<i32>, _> = client.read_multiple_double_variables(0, 0).await;
+    assert!(result.is_err(), "Count 0 should return error");
+
+    let result: Result<(), _> = client.write_multiple_double_variables(0, vec![]).await;
+    assert!(result.is_err(), "Empty values should return error");
+
+    // Test invalid count: too large
+    let result: Result<Vec<i32>, _> = client.read_multiple_double_variables(0, 119).await;
+    assert!(result.is_err(), "Count 119 should return error");
+
+    let large_values: Vec<i32> = vec![0; 119];
+    let result: Result<(), _> = client.write_multiple_double_variables(0, large_values).await;
+    assert!(result.is_err(), "119 values should return error");
+});
+
+test_with_logging!(test_plural_double_variable_maximum_count, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test maximum count (118)
+    let max_values: Vec<i32> = (0..118).map(|i| i * 1000).collect();
+    client
+        .write_multiple_double_variables(0, max_values.clone())
+        .await
+        .expect("Failed to write maximum count double variables");
+
+    wait_for_operation().await;
+
+    let read_max = client
+        .read_multiple_double_variables(0, 118)
+        .await
+        .expect("Failed to read maximum count double variables");
+    assert_eq!(read_max, max_values);
+});

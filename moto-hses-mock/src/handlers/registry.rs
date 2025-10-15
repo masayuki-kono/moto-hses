@@ -24,7 +24,7 @@ use super::system::{
 };
 use super::variable::{
     ByteVarHandler, DoubleVarHandler, IntegerVarHandler, PluralByteVarHandler,
-    PluralIntegerVarHandler, RealVarHandler, StringVarHandler,
+    PluralDoubleVarHandler, PluralIntegerVarHandler, RealVarHandler, StringVarHandler,
 };
 
 /// Command handler registry
@@ -98,6 +98,10 @@ impl CommandHandlerRegistry {
         handlers.insert(
             0x303,
             Arc::new(PluralIntegerVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
+        );
+        handlers.insert(
+            0x304,
+            Arc::new(PluralDoubleVarHandler) as Arc<dyn CommandHandler + Send + Sync>,
         );
 
         // Job and movement handlers

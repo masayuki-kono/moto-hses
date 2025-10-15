@@ -27,6 +27,7 @@ pub use register::{ReadMultipleRegisters, ReadRegister, WriteMultipleRegisters, 
 pub use servo::{HoldServoControl, HoldServoType, HoldServoValue};
 pub use status::{ReadStatus, ReadStatusData1, ReadStatusData2};
 pub use variable::{
-    ReadMultipleByteVariables, ReadMultipleIntegerVariables, ReadVar, VariableCommandId,
-    WriteMultipleByteVariables, WriteMultipleIntegerVariables, WriteVar,
+    ReadMultipleByteVariables, ReadMultipleDoubleVariables, ReadMultipleIntegerVariables, ReadVar,
+    VariableCommandId, WriteMultipleByteVariables, WriteMultipleDoubleVariables,
+    WriteMultipleIntegerVariables, WriteVar,
 };
