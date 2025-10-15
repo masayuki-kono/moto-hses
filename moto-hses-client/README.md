@@ -106,23 +106,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 The crate includes comprehensive examples in the `examples/` directory:
 
 - `alarm_operations.rs` - Alarm data handling
+- `byte_variable_operations.rs` - Byte variable (B) read/write operations
 - `cycle_mode_control.rs` - Cycle mode switching operations
-- `io_operations.rs` - I/O operations
-- `job_start.rs` - Job start operations
-- `job_select.rs` - Job selection operations
-- `position_operations.rs` - Position data operations
-- `variable_operations.rs` - Variable read/write operations
+- `double_variable_operations.rs` - Double variable (D) read/write operations
 - `file_operations.rs` - File transfer operations
 - `hold_servo_control.rs` - Servo control operations
-- `register_operations.rs` - Register operations
+- `integer_variable_operations.rs` - Integer variable (I) read/write operations
+- `io_operations.rs` - I/O operations
+- `job_select.rs` - Job selection operations
+- `job_start.rs` - Job start operations
+- `position_operations.rs` - Position data operations
 - `read_executing_job_info.rs` - Job information
 - `read_status.rs` - Status monitoring
+- `real_variable_operations.rs` - Real variable (R) read/write operations
+- `register_operations.rs` - Register operations
+- `string_variable_operations.rs` - String variable (S) read/write operations
 
 ### Running Examples
 
 ```bash
 # Run a specific example
 RUST_LOG=info cargo run --example alarm_operations -- 192.168.0.3 10040
+
+# Run variable operation examples
+RUST_LOG=info cargo run --example byte_variable_operations -- 192.168.0.3 10040
+RUST_LOG=info cargo run --example integer_variable_operations -- 192.168.0.3 10040
+RUST_LOG=info cargo run --example double_variable_operations -- 192.168.0.3 10040
+RUST_LOG=info cargo run --example real_variable_operations -- 192.168.0.3 10040
+RUST_LOG=info cargo run --example string_variable_operations -- 192.168.0.3 10040
 ```
 
 ## Testing
