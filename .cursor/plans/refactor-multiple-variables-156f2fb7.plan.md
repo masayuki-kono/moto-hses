@@ -690,38 +690,20 @@ Fix any issues that arise from the refactoring.
 
 No significant issues requiring rule updates. The refactoring follows established patterns and coding standards. All Clippy warnings were addressed using existing rules (inline format arguments, proper error handling with try_from).
 
-## To-dos
-
-- [ ] Add MultipleVariableCommandId trait and implementations to proto crate
-- [ ] Add ReadMultipleVariables<T> and WriteMultipleVariables<T> generic structs to proto crate
-- [ ] Add MultipleVariableResponse trait and implementations to proto crate
-- [ ] Implement serialization for WriteMultipleVariables<T> for each type
-- [ ] Add read_multiple_variables<T> and write_multiple_variables<T> to client protocol.rs
-- [ ] Add special string variable methods with encoding support to protocol.rs
-- [ ] Add convenience wrapper methods to convenience.rs
-- [ ] Remove old 10 methods from protocol.rs
-- [ ] Remove old 10 command structs from proto crate variable.rs
-- [ ] Update exports in proto commands/mod.rs
-- [ ] Update integration tests to use new method names
-- [ ] Update all example files to use new method names
-- [ ] Run cargo fmt, clippy, test, and doc
-- [ ] Update plan To-dos section status after implementation completion
-- [ ] Update plan content to reflect actual implementation
-
 ### To-dos
 
-- [ ] Add MultipleVariableCommandId trait and implementations to proto crate
-- [ ] Add ReadMultipleVariables<T> and WriteMultipleVariables<T> generic structs to proto crate
-- [ ] Add MultipleVariableResponse trait and implementations to proto crate
-- [ ] Implement serialization for WriteMultipleVariables<T> for each type
-- [ ] Add read_multiple_variables<T> and write_multiple_variables<T> to client protocol.rs
-- [ ] Add special string variable methods with encoding support to protocol.rs
-- [ ] Add convenience wrapper methods to convenience.rs
-- [ ] Remove old 10 methods from protocol.rs
-- [ ] Remove old 10 command structs from proto crate variable.rs
-- [ ] Update exports in proto commands/mod.rs
-- [ ] Update integration tests to use new method names
-- [ ] Update all example files to use new method names
-- [ ] Run cargo fmt, clippy, test, and doc
-- [ ] Update plan To-dos section status after implementation completion
-- [ ] Update plan content to reflect actual implementation
+- [x] Add MultipleVariableCommandId trait and implementations to proto crate
+- [x] Add ReadMultipleVariables<T> and WriteMultipleVariables<T> generic structs to proto crate
+- [x] Add MultipleVariableResponse trait and implementations to proto crate
+- [x] Implement serialization for WriteMultipleVariables<T> for each type
+- [x] Add read_multiple_variables<T> and write_multiple_variables<T> to client protocol.rs
+- [x] Add special string variable methods with encoding support to protocol.rs
+- [x] Add convenience wrapper methods to convenience.rs
+- [x] Remove old 10 methods from protocol.rs
+- [x] Remove old 10 command structs from proto crate variable.rs
+- [x] Update exports in proto commands/mod.rs
+- [x] Update integration tests to use new method names
+- [x] Update all example files to use new method names
+- [x] Run cargo fmt, clippy, test, and doc
+- [x] Update plan To-dos section status after implementation completion
+- [x] Update plan content to reflect actual implementation
