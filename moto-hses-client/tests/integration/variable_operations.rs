@@ -564,3 +564,113 @@ test_with_logging!(test_plural_real_variable_floating_point_precision, {
         }
     }
 });
+
+test_with_logging!(test_multiple_character_variables_operations, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test writing multiple character type variables
+    let values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
+
+    client
+        .write_multiple_character_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple character variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_character_variables(0, 3)
+        .await
+        .expect("Failed to read multiple character variables");
+    assert_eq!(read_values, values);
+
+    // Test boundary conditions (count = 1)
+    let single_values = vec!["Test".to_string()];
+
+    client
+        .write_multiple_character_variables(10, single_values.clone())
+        .await
+        .expect("Failed to write single character variable");
+
+    wait_for_operation().await;
+
+    let read_single = client
+        .read_multiple_character_variables(10, 1)
+        .await
+        .expect("Failed to read single character variable");
+    assert_eq!(read_single, single_values);
+
+    // Test maximum count (29)
+    let max_values: Vec<String> = (0..29).map(|i| format!("Test{i:02}")).collect();
+
+    client
+        .write_multiple_character_variables(20, max_values.clone())
+        .await
+        .expect("Failed to write maximum count character variables");
+
+    wait_for_operation().await;
+
+    let read_max = client
+        .read_multiple_character_variables(20, 29)
+        .await
+        .expect("Failed to read maximum count character variables");
+    assert_eq!(read_max, max_values);
+
+    // Test with various string patterns
+    let pattern_values =
+        vec!["ASCII_STRING".to_string(), "こんにちは".to_string(), "Binary123".to_string()];
+
+    client
+        .write_multiple_character_variables(50, pattern_values.clone())
+        .await
+        .expect("Failed to write pattern character variables");
+
+    wait_for_operation().await;
+
+    let read_patterns = client
+        .read_multiple_character_variables(50, 3)
+        .await
+        .expect("Failed to read pattern character variables");
+    assert_eq!(read_patterns, pattern_values);
+});
+
+test_with_logging!(test_multiple_character_variables_validation, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid count: 0
+    let result = client.read_multiple_character_variables(0, 0).await;
+    assert!(result.is_err());
+    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+
+    // Test invalid count: > 29
+    let result = client.read_multiple_character_variables(0, 30).await;
+    assert!(result.is_err());
+    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+
+    // Test invalid count for write: 0
+    let result = client.write_multiple_character_variables(0, vec![]).await;
+    assert!(result.is_err());
+    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+
+    // Test invalid count for write: > 29
+    let large_values: Vec<String> = (0..30).map(|i| format!("Test{i}")).collect();
+    let result = client.write_multiple_character_variables(0, large_values).await;
+    assert!(result.is_err());
+    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+
+    // Test string too long when encoded
+    let long_string = "This is a very long string that exceeds 16 bytes when encoded";
+    let long_values = vec![long_string.to_string()];
+    let result = client.write_multiple_character_variables(0, long_values).await;
+    assert!(result.is_err());
+    assert!(
+        result.expect_err("Should be error").to_string().contains("exceeds 16 bytes when encoded")
+    );
+});

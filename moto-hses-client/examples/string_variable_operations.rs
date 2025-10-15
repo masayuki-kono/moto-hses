@@ -5,6 +5,7 @@ use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]
+#[allow(clippy::too_many_lines, clippy::similar_names)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
@@ -75,6 +76,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Err(e) => info!("✗ Failed to read S000: {e}"),
+    }
+
+    // Multiple Character Variable Operations (0x306 command)
+    info!("\n--- Multiple Character Variable Operations (0x306) ---");
+
+    // Write multiple character type variables
+    let character_values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
+
+    match client.write_multiple_character_variables(0, character_values.clone()).await {
+        Ok(()) => info!("✓ Wrote {} character variables to S000-S002", character_values.len()),
+        Err(e) => info!("✗ Failed to write multiple character variables: {e}"),
+    }
+
+    // Read multiple character type variables and verify
+    match client.read_multiple_character_variables(0, 3).await {
+        Ok(read_values) => {
+            info!("✓ Read {} character variables from S000-S002:", read_values.len());
+            for (i, value) in read_values.iter().enumerate() {
+                info!("  S{i:03} = '{value}'");
+            }
+
+            // Verify that read values match written values
+            if read_values == character_values {
+                info!("✓ Verification successful: Read values match written values");
+            } else {
+                info!("✗ Verification failed: Read values do not match written values");
+                for (i, (written, read)) in
+                    character_values.iter().zip(read_values.iter()).enumerate()
+                {
+                    if written != read {
+                        info!("  S{i:03}: written='{written}', read='{read}'");
+                    }
+                }
+            }
+        }
+        Err(e) => info!("✗ Failed to read multiple character variables: {e}"),
     }
 
     info!("\n--- String Variable Operations Example completed successfully ---");
