@@ -53,6 +53,7 @@ The following robot models have been tested and verified for compatibility:
 | 0x302 | Plural Byte Type Variable (B) Reading / Writing Command |
 | 0x303 | Plural Integer Type Variable (I) Reading / Writing Command |
 | 0x304 | Plural Double Precision Integer Type Variable (D) Reading / Writing Command |
+| 0x305 | Plural Real Type Variable (R) Reading / Writing Command |
 
 ### File Control Commands
 

@@ -9,8 +9,9 @@ use moto_hses_proto::{
     commands::{
         JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleByteVariables,
         ReadMultipleDoubleVariables, ReadMultipleIntegerVariables, ReadMultipleIo,
-        WriteMultipleByteVariables, WriteMultipleDoubleVariables, WriteMultipleIntegerVariables,
-        WriteMultipleIo, parse_file_content, parse_file_list,
+        ReadMultipleRealVariables, WriteMultipleByteVariables, WriteMultipleDoubleVariables,
+        WriteMultipleIntegerVariables, WriteMultipleIo, WriteMultipleRealVariables,
+        parse_file_content, parse_file_list,
     },
 };
 use std::fmt::Write;
@@ -1303,6 +1304,88 @@ impl HsesClient {
         values: Vec<i32>,
     ) -> Result<(), ClientError> {
         let command = WriteMultipleDoubleVariables::new(start_variable_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Read multiple real type variables (R) (0x305 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-999 for extended settings)
+    /// * `count` - Number of variables to read (max 118)
+    ///
+    /// # Returns
+    ///
+    /// Vector of variable values (f32)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_real_variables(
+        &self,
+        start_variable_number: u16,
+        count: u32,
+    ) -> Result<Vec<f32>, ClientError> {
+        let command = ReadMultipleRealVariables::new(start_variable_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+
+        // Response format: Byte0-3 = count, Byte4-N = variable data (4 bytes each)
+        if response.len() < 4 {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Response too short: {} bytes (need at least 4)",
+                response.len()
+            ))));
+        }
+
+        let response_count =
+            u32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+
+        if response_count != count {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Count mismatch: expected {count}, got {response_count}"
+            ))));
+        }
+
+        // Parse variable values (4 bytes each)
+        let expected_len = 4 + (count as usize * 4);
+        if response.len() != expected_len {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Invalid response length: got {} bytes, expected {expected_len}",
+                response.len()
+            ))));
+        }
+
+        let mut values = Vec::with_capacity(count as usize);
+        for i in 0..count as usize {
+            let offset = 4 + i * 4;
+            let value = f32::from_le_bytes([
+                response[offset],
+                response[offset + 1],
+                response[offset + 2],
+                response[offset + 3],
+            ]);
+            values.push(value);
+        }
+        Ok(values)
+    }
+
+    /// Write multiple real type variables (R) (0x305 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-999 for extended settings)
+    /// * `values` - Variable values to write (max 118 items)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_real_variables(
+        &self,
+        start_variable_number: u16,
+        values: Vec<f32>,
+    ) -> Result<(), ClientError> {
+        let command = WriteMultipleRealVariables::new(start_variable_number, values)?;
         self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

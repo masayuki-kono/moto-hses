@@ -330,6 +330,64 @@ impl MockState {
         }
     }
 
+    /// Get multiple real type variable values
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable` - Starting variable number
+    /// * `count` - Number of variables to read
+    ///
+    /// # Returns
+    ///
+    /// Vector of real variable values (f32)
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u16::MAX`
+    #[must_use]
+    #[allow(clippy::panic)]
+    pub fn get_multiple_real_variables(&self, start_variable: u16, count: usize) -> Vec<f32> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            let var_num = start_variable
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
+                });
+            let var_data = self.get_variable(var_num);
+            // R variable is 4 bytes (f32)
+            let value = var_data.map_or(0.0_f32, |data| {
+                if data.len() >= 4 {
+                    f32::from_le_bytes([data[0], data[1], data[2], data[3]])
+                } else {
+                    0.0
+                }
+            });
+            values.push(value);
+        }
+        values
+    }
+
+    /// Set multiple real type variable values
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable` - Starting variable number
+    /// * `values` - Real variable values to set
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u16::MAX`
+    #[allow(clippy::panic)]
+    pub fn set_multiple_real_variables(&mut self, start_variable: u16, values: &[f32]) {
+        for (i, &value) in values.iter().enumerate() {
+            let var_num = start_variable
+                + u16::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
+                });
+            self.set_variable(var_num, value.to_le_bytes().to_vec());
+        }
+    }
+
     /// Get I/O state
     #[must_use]
     pub fn get_io_state(&self, io_number: u16) -> bool {

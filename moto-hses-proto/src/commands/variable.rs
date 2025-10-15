@@ -417,6 +417,114 @@ impl Command for WriteMultipleDoubleVariables {
     }
 }
 
+/// Read multiple real type variables (R) command (0x305)
+#[derive(Debug, Clone)]
+pub struct ReadMultipleRealVariables {
+    pub start_variable_number: u16, // Support extended variable settings (0-999)
+    pub count: u32,                 // Number of R variable data (max 118)
+}
+
+impl ReadMultipleRealVariables {
+    /// Create a new `ReadMultipleRealVariables` command
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number
+    /// * `count` - Number of variables to read (max 118)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parameters are invalid
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
+        // Validate count (max 118, must be > 0)
+        if count == 0 || count > 118 {
+            return Err(ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-118)"
+            )));
+        }
+        Ok(Self { start_variable_number, count })
+    }
+}
+
+impl Command for ReadMultipleRealVariables {
+    type Response = Vec<f32>; // Array of R variable values
+    fn command_id() -> u16 {
+        0x305
+    }
+    fn instance(&self) -> u16 {
+        self.start_variable_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Fixed to 0 for plural commands
+    fn service(&self) -> u8 {
+        0x33
+    } // Read plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        // Only send count (4 bytes, little-endian)
+        Ok(self.count.to_le_bytes().to_vec())
+    }
+}
+
+/// Write multiple real type variables (R) command (0x305)
+#[derive(Debug, Clone)]
+pub struct WriteMultipleRealVariables {
+    pub start_variable_number: u16, // Support extended variable settings (0-999)
+    pub values: Vec<f32>,           // R variable values to write
+}
+
+impl WriteMultipleRealVariables {
+    /// Create a new `WriteMultipleRealVariables` command
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number
+    /// * `values` - Variable values to write (max 118 items)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if parameters are invalid
+    pub fn new(start_variable_number: u16, values: Vec<f32>) -> Result<Self, ProtocolError> {
+        let count = values.len();
+        // Validate count (max 118, must be > 0)
+        if count == 0 || count > 118 {
+            return Err(ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable_number} (must be 1-118)"
+            )));
+        }
+        Ok(Self { start_variable_number, values })
+    }
+}
+
+impl Command for WriteMultipleRealVariables {
+    type Response = ();
+    fn command_id() -> u16 {
+        0x305
+    }
+    fn instance(&self) -> u16 {
+        self.start_variable_number
+    }
+    fn attribute(&self) -> u8 {
+        0
+    } // Fixed to 0 for plural commands
+    fn service(&self) -> u8 {
+        0x34
+    } // Write plural data
+    fn serialize(&self) -> Result<Vec<u8>, ProtocolError> {
+        let count = u32::try_from(self.values.len()).map_err(|_| {
+            ProtocolError::InvalidMessage(format!(
+                "Values count {} exceeds u32::MAX",
+                self.values.len()
+            ))
+        })?;
+        let mut payload = count.to_le_bytes().to_vec();
+        for &value in &self.values {
+            payload.extend_from_slice(&value.to_le_bytes());
+        }
+        Ok(payload)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -785,6 +893,128 @@ mod tests {
     fn test_write_multiple_double_variables_serialization() {
         let values = vec![1_000_000, -2_000_000, 3_000_000];
         let cmd = WriteMultipleDoubleVariables::new(5, values.clone())
+            .expect("Valid command should not fail");
+        let serialized = cmd.serialize().expect("Serialization should not fail");
+
+        // Expected: count (4 bytes) + values (4 bytes each)
+        let mut expected = vec![3, 0, 0, 0]; // 3 in little-endian
+        for value in values {
+            expected.extend_from_slice(&value.to_le_bytes());
+        }
+        assert_eq!(serialized, expected);
+    }
+
+    // Tests for ReadMultipleRealVariables (0x305)
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_real_variables_creation() {
+        // Valid cases
+        let cmd = ReadMultipleRealVariables::new(0, 1).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.count, 1);
+
+        let cmd = ReadMultipleRealVariables::new(50, 4).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 50);
+        assert_eq!(cmd.count, 4);
+
+        // Maximum valid count
+        let cmd = ReadMultipleRealVariables::new(0, 118).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.count, 118);
+
+        // Valid case with any start variable number
+        let cmd = ReadMultipleRealVariables::new(255, 1).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 255);
+        assert_eq!(cmd.count, 1);
+    }
+
+    #[test]
+    fn test_read_multiple_real_variables_validation() {
+        // Invalid count: zero
+        assert!(ReadMultipleRealVariables::new(0, 0).is_err());
+
+        // Invalid count: too large
+        assert!(ReadMultipleRealVariables::new(0, 119).is_err());
+        assert!(ReadMultipleRealVariables::new(0, 1000).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_real_variables_command_trait() {
+        let cmd = ReadMultipleRealVariables::new(10, 4).expect("Valid command should not fail");
+        assert_eq!(ReadMultipleRealVariables::command_id(), 0x305);
+        assert_eq!(cmd.instance(), 10);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x33);
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_read_multiple_real_variables_serialization() {
+        let cmd = ReadMultipleRealVariables::new(5, 3).expect("Valid command should not fail");
+        let serialized = cmd.serialize().expect("Serialization should not fail");
+        assert_eq!(serialized, vec![3, 0, 0, 0]); // 3 in little-endian
+    }
+
+    // Tests for WriteMultipleRealVariables (0x305)
+    #[test]
+    #[allow(clippy::expect_used, clippy::cast_precision_loss)]
+    fn test_write_multiple_real_variables_creation() {
+        // Valid cases
+        let values = vec![1.5];
+        let cmd = WriteMultipleRealVariables::new(0, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.values, values);
+
+        let values = vec![1.0, -2.5, std::f32::consts::PI, -4.0];
+        let cmd = WriteMultipleRealVariables::new(50, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 50);
+        assert_eq!(cmd.values, values);
+
+        // Maximum valid count
+        let values: Vec<f32> = (0..118).map(|i| i as f32 * 1.5).collect();
+        let cmd =
+            WriteMultipleRealVariables::new(0, values).expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 0);
+        assert_eq!(cmd.values.len(), 118);
+
+        // Valid case with any start variable number
+        let values = vec![1.5, -2.75];
+        let cmd = WriteMultipleRealVariables::new(255, values.clone())
+            .expect("Valid command should not fail");
+        assert_eq!(cmd.start_variable_number, 255);
+        assert_eq!(cmd.values, values);
+    }
+
+    #[test]
+    fn test_write_multiple_real_variables_validation() {
+        // Invalid count: empty
+        assert!(WriteMultipleRealVariables::new(0, vec![]).is_err());
+
+        // Invalid count: too large
+        let large_values: Vec<f32> = vec![0.0; 119];
+        assert!(WriteMultipleRealVariables::new(0, large_values).is_err());
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_write_multiple_real_variables_command_trait() {
+        let values = vec![1.5, -2.75, std::f32::consts::PI, -4.0];
+        let cmd =
+            WriteMultipleRealVariables::new(10, values).expect("Valid command should not fail");
+        assert_eq!(WriteMultipleRealVariables::command_id(), 0x305);
+        assert_eq!(cmd.instance(), 10);
+        assert_eq!(cmd.attribute(), 0);
+        assert_eq!(cmd.service(), 0x34);
+    }
+
+    #[test]
+    #[allow(clippy::expect_used)]
+    fn test_write_multiple_real_variables_serialization() {
+        let values = vec![1.5, -2.75, std::f32::consts::PI];
+        let cmd = WriteMultipleRealVariables::new(5, values.clone())
             .expect("Valid command should not fail");
         let serialized = cmd.serialize().expect("Serialization should not fail");
 
