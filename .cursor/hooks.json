@@ -1,10 +1,5 @@
 {
   "version": 1,
   "hooks": {
-    "stop": [
-      {
-        "command": "./hooks/run-fmt-and-clippy.sh"
-      }
-    ]
   }
 }
