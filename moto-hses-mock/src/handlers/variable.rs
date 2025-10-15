@@ -414,10 +414,8 @@ impl CommandHandler for PluralIntegerVarHandler {
                 let mut values = Vec::with_capacity(count as usize);
                 for i in 0..count as usize {
                     let offset = 4 + i * 2;
-                    let value = i16::from_le_bytes([
-                        message.payload[offset],
-                        message.payload[offset + 1],
-                    ]);
+                    let value =
+                        i16::from_le_bytes([message.payload[offset], message.payload[offset + 1]]);
                     values.push(value);
                 }
 

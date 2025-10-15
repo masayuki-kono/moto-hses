@@ -274,8 +274,7 @@ test_with_logging!(test_multiple_integer_variables_large_batch, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test maximum safe count (limited by variable number range 0-99)
-    let large_values: Vec<i16> =
-        (0..100).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
+    let large_values: Vec<i16> = (0..100).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
     client
         .write_multiple_integer_variables(0, large_values.clone())
         .await

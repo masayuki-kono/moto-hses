@@ -515,7 +515,8 @@ mod tests {
 
         // Maximum valid count
         let values: Vec<i16> = (0..237).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
-        let cmd = WriteMultipleIntegerVariables::new(0, values).expect("Valid command should not fail");
+        let cmd =
+            WriteMultipleIntegerVariables::new(0, values).expect("Valid command should not fail");
         assert_eq!(cmd.start_variable_number, 0);
         assert_eq!(cmd.values.len(), 237);
 
@@ -541,7 +542,8 @@ mod tests {
     #[allow(clippy::expect_used)]
     fn test_write_multiple_integer_variables_command_trait() {
         let values = vec![100, -200, 300, -400];
-        let cmd = WriteMultipleIntegerVariables::new(10, values).expect("Valid command should not fail");
+        let cmd =
+            WriteMultipleIntegerVariables::new(10, values).expect("Valid command should not fail");
         assert_eq!(WriteMultipleIntegerVariables::command_id(), 0x303);
         assert_eq!(cmd.instance(), 10);
         assert_eq!(cmd.attribute(), 0);
