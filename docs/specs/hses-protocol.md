@@ -774,8 +774,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x0E` (Get_Attribute_Single): Read out the specified register data
   - `0x10` (Set_Attribute_Single): Register 0 to 559 is writable
 - **Payload**: Data exists during writing operation only
-  - 2 bytes: Register data
-    - Byte 0-1: Register Data
+  - Byte 0-1: Register Data
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -789,8 +788,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 2 bytes: Register data
-    - Byte 0-1: Register Data
+  - Byte 0-1: Register Data
   - Register data exists only when requested by the client
 
 #### Byte Variable (B) Reading / Writing Command (Command 0x7A)
@@ -808,8 +806,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 1 bytes: B variable data
-    - Byte 0: B variable
+  - Byte 0: B variable
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -823,8 +820,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 1 bytes: B variable data
-    - Byte 0: B variable
+  - Byte 0: B variable
   - The data exists only when requested by the client
 
 #### Integer Type Variable (I) Reading / Writing Command (Command 0x7B)
@@ -842,8 +838,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 2 bytes: I variable data
-    - Byte 0-1: I variable
+  - Byte 0-1: I variable
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -857,8 +852,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during writing operation only
-  - 2 bytes: I variable data
-    - Byte 0-1: I variable
+  - Byte 0-1: I variable
   - The data exists only when requested by the client
 
 #### Double Precision Integer Type Variable (D) Reading / Writing Command (Command 0x7C)
@@ -876,8 +870,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 4 bytes: D variable data
-    - Byte 0-3: D variable
+  - Byte 0-3: D variable
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -891,8 +884,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 4 bytes: D variable data
-    - Byte 0-3: D variable
+  - Byte 0-3: D variable
   - The data exists only when requested by the client
 
 #### Real Type Variable (R) Reading / Writing Command (Command 0x7D)
@@ -910,8 +902,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 4 bytes: R variable data
-    - Byte 0-3: R variable
+  - Byte 0-3: R variable
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -925,8 +916,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 4 bytes: R variable data
-    - Byte 0-3: R variable
+  - Byte 0-3: R variable
   - The data exists only when requested by the client
 
 #### Character Type Variable (S) Reading / Writing Command (Command 0x7E)
@@ -944,8 +934,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `0x10` (Set_Attribute_Single): Write the data to the specified variable
   - `0x02` (Set_Attribute_All): Write the data to the specified variable
 - **Payload**: Data exists during writing operation only
-  - 32-bit integer (4 bytes)x4: S variable data
-    - Byte 0-15: S variable (16-byte string)
+  - Byte 0-15: S variable (16-byte string)
   - Data exists during the writing operation only
 
 **Response Structure:**
@@ -959,8 +948,7 @@ HSES (High Speed Ethernet Server) is a UDP-based communication protocol for Yask
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
 - **Payload**: Data exists during reading operation only
-  - 32-bit integer (4 bytes)x4: S variable data
-    - Byte 0-15: S variable (16-byte string)
+  - Byte 0-15: S variable (16-byte string)
   - The data exists only when requested by the client
 
 #### Robot Position Type Variable (P) Reading / Writing Command (Command 0x7F)
@@ -1474,7 +1462,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - Byte4-5: Register data 1
   - Byte6-7: Register data 2
   - ...
-  - Byte(3 + Number * 2 - 1)-Byte(3 + Number * 2): Register data “Number”
+  - Byte(3 + (Number - 1) * 2 + 1)-Byte(3 + Number * 2): Register data “Number”
   - Note:
     - When reading, only the "Number" field is valid
     - Register data section is valid only when writing
@@ -1495,7 +1483,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - Byte4-5: Register data 1
   - Byte6-7: Register data 2
   - ...
-  - Byte(3 + Number * 2 - 1)-Byte(3 + Number * 2): Register data “Number”
+  - Byte(3 + (Number - 1) * 2 + 1)-Byte(3 + Number * 2): Register data “Number”
   - Note:
     - When writing, only the "Number" field is valid
     - Register data section is valid only when reading
@@ -1514,7 +1502,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `0x34`: Write plural data (Writes the fixed size specified by the data part)
 - **Payload**: Plural B variable
   - Byte0-3: Number of B variable data (Maximum value: 474, must be specified as a multiple of 2)
-    - **Note**: The actual maximum value is limited by the variable number range (0-99)
+    - **Note**: The actual maximum value is limited by the variable number range
     - **Standard setting**: Maximum 100 variables (limited by Instance range 0-99)
     - **Extended setting**: Maximum 474 variables (requires optional extended variable function)
   - Byte4:   B variable data 1
@@ -1542,7 +1530,7 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - Byte4:   B variable data 1
   - Byte5:   B variable data 2
   - ...
-  - Byte(3 + Number): B variable data “Number”
+  - Byte(3 + Number): B variable data "Number"
   - Note:
     - When writing, only the "Number" field is valid
     - B variable data section is valid only when reading
@@ -1560,12 +1548,20 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data
   - `0x34`: Write plural data
-- **Payload**: Data exists during writing operation only
-  - 120 × 32-bit integers (480 bytes): Plural I variable data
-    - Integer 1: Number (Maximum: 237)
-    - Integers 2-120: I variable 1 to 237
-      - Variable data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural I variable
+  - Byte0-3: Number of I variable data (Maximum value: 237)
+    - **Note**: The actual maximum value is limited by the variable number range
+    - **Standard setting**: Maximum 100 variables (limited by Instance range 0-99)
+    - **Extended setting**: Maximum 237 variables (requires optional extended variable function)
+  - Byte4-5:   I variable data 1
+  - Byte6-7:   I variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 2 + 1)-Byte(3 + Number * 2): I variable data "Number"
+  - Note:
+    - When reading, only the "Number" field is valid
+    - I variable data section is valid only when writing
+    - Each I variable data is 2 byte, and the payload contains the number of I variable data specified by the Number field
+    - **Variable range constraint**: start_variable + count - 1 must not exceed the maximum variable number (99 for standard, varies by configuration for extended)
 
 **Response Structure:**
 
@@ -1577,9 +1573,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - I variable data exists only when requested by the client
+- **Payload**: Plural I variable
+  - Byte0-3: Number of I variable data (Set to the same value as the Number specified in the request)
+  - Byte4-5:   I variable data 1
+  - Byte6-7:   I variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 2 + 1)-Byte(3 + Number * 2): I variable data "Number"
+  - Note:
+    - When writing, only the "Number" field is valid
+    - I variable data section is valid only when reading
 
 #### Plural Double Precision Integer Type Variable (D) Reading / Writing Command (Command 0x304)
 
@@ -1594,12 +1596,20 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data
   - `0x34`: Write plural data
-- **Payload**: Data exists during writing operation only
-  - 119 × 32-bit integers (476 bytes): Plural D variable data
-    - Integer 1: Number (Maximum: 118)
-    - Integers 2-119: D variable 1 to 118
-      - Variable data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural D variable
+  - Byte0-3: Number of D variable data (Maximum value: 118)
+    - **Note**: The actual maximum value is limited by the variable number range
+    - **Standard setting**: Maximum 100 variables (limited by Instance range 0-99)
+    - **Extended setting**: Maximum 118 variables (requires optional extended variable function)
+  - Byte4-7:   D variable data 1
+  - Byte8-11:  D variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 4 + 1)-Byte(3 + Number * 4): D variable data "Number"
+  - Note:
+    - When reading, only the "Number" field is valid
+    - D variable data section is valid only when writing
+    - Each D variable data is 4 byte, and the payload contains the number of D variable data specified by the Number field
+    - **Variable range constraint**: start_variable + count - 1 must not exceed the maximum variable number (99 for standard, varies by configuration for extended)
 
 **Response Structure:**
 
@@ -1611,9 +1621,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - D variable data exists only when requested by the client
+- **Payload**: Plural D variable
+  - Byte0-3: Number of D variable data (Set to the same value as the Number specified in the request)
+  - Byte4-7:   D variable data 1
+  - Byte8-11:  D variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 4 + 1)-Byte(3 + Number * 4): D variable data "Number"
+  - Note:
+    - When writing, only the "Number" field is valid
+    - D variable data section is valid only when reading
 
 #### Plural Real Type Variable (R) Reading / Writing Command (Command 0x305)
 
@@ -1628,12 +1644,20 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data
   - `0x34`: Write plural data
-- **Payload**: Data exists during writing operation only
-  - 119 × 32-bit integers (476 bytes): Plural R variable data
-    - Integer 1: Number (Maximum: 118)
-    - Integers 2-119: R variable 1 to 118
-      - Variable data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural R variable
+  - Byte0-3: Number of R variable data (Maximum value: 118)
+    - **Note**: The actual maximum value is limited by the variable number range
+    - **Standard setting**: Maximum 100 variables (limited by Instance range 0-99)
+    - **Extended setting**: Maximum 118 variables (requires optional extended variable function)
+  - Byte4-7:   R variable data 1
+  - Byte8-11:  R variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 4 + 1)-Byte(3 + Number * 4): R variable data "Number"
+  - Note:
+    - When reading, only the "Number" field is valid
+    - R variable data section is valid only when writing
+    - Each R variable data is 4 byte, and the payload contains the number of R variable data specified by the Number field
+    - **Variable range constraint**: start_variable + count - 1 must not exceed the maximum variable number (99 for standard, varies by configuration for extended)
 
 **Response Structure:**
 
@@ -1645,9 +1669,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - R variable data exists only when requested by the client
+- **Payload**: Plural R variable
+  - Byte0-3: Number of R variable data (Set to the same value as the Number specified in the request)
+  - Byte4-7:   R variable data 1
+  - Byte8-11:  R variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 4 + 1)-Byte(3 + Number * 4): R variable data "Number"
+  - Note:
+    - When writing, only the "Number" field is valid
+    - R variable data section is valid only when reading
 
 #### Plural Character Type Variable (S) Reading / Writing Command (Command 0x306)
 
@@ -1662,13 +1692,17 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
 - **Service**:
   - `0x33`: Read plural data
   - `0x34`: Write plural data
-- **Payload**: Data exists during writing operation only
-  - 117 × 32-bit integers (468 bytes): Plural S variable data
-    - Integer 1: Number (Maximum: 29)
-    - Integers 2-117: S variable 1 to 29
-      - Each S variable spans 4 consecutive 32-bit integers (16 bytes)
-      - Variable data part is valid only when writing
-      - When reading, only the number of data is valid
+- **Payload**: Plural S variable
+  - Byte0-3: Number of S variable data (Maximum value: 29)
+  - Byte4-19:   S variable data 1
+  - Byte20-35:  S variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 16 + 1)-Byte(3 + Number * 16): S variable data "Number"
+  - Note:
+    - When reading, only the "Number" field is valid
+    - S variable data section is valid only when writing
+    - Each S variable data is 16 byte, and the payload contains the number of S variable data specified by the Number field
+    - **Variable range constraint**: start_variable + count - 1 must not exceed the maximum variable number (99 for standard, varies by configuration for extended)
 
 **Response Structure:**
 
@@ -1680,9 +1714,15 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `1`: 1 WORD of added status data
   - `2`: 2 WORD of added status data
 - **Added status**: Error code specified by the added status size
-- **Payload**: Data exists during reading operation only
-  - Same structure as request payload
-  - S variable data exists only when requested by the client
+- **Payload**: Plural S variable
+  - Byte0-3: Number of S variable data (Set to the same value as the Number specified in the request)
+  - Byte4-19:   S variable data 1
+  - Byte20-35:  S variable data 2
+  - ...
+  - Byte(3 + (Number - 1) * 16 + 1)-Byte(3 + Number * 16): S variable data "Number"
+  - Note:
+    - When writing, only the "Number" field is valid
+    - S variable data section is valid only when reading
 
 #### Plural Robot Position Type Variable (P) Reading / Writing Command (Command 0x307)
 
