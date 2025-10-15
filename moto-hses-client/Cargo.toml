@@ -37,8 +37,24 @@ name = "alarm_operations"
 path = "examples/alarm_operations.rs"
 
 [[example]]
-name = "variable_operations"
-path = "examples/variable_operations.rs"
+name = "byte_variable_operations"
+path = "examples/byte_variable_operations.rs"
+
+[[example]]
+name = "integer_variable_operations"
+path = "examples/integer_variable_operations.rs"
+
+[[example]]
+name = "double_variable_operations"
+path = "examples/double_variable_operations.rs"
+
+[[example]]
+name = "real_variable_operations"
+path = "examples/real_variable_operations.rs"
+
+[[example]]
+name = "string_variable_operations"
+path = "examples/string_variable_operations.rs"
 
 [[example]]
 name = "position_operations"

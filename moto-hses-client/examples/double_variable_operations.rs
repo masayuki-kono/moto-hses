@@ -1,10 +1,8 @@
 use log::info;
 
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{CycleMode, ROBOT_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
-
-const TARGET_CYCLE_MODE: CycleMode = CycleMode::Step;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,22 +47,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    info!("Setting cycle mode to: {TARGET_CYCLE_MODE:?}");
-    match client.set_cycle_mode(TARGET_CYCLE_MODE).await {
-        Ok(()) => {
-            info!("✓ Successfully set cycle mode to {TARGET_CYCLE_MODE:?}");
+    // Double Variable Operations (0x7C command)
+    info!("\n--- Double Variable Operations (0x7C) ---");
+
+    // Read 32-bit integer variable
+    match client.read_i32(0).await {
+        Ok(value) => {
+            info!("✓ D000 = {value}");
         }
         Err(e) => {
-            info!("✗ Failed to set cycle mode to {TARGET_CYCLE_MODE:?}: {e}");
-            return Ok(());
+            info!("✗ Failed to read D000: {e}");
         }
     }
 
-    let data1 = client.read_status_data1().await?;
-    info!(
-        "Status:(step:{},one cycle:{},continuous:{})",
-        data1.step, data1.one_cycle, data1.continuous
-    );
+    // Write 32-bit integer variable
+    match client.write_i32(0, 305_419_896).await {
+        Ok(()) => {
+            info!("✓ Wrote 305_419_896 (0x12345678) to D000");
+        }
+        Err(e) => {
+            info!("✗ Failed to write to D000: {e}");
+        }
+    }
 
+    // Verify written value
+    match client.read_i32(0).await {
+        Ok(value) => {
+            info!("✓ D000 = {value} (expected: 305_419_896)");
+        }
+        Err(e) => {
+            info!("✗ Failed to read D000: {e}");
+        }
+    }
+
+    info!("\n--- Double Variable Operations Example completed successfully ---");
     Ok(())
 }

@@ -1,10 +1,8 @@
 use log::info;
 
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{CycleMode, ROBOT_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
-
-const TARGET_CYCLE_MODE: CycleMode = CycleMode::Step;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,22 +47,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    info!("Setting cycle mode to: {TARGET_CYCLE_MODE:?}");
-    match client.set_cycle_mode(TARGET_CYCLE_MODE).await {
-        Ok(()) => {
-            info!("✓ Successfully set cycle mode to {TARGET_CYCLE_MODE:?}");
+    // Real Variable Operations (0x7D command)
+    info!("\n--- Real Variable Operations (0x7D) ---");
+
+    // Read float variable
+    match client.read_f32(0).await {
+        Ok(value) => {
+            info!("✓ R000 = {value}");
         }
         Err(e) => {
-            info!("✗ Failed to set cycle mode to {TARGET_CYCLE_MODE:?}: {e}");
-            return Ok(());
+            info!("✗ Failed to read R000: {e}");
         }
     }
 
-    let data1 = client.read_status_data1().await?;
-    info!(
-        "Status:(step:{},one cycle:{},continuous:{})",
-        data1.step, data1.one_cycle, data1.continuous
-    );
+    // Write float variable
+    match client.write_f32(0, std::f32::consts::PI).await {
+        Ok(()) => {
+            info!("✓ Wrote π to R000");
+        }
+        Err(e) => {
+            info!("✗ Failed to write to R000: {e}");
+        }
+    }
 
+    // Verify written value
+    match client.read_f32(0).await {
+        Ok(value) => {
+            info!("✓ R000 = {value} (expected: 3.14159)");
+        }
+        Err(e) => {
+            info!("✗ Failed to read R000: {e}");
+        }
+    }
+
+    info!("\n--- Real Variable Operations Example completed successfully ---");
     Ok(())
 }

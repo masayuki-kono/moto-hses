@@ -8,8 +8,8 @@ use moto_hses_proto::{
     VariableCommandId, WriteIo, WriteVar,
     commands::{
         JobSelectCommand, JobSelectType, JobStartCommand, ReadMultipleByteVariables,
-        ReadMultipleIo, WriteMultipleByteVariables, WriteMultipleIo, parse_file_content,
-        parse_file_list,
+        ReadMultipleIntegerVariables, ReadMultipleIo, WriteMultipleByteVariables,
+        WriteMultipleIntegerVariables, WriteMultipleIo, parse_file_content, parse_file_list,
     },
 };
 use std::fmt::Write;
@@ -41,7 +41,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn read_variable<T>(&self, index: u8) -> Result<T, ClientError>
+    pub async fn read_variable<T>(&self, index: u16) -> Result<T, ClientError>
     where
         T: HsesPayload + VariableCommandId,
     {
@@ -53,7 +53,7 @@ impl HsesClient {
     /// # Errors
     ///
     /// Returns an error if communication fails
-    pub async fn write_variable<T>(&self, index: u8, value: T) -> Result<(), ClientError>
+    pub async fn write_variable<T>(&self, index: u16, value: T) -> Result<(), ClientError>
     where
         T: HsesPayload + VariableCommandId,
     {
@@ -78,7 +78,7 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn read_multiple_byte_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         count: u32,
     ) -> Result<Vec<u8>, ClientError> {
         let command = ReadMultipleByteVariables::new(start_variable_number, count)?;
@@ -127,10 +127,87 @@ impl HsesClient {
     /// Returns an error if communication fails or parameters are invalid
     pub async fn write_multiple_byte_variables(
         &self,
-        start_variable_number: u8,
+        start_variable_number: u16,
         values: Vec<u8>,
     ) -> Result<(), ClientError> {
         let command = WriteMultipleByteVariables::new(start_variable_number, values)?;
+        self.send_command_with_retry(command, Division::Robot).await?;
+        Ok(())
+    }
+
+    /// Read multiple integer variables (I) (0x303 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-99)
+    /// * `count` - Number of variables to read (max 237)
+    ///
+    /// # Returns
+    ///
+    /// Vector of variable values (i16)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn read_multiple_integer_variables(
+        &self,
+        start_variable_number: u16,
+        count: u32,
+    ) -> Result<Vec<i16>, ClientError> {
+        let command = ReadMultipleIntegerVariables::new(start_variable_number, count)?;
+        let response = self.send_command_with_retry(command, Division::Robot).await?;
+
+        // Response format: Byte0-3 = count, Byte4-N = variable data (2 bytes each)
+        if response.len() < 4 {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Response too short: {} bytes (need at least 4)",
+                response.len()
+            ))));
+        }
+
+        let response_count =
+            u32::from_le_bytes([response[0], response[1], response[2], response[3]]);
+
+        if response_count != count {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Count mismatch: expected {count}, got {response_count}"
+            ))));
+        }
+
+        // Parse variable values (2 bytes each)
+        let expected_len = 4 + (count as usize * 2);
+        if response.len() != expected_len {
+            return Err(ClientError::ProtocolError(ProtocolError::Deserialization(format!(
+                "Invalid response length: got {} bytes, expected {expected_len}",
+                response.len()
+            ))));
+        }
+
+        let mut values = Vec::with_capacity(count as usize);
+        for i in 0..count as usize {
+            let offset = 4 + i * 2;
+            let value = i16::from_le_bytes([response[offset], response[offset + 1]]);
+            values.push(value);
+        }
+        Ok(values)
+    }
+
+    /// Write multiple integer variables (I) (0x303 command)
+    ///
+    /// # Arguments
+    ///
+    /// * `start_variable_number` - Starting variable number (0-99)
+    /// * `values` - Variable values to write (max 237 items)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if communication fails or parameters are invalid
+    pub async fn write_multiple_integer_variables(
+        &self,
+        start_variable_number: u16,
+        values: Vec<i16>,
+    ) -> Result<(), ClientError> {
+        let command = WriteMultipleIntegerVariables::new(start_variable_number, values)?;
         self.send_command_with_retry(command, Division::Robot).await?;
         Ok(())
     }

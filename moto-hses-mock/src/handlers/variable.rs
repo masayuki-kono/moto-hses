@@ -13,9 +13,7 @@ impl CommandHandler for ByteVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
-        })?;
+        let var_index = message.sub_header.instance; // Direct use since instance is u16
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for B variables)
@@ -64,9 +62,7 @@ impl CommandHandler for IntegerVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
-        })?;
+        let var_index = message.sub_header.instance; // Direct use since instance is u16
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for I variables)
@@ -115,9 +111,7 @@ impl CommandHandler for DoubleVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
-        })?;
+        let var_index = message.sub_header.instance; // Direct use since instance is u16
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for D variables)
@@ -166,9 +160,7 @@ impl CommandHandler for RealVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
-        })?;
+        let var_index = message.sub_header.instance; // Direct use since instance is u16
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for R variables)
@@ -220,9 +212,7 @@ impl CommandHandler for StringVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let var_index = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance("Variable index too large".to_string())
-        })?;
+        let var_index = message.sub_header.instance; // Direct use since instance is u16
         let service = message.sub_header.service;
 
         // Validate variable index range (0-99 for S variables)
@@ -280,12 +270,7 @@ impl CommandHandler for PluralByteVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance(format!(
-                "Variable index {} too large for u8 conversion",
-                message.sub_header.instance
-            ))
-        })?;
+        let start_variable = message.sub_header.instance;
         let service = message.sub_header.service;
 
         // Validate attribute (should be 0)
@@ -337,6 +322,84 @@ impl CommandHandler for PluralByteVarHandler {
                 let values = message.payload[4..].to_vec();
 
                 state.set_multiple_byte_variables(start_variable, &values);
+
+                // Return only count
+                Ok(count.to_le_bytes().to_vec())
+            }
+            _ => Err(proto::ProtocolError::InvalidService),
+        }
+    }
+}
+
+/// Handler for plural integer variable operations (0x303)
+pub struct PluralIntegerVarHandler;
+
+impl CommandHandler for PluralIntegerVarHandler {
+    fn handle(
+        &self,
+        message: &proto::HsesRequestMessage,
+        state: &mut MockState,
+    ) -> Result<Vec<u8>, proto::ProtocolError> {
+        let start_variable = message.sub_header.instance;
+        let service = message.sub_header.service;
+
+        // Validate attribute (should be 0)
+        if message.sub_header.attribute != 0 {
+            return Err(proto::ProtocolError::InvalidAttribute);
+        }
+
+        // Parse count from payload (first 4 bytes)
+        if message.payload.len() < 4 {
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Payload too short: {} bytes for start_variable {start_variable} (need at least 4 bytes)",
+                message.payload.len()
+            )));
+        }
+
+        let count = u32::from_le_bytes([
+            message.payload[0],
+            message.payload[1],
+            message.payload[2],
+            message.payload[3],
+        ]);
+
+        // Validate count (max 237, must be > 0)
+        if count == 0 || count > 237 {
+            return Err(proto::ProtocolError::InvalidMessage(format!(
+                "Invalid count: {count} for start_variable {start_variable} (must be 1-237)"
+            )));
+        }
+
+        match service {
+            0x33 => {
+                // Read - return count + variable data
+                let values = state.get_multiple_integer_variables(start_variable, count as usize);
+                let mut response = count.to_le_bytes().to_vec();
+                for value in values {
+                    response.extend_from_slice(&value.to_le_bytes());
+                }
+                Ok(response)
+            }
+            0x34 => {
+                // Write - validate payload length and update state
+                let expected_len = 4 + (count as usize * 2);
+                if message.payload.len() != expected_len {
+                    return Err(proto::ProtocolError::InvalidMessage(format!(
+                        "Invalid payload length: got {} bytes, expected {expected_len}",
+                        message.payload.len()
+                    )));
+                }
+
+                // Parse variable values (2 bytes each)
+                let mut values = Vec::with_capacity(count as usize);
+                for i in 0..count as usize {
+                    let offset = 4 + i * 2;
+                    let value =
+                        i16::from_le_bytes([message.payload[offset], message.payload[offset + 1]]);
+                    values.push(value);
+                }
+
+                state.set_multiple_integer_variables(start_variable, &values);
 
                 // Return only count
                 Ok(count.to_le_bytes().to_vec())

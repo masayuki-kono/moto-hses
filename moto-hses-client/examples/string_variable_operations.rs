@@ -1,10 +1,8 @@
 use log::info;
 
 use moto_hses_client::{ClientConfig, HsesClient};
-use moto_hses_proto::{CycleMode, ROBOT_CONTROL_PORT, TextEncoding};
+use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
-
-const TARGET_CYCLE_MODE: CycleMode = CycleMode::Step;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,22 +47,36 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    info!("Setting cycle mode to: {TARGET_CYCLE_MODE:?}");
-    match client.set_cycle_mode(TARGET_CYCLE_MODE).await {
-        Ok(()) => {
-            info!("✓ Successfully set cycle mode to {TARGET_CYCLE_MODE:?}");
-        }
-        Err(e) => {
-            info!("✗ Failed to set cycle mode to {TARGET_CYCLE_MODE:?}: {e}");
-            return Ok(());
-        }
+    // String Variable Operations (0x7E command)
+    info!("\n--- String Variable Operations (0x7E) ---");
+
+    // Read string variable
+    match client.read_string(0).await {
+        Ok(value) => info!("✓ S000 = '{}'", String::from_utf8_lossy(&value)),
+        Err(e) => info!("✗ Failed to read S000: {e}"),
     }
 
-    let data1 = client.read_status_data1().await?;
-    info!(
-        "Status:(step:{},one cycle:{},continuous:{})",
-        data1.step, data1.one_cycle, data1.continuous
-    );
+    // Write string variable
+    let test_string = b"Hello, Robot!";
+    match client.write_string(0, test_string.to_vec()).await {
+        Ok(()) => info!("✓ Wrote '{}' to S000", String::from_utf8_lossy(test_string)),
+        Err(e) => info!("✗ Failed to write to S000: {e}"),
+    }
 
+    // Verify written string
+    match client.read_string(0).await {
+        Ok(value) => {
+            let expected = String::from_utf8_lossy(test_string);
+            let actual = String::from_utf8_lossy(&value);
+            if value == test_string {
+                info!("✓ S000 = '{actual}' (expected: '{expected}')");
+            } else {
+                info!("✗ S000 = '{actual}' (expected: '{expected}')");
+            }
+        }
+        Err(e) => info!("✗ Failed to read S000: {e}"),
+    }
+
+    info!("\n--- String Variable Operations Example completed successfully ---");
     Ok(())
 }

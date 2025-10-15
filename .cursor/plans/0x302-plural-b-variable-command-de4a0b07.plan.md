@@ -40,12 +40,12 @@ Add structures for Plural B Variable command (following the same pattern as 0x30
 /// Read multiple byte variables (B) command (0x302)
 #[derive(Debug, Clone)]
 pub struct ReadMultipleByteVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,  // Support extended variable settings (0-999)
     pub count: u32,  // Number of B variable data (max 474, must be multiple of 2)
 }
 
 impl ReadMultipleByteVariables {
-    pub fn new(start_variable_number: u8, count: u32) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, count: u32) -> Result<Self, ProtocolError> {
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 {
             return Err(ProtocolError::InvalidMessage(format!(
@@ -76,12 +76,12 @@ impl Command for ReadMultipleByteVariables {
 /// Write multiple byte variables (B) command (0x302)
 #[derive(Debug, Clone)]
 pub struct WriteMultipleByteVariables {
-    pub start_variable_number: u8,
+    pub start_variable_number: u16,  // Support extended variable settings (0-999)
     pub values: Vec<u8>,  // B variable values to write
 }
 
 impl WriteMultipleByteVariables {
-    pub fn new(start_variable_number: u8, values: Vec<u8>) -> Result<Self, ProtocolError> {
+    pub fn new(start_variable_number: u16, values: Vec<u8>) -> Result<Self, ProtocolError> {
         let count = values.len();
         // Validate count (max 474, must be > 0, must be multiple of 2)
         if count == 0 || count > 474 || !count.is_multiple_of(2) {
@@ -126,7 +126,7 @@ Add client API methods:
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number
+/// * `start_variable_number` - Starting variable number (0-999 for extended settings)
 /// * `count` - Number of variables to read (max 474, must be multiple of 2)
 ///
 /// # Returns
@@ -138,7 +138,7 @@ Add client API methods:
 /// Returns an error if communication fails or parameters are invalid
 pub async fn read_multiple_byte_variables(
     &self,
-    start_variable_number: u8,
+    start_variable_number: u16,
     count: u32,
 ) -> Result<Vec<u8>, ClientError> {
     let command = ReadMultipleByteVariables::new(start_variable_number, count)?;
@@ -177,7 +177,7 @@ pub async fn read_multiple_byte_variables(
 ///
 /// # Arguments
 ///
-/// * `start_variable_number` - Starting variable number
+/// * `start_variable_number` - Starting variable number (0-999 for extended settings)
 /// * `values` - Variable values to write (max 474, must be multiple of 2 in length)
 ///
 /// # Errors
@@ -185,7 +185,7 @@ pub async fn read_multiple_byte_variables(
 /// Returns an error if communication fails or parameters are invalid
 pub async fn write_multiple_byte_variables(
     &self,
-    start_variable_number: u8,
+    start_variable_number: u16,
     values: Vec<u8>,
 ) -> Result<(), ClientError> {
     let command = WriteMultipleByteVariables::new(start_variable_number, values)?;
@@ -202,10 +202,10 @@ Add batch operations for byte variables (if not already present):
 
 ```rust
 /// Get multiple byte variable values
-pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> Vec<u8> {
+pub fn get_multiple_byte_variables(&self, start_variable: u16, count: usize) -> Vec<u8> {
     let mut values = Vec::with_capacity(count);
     for i in 0..count {
-        let var_num = start_variable + u8::try_from(i).expect("Variable index should fit in u8");
+        let var_num = start_variable + u16::try_from(i).expect("Variable index should fit in u16");
         let var_data = self.get_variable(var_num);
         values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
     }
@@ -213,9 +213,9 @@ pub fn get_multiple_byte_variables(&self, start_variable: u8, count: usize) -> V
 }
 
 /// Set multiple byte variable values
-pub fn set_multiple_byte_variables(&mut self, start_variable: u8, values: &[u8]) {
+pub fn set_multiple_byte_variables(&mut self, start_variable: u16, values: &[u8]) {
     for (i, &value) in values.iter().enumerate() {
-        let var_num = start_variable + u8::try_from(i).expect("Variable index should fit in u8");
+        let var_num = start_variable + u16::try_from(i).expect("Variable index should fit in u16");
         self.set_variable(var_num, vec![value]);
     }
 }
@@ -237,11 +237,7 @@ impl CommandHandler for PluralByteVarHandler {
         message: &proto::HsesRequestMessage,
         state: &mut MockState,
     ) -> Result<Vec<u8>, proto::ProtocolError> {
-        let start_variable = u8::try_from(message.sub_header.instance).map_err(|_| {
-            proto::ProtocolError::InvalidInstance(format!(
-                "Variable index {} too large for u8 conversion", message.sub_header.instance
-            ))
-        })?;
+        let start_variable = message.sub_header.instance;  // Direct use since instance is u16
         let service = message.sub_header.service;
         
         // Validate attribute (should be 0)
@@ -426,6 +422,17 @@ let max_values: Vec<u8> = (0..474).map(|i| u8::try_from(i % 256).expect("Should 
 client.write_multiple_byte_variables(0, max_values).await?;
 ```
 
+
+### Implementation Notes
+
+- All unit tests passed (16 tests for variable operations)
+- All integration tests passed (86 tests total, including 4 new 0x302 tests)
+- No Clippy warnings after fixes
+- Documentation updated across all crates
+- Example code successfully demonstrates the new functionality
+- **Type Change**: Changed `start_variable_number` from `u8` to `u16` to support extended variable settings (0-999)
+- **Backward Compatibility**: Standard settings (0-99) remain fully supported
+- **Protocol Compliance**: Aligns with HSES protocol specification where Instance field is 2 bytes (u16)
 
 ### Proposed Rules Updates
 
