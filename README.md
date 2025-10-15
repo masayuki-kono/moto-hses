@@ -116,7 +116,11 @@ Comprehensive examples are available in the [`examples/`](moto-hses-client/examp
 - [`alarm_operations.rs`](moto-hses-client/examples/alarm_operations.rs) — Alarm data handling
 - [`io_operations.rs`](moto-hses-client/examples/io_operations.rs) — I/O operations
 - [`position_operations.rs`](moto-hses-client/examples/position_operations.rs) — Position data operations
-- [`variable_operations.rs`](moto-hses-client/examples/variable_operations.rs) — Variable read/write operations
+- [`byte_variable_operations.rs`](moto-hses-client/examples/byte_variable_operations.rs) — Byte variable operations
+- [`integer_variable_operations.rs`](moto-hses-client/examples/integer_variable_operations.rs) — Integer variable operations
+- [`double_variable_operations.rs`](moto-hses-client/examples/double_variable_operations.rs) — Double integer variable operations
+- [`real_variable_operations.rs`](moto-hses-client/examples/real_variable_operations.rs) — Real variable operations
+- [`string_variable_operations.rs`](moto-hses-client/examples/string_variable_operations.rs) — String variable operations
 - [`file_operations.rs`](moto-hses-client/examples/file_operations.rs) — File transfer operations
 - [`hold_servo_control.rs`](moto-hses-client/examples/hold_servo_control.rs) — Servo control operations
 - [`register_operations.rs`](moto-hses-client/examples/register_operations.rs) — Register operations
