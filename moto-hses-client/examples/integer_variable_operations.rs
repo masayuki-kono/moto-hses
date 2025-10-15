@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Plural Integer Variable Operations (0x303) ---");
 
     // Read multiple integer variables
-    match client.read_multiple_integer_variables(0, 4).await {
+    match client.read_multiple_i16(0, 4).await {
         Ok(values) => {
             info!("✓ Read 4 integer variables starting from I000:");
             for (i, value) in values.iter().enumerate() {
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write multiple integer variables
     let test_int_values = vec![100, -200, 300, -400];
-    match client.write_multiple_integer_variables(0, test_int_values.clone()).await {
+    match client.write_multiple_i16(0, test_int_values.clone()).await {
         Ok(()) => {
             info!("✓ Wrote {} integer variables starting from I000:", test_int_values.len());
             for (i, value) in test_int_values.iter().enumerate() {
@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify written values
     #[allow(clippy::expect_used)]
     match client
-        .read_multiple_integer_variables(
+        .read_multiple_i16(
             0,
             u32::try_from(test_int_values.len()).expect("Count should fit in u32"),
         )

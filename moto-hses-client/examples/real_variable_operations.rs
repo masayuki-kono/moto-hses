@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Plural Real Variable Operations (0x305) ---");
 
     // Read multiple real variables
-    match client.read_multiple_real_variables(0, 4).await {
+    match client.read_multiple_f32(0, 4).await {
         Ok(values) => {
             info!("✓ Read {count} real variables: {values:?}", count = values.len());
         }
@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write multiple real variables
     let values = vec![1.5, -2.75, std::f32::consts::PI, -4.0];
-    match client.write_multiple_real_variables(0, values.clone()).await {
+    match client.write_multiple_f32(0, values.clone()).await {
         Ok(()) => {
             info!("✓ Wrote {count} real variables: {values:?}", count = values.len());
         }
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Verify written values
-    match client.read_multiple_real_variables(0, 4).await {
+    match client.read_multiple_f32(0, 4).await {
         Ok(read_values) => {
             info!("✓ Read back {count} real variables: {read_values:?}", count = read_values.len());
         }
@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with different start variable
     let values2 = vec![0.5, -1.25];
-    match client.write_multiple_real_variables(10, values2.clone()).await {
+    match client.write_multiple_f32(10, values2.clone()).await {
         Ok(()) => {
             info!(
                 "✓ Wrote {count} real variables at offset 10: {values2:?}",
@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Verify values at offset 10
-    match client.read_multiple_real_variables(10, 2).await {
+    match client.read_multiple_f32(10, 2).await {
         Ok(read_values2) => {
             info!(
                 "✓ Read back {count} real variables at offset 10: {read_values2:?}",
