@@ -84,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Plural Double Variable Operations (0x304) ---");
 
     // Read multiple double precision integer variables
-    match client.read_multiple_double_variables(0, 4).await {
+    match client.read_multiple_i32(0, 4).await {
         Ok(values) => {
             info!("✓ Read multiple D variables: {values:?}");
         }
@@ -95,7 +95,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write multiple double precision integer variables
     let values = vec![1_000_000, -2_000_000, 2_147_483_647, -2_147_483_648];
-    match client.write_multiple_double_variables(0, values.clone()).await {
+    match client.write_multiple_i32(0, values.clone()).await {
         Ok(()) => {
             info!("✓ Wrote multiple D variables: {values:?}");
         }
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Verify written values
-    match client.read_multiple_double_variables(0, 4).await {
+    match client.read_multiple_i32(0, 4).await {
         Ok(read_values) => {
             info!("✓ Read back multiple D variables: {read_values:?}");
             if read_values == values {

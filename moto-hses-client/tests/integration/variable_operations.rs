@@ -29,10 +29,10 @@ test_with_logging!(test_variable_read_operations, {
 
     // Test string variables
     let s0 = client.read_string(40).await.expect("Failed to read string variable");
-    assert_eq!(String::from_utf8_lossy(&s0), "Hello");
+    assert_eq!(s0, "Hello");
 
     let s1 = client.read_string(41).await.expect("Failed to read string variable");
-    assert_eq!(String::from_utf8_lossy(&s1), "World");
+    assert_eq!(s1, "World");
 });
 
 test_with_logging!(test_variable_write_operations, {
@@ -72,25 +72,23 @@ test_with_logging!(test_string_variable_operations, {
     // Test string operations with expected initial values
     // Verify initial string values
     let s0 = client.read_string(40).await.expect("Failed to read initial string");
-    assert_eq!(String::from_utf8_lossy(&s0), "Hello");
+    assert_eq!(s0, "Hello");
 
     let s1 = client.read_string(41).await.expect("Failed to read initial string");
-    assert_eq!(String::from_utf8_lossy(&s1), "World");
+    assert_eq!(s1, "World");
 
     // Test writing new string
     let test_string = "Hello, Robot!";
     client
-        .write_string(40, test_string.as_bytes().to_vec())
+        .write_string(40, test_string.to_string())
         .await
         .expect("Failed to write string variable");
 
     wait_for_operation().await;
 
     // Read string back and verify
-    let read_string_bytes = client.read_string(40).await.expect("Failed to read string variable");
-
-    let read_string = String::from_utf8_lossy(&read_string_bytes);
-    assert_eq!(read_string.trim_end_matches('\0'), test_string);
+    let read_string = client.read_string(40).await.expect("Failed to read string variable");
+    assert_eq!(read_string, test_string);
 });
 
 test_with_logging!(test_invalid_variable_handling, {
@@ -113,14 +111,14 @@ test_with_logging!(test_invalid_variable_handling, {
     assert!(result.is_err(), "Invalid variable index should return error");
 
     // Test invalid string variable index
-    let result: Result<Vec<u8>, _> = client.read_string(255).await;
+    let result: Result<String, _> = client.read_string(255).await;
     assert!(result.is_err(), "Invalid string variable index should return error");
 
     // Test invalid variable index for write
     let result: Result<(), _> = client.write_i16(255, 42).await;
     assert!(result.is_err(), "Invalid variable index write should return error");
 
-    let result: Result<(), _> = client.write_string(255, b"test".to_vec()).await;
+    let result: Result<(), _> = client.write_string(255, "test".to_string()).await;
     assert!(result.is_err(), "Invalid string variable index write should return error");
 });
 
@@ -133,32 +131,28 @@ test_with_logging!(test_multiple_byte_variables_read_write, {
     // Test reading multiple byte variables (count must be multiple of 2)
     let values = vec![10, 20, 30, 40];
     client
-        .write_multiple_byte_variables(0, values.clone())
+        .write_multiple_u8(0, values.clone())
         .await
         .expect("Failed to write multiple byte variables");
 
     wait_for_operation().await;
 
     // Read back and verify
-    let read_values = client
-        .read_multiple_byte_variables(0, 4)
-        .await
-        .expect("Failed to read multiple byte variables");
+    let read_values =
+        client.read_multiple_u8(0, 4).await.expect("Failed to read multiple byte variables");
     assert_eq!(read_values, values);
 
     // Test boundary conditions
     let boundary_values = vec![99, 100];
     client
-        .write_multiple_byte_variables(98, boundary_values.clone())
+        .write_multiple_u8(98, boundary_values.clone())
         .await
         .expect("Failed to write boundary byte variables");
 
     wait_for_operation().await;
 
-    let read_boundary = client
-        .read_multiple_byte_variables(98, 2)
-        .await
-        .expect("Failed to read boundary byte variables");
+    let read_boundary =
+        client.read_multiple_u8(98, 2).await.expect("Failed to read boundary byte variables");
     assert_eq!(read_boundary, boundary_values);
 });
 
@@ -169,21 +163,21 @@ test_with_logging!(test_multiple_byte_variables_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test count must be multiple of 2 (should fail)
-    let result = client.read_multiple_byte_variables(0, 3).await;
+    let result = client.read_multiple_u8(0, 3).await;
     assert!(result.is_err(), "Odd count should fail");
 
-    let result = client.write_multiple_byte_variables(0, vec![1, 2, 3]).await;
+    let result = client.write_multiple_u8(0, vec![1, 2, 3]).await;
     assert!(result.is_err(), "Odd count write should fail");
 
     // Test count too large (should fail)
-    let result = client.read_multiple_byte_variables(0, 475).await;
+    let result = client.read_multiple_u8(0, 475).await;
     assert!(result.is_err(), "Count too large should fail");
 
     // Note: Instance range validation removed to support extended settings
     // The actual variable range is now configurable and not limited to 0-99
 
     // Test zero count (should fail)
-    let result = client.read_multiple_byte_variables(0, 0).await;
+    let result = client.read_multiple_u8(0, 0).await;
     assert!(result.is_err(), "Zero count should fail");
 });
 
@@ -197,14 +191,14 @@ test_with_logging!(test_multiple_byte_variables_large_batch, {
     let large_values: Vec<u8> =
         (0..100).map(|i| u8::try_from(i % 256).expect("Should fit in u8")).collect();
     client
-        .write_multiple_byte_variables(0, large_values.clone())
+        .write_multiple_u8(0, large_values.clone())
         .await
         .expect("Failed to write large batch of byte variables");
 
     wait_for_operation().await;
 
     let read_large = client
-        .read_multiple_byte_variables(0, 100)
+        .read_multiple_u8(0, 100)
         .await
         .expect("Failed to read large batch of byte variables");
     assert_eq!(read_large, large_values);
@@ -219,32 +213,28 @@ test_with_logging!(test_multiple_integer_variables_operations, {
     // Test writing multiple integer variables
     let values = vec![100, -200, 300, -400];
     client
-        .write_multiple_integer_variables(0, values.clone())
+        .write_multiple_i16(0, values.clone())
         .await
         .expect("Failed to write multiple integer variables");
 
     wait_for_operation().await;
 
     // Read back and verify
-    let read_values = client
-        .read_multiple_integer_variables(0, 4)
-        .await
-        .expect("Failed to read multiple integer variables");
+    let read_values =
+        client.read_multiple_i16(0, 4).await.expect("Failed to read multiple integer variables");
     assert_eq!(read_values, values);
 
     // Test boundary conditions
     let boundary_values = vec![99, -100];
     client
-        .write_multiple_integer_variables(98, boundary_values.clone())
+        .write_multiple_i16(98, boundary_values.clone())
         .await
         .expect("Failed to write boundary integer variables");
 
     wait_for_operation().await;
 
-    let read_boundary = client
-        .read_multiple_integer_variables(98, 2)
-        .await
-        .expect("Failed to read boundary integer variables");
+    let read_boundary =
+        client.read_multiple_i16(98, 2).await.expect("Failed to read boundary integer variables");
     assert_eq!(read_boundary, boundary_values);
 });
 
@@ -255,15 +245,15 @@ test_with_logging!(test_multiple_integer_variables_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test count too large (should fail)
-    let result = client.read_multiple_integer_variables(0, 238).await;
+    let result = client.read_multiple_i16(0, 238).await;
     assert!(result.is_err(), "Count too large should fail");
 
     // Test zero count (should fail)
-    let result = client.read_multiple_integer_variables(0, 0).await;
+    let result = client.read_multiple_i16(0, 0).await;
     assert!(result.is_err(), "Zero count should fail");
 
     // Test empty values write (should fail)
-    let result = client.write_multiple_integer_variables(0, vec![]).await;
+    let result = client.write_multiple_i16(0, vec![]).await;
     assert!(result.is_err(), "Empty values should fail");
 });
 
@@ -276,14 +266,14 @@ test_with_logging!(test_multiple_integer_variables_large_batch, {
     // Test maximum safe count (limited by variable number range 0-99)
     let large_values: Vec<i16> = (0..100).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
     client
-        .write_multiple_integer_variables(0, large_values.clone())
+        .write_multiple_i16(0, large_values.clone())
         .await
         .expect("Failed to write large batch of integer variables");
 
     wait_for_operation().await;
 
     let read_large = client
-        .read_multiple_integer_variables(0, 100)
+        .read_multiple_i16(0, 100)
         .await
         .expect("Failed to read large batch of integer variables");
     assert_eq!(read_large, large_values);
@@ -298,14 +288,14 @@ test_with_logging!(test_multiple_integer_variables_maximum_count, {
     // Test maximum count (237) - this tests the protocol limit
     let max_values: Vec<i16> = (0..237).map(|i| i16::try_from(i % 1000).unwrap_or(0)).collect();
     client
-        .write_multiple_integer_variables(0, max_values.clone())
+        .write_multiple_i16(0, max_values.clone())
         .await
         .expect("Failed to write maximum count integer variables");
 
     wait_for_operation().await;
 
     let read_max = client
-        .read_multiple_integer_variables(0, 237)
+        .read_multiple_i16(0, 237)
         .await
         .expect("Failed to read maximum count integer variables");
     assert_eq!(read_max, max_values);
@@ -318,17 +308,15 @@ test_with_logging!(test_plural_double_variable_operations, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test reading multiple double precision integer variables
-    let read_values = client
-        .read_multiple_double_variables(0, 4)
-        .await
-        .expect("Failed to read multiple double variables");
+    let read_values =
+        client.read_multiple_i32(0, 4).await.expect("Failed to read multiple double variables");
     assert_eq!(read_values.len(), 4);
     assert_eq!(read_values, vec![0, 0, 0, 0]); // Default values
 
     // Test writing multiple double precision integer variables
     let values = vec![1_000_000, -2_000_000, 2_147_483_647, -2_147_483_648];
     client
-        .write_multiple_double_variables(0, values.clone())
+        .write_multiple_i32(0, values.clone())
         .await
         .expect("Failed to write multiple double variables");
 
@@ -336,7 +324,7 @@ test_with_logging!(test_plural_double_variable_operations, {
 
     // Read back and verify
     let read_values = client
-        .read_multiple_double_variables(0, 4)
+        .read_multiple_i32(0, 4)
         .await
         .expect("Failed to read back multiple double variables");
     assert_eq!(read_values, values);
@@ -344,14 +332,14 @@ test_with_logging!(test_plural_double_variable_operations, {
     // Test with different start variable
     let values2 = vec![500_000, -1_500_000];
     client
-        .write_multiple_double_variables(10, values2.clone())
+        .write_multiple_i32(10, values2.clone())
         .await
         .expect("Failed to write multiple double variables at offset 10");
 
     wait_for_operation().await;
 
     let read_values2 = client
-        .read_multiple_double_variables(10, 2)
+        .read_multiple_i32(10, 2)
         .await
         .expect("Failed to read multiple double variables at offset 10");
     assert_eq!(read_values2, values2);
@@ -364,18 +352,18 @@ test_with_logging!(test_plural_double_variable_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test invalid count: zero
-    let result: Result<Vec<i32>, _> = client.read_multiple_double_variables(0, 0).await;
+    let result: Result<Vec<i32>, _> = client.read_multiple_i32(0, 0).await;
     assert!(result.is_err(), "Count 0 should return error");
 
-    let result: Result<(), _> = client.write_multiple_double_variables(0, vec![]).await;
+    let result: Result<(), _> = client.write_multiple_i32(0, vec![]).await;
     assert!(result.is_err(), "Empty values should return error");
 
     // Test invalid count: too large
-    let result: Result<Vec<i32>, _> = client.read_multiple_double_variables(0, 119).await;
+    let result: Result<Vec<i32>, _> = client.read_multiple_i32(0, 119).await;
     assert!(result.is_err(), "Count 119 should return error");
 
     let large_values: Vec<i32> = vec![0; 119];
-    let result: Result<(), _> = client.write_multiple_double_variables(0, large_values).await;
+    let result: Result<(), _> = client.write_multiple_i32(0, large_values).await;
     assert!(result.is_err(), "119 values should return error");
 });
 
@@ -388,14 +376,14 @@ test_with_logging!(test_plural_double_variable_maximum_count, {
     // Test maximum count (118)
     let max_values: Vec<i32> = (0..118).map(|i| i * 1000).collect();
     client
-        .write_multiple_double_variables(0, max_values.clone())
+        .write_multiple_i32(0, max_values.clone())
         .await
         .expect("Failed to write maximum count double variables");
 
     wait_for_operation().await;
 
     let read_max = client
-        .read_multiple_double_variables(0, 118)
+        .read_multiple_i32(0, 118)
         .await
         .expect("Failed to read maximum count double variables");
     assert_eq!(read_max, max_values);
@@ -408,40 +396,36 @@ test_with_logging!(test_plural_real_variable_operations, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test reading multiple real type variables
-    let read_values = client
-        .read_multiple_real_variables(0, 4)
-        .await
-        .expect("Failed to read multiple real variables");
+    let read_values =
+        client.read_multiple_f32(0, 4).await.expect("Failed to read multiple real variables");
     assert_eq!(read_values.len(), 4);
     assert_eq!(read_values, vec![0.0, 0.0, 0.0, 0.0]); // Default values
 
     // Test writing multiple real type variables
     let values = vec![1.5, -2.75, std::f32::consts::PI, -4.0];
     client
-        .write_multiple_real_variables(0, values.clone())
+        .write_multiple_f32(0, values.clone())
         .await
         .expect("Failed to write multiple real variables");
 
     wait_for_operation().await;
 
     // Read back and verify
-    let read_values = client
-        .read_multiple_real_variables(0, 4)
-        .await
-        .expect("Failed to read back multiple real variables");
+    let read_values =
+        client.read_multiple_f32(0, 4).await.expect("Failed to read back multiple real variables");
     assert_eq!(read_values, values);
 
     // Test with different start variable
     let values2 = vec![0.5, -1.25];
     client
-        .write_multiple_real_variables(10, values2.clone())
+        .write_multiple_f32(10, values2.clone())
         .await
         .expect("Failed to write multiple real variables at offset 10");
 
     wait_for_operation().await;
 
     let read_values2 = client
-        .read_multiple_real_variables(10, 2)
+        .read_multiple_f32(10, 2)
         .await
         .expect("Failed to read multiple real variables at offset 10");
     assert_eq!(read_values2, values2);
@@ -454,20 +438,20 @@ test_with_logging!(test_plural_real_variable_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test invalid count: zero
-    let result: Result<Vec<f32>, _> = client.read_multiple_real_variables(0, 0).await;
+    let result: Result<Vec<f32>, _> = client.read_multiple_f32(0, 0).await;
     assert!(result.is_err(), "Zero count should fail");
 
     // Test invalid count: too large
-    let result: Result<Vec<f32>, _> = client.read_multiple_real_variables(0, 119).await;
+    let result: Result<Vec<f32>, _> = client.read_multiple_f32(0, 119).await;
     assert!(result.is_err(), "Count too large should fail");
 
     // Test empty values write (should fail)
-    let result: Result<(), _> = client.write_multiple_real_variables(0, vec![]).await;
+    let result: Result<(), _> = client.write_multiple_f32(0, vec![]).await;
     assert!(result.is_err(), "Empty values should fail");
 
     // Test values count too large (should fail)
     let large_values: Vec<f32> = vec![0.0; 119];
-    let result: Result<(), _> = client.write_multiple_real_variables(0, large_values).await;
+    let result: Result<(), _> = client.write_multiple_f32(0, large_values).await;
     assert!(result.is_err(), "Values count too large should fail");
 });
 
@@ -481,14 +465,14 @@ test_with_logging!(test_plural_real_variable_large_batch, {
     #[allow(clippy::cast_precision_loss)]
     let large_values: Vec<f32> = (0..50).map(|i| i as f32 * 1.5).collect();
     client
-        .write_multiple_real_variables(0, large_values.clone())
+        .write_multiple_f32(0, large_values.clone())
         .await
         .expect("Failed to write large batch of real variables");
 
     wait_for_operation().await;
 
     let read_large = client
-        .read_multiple_real_variables(0, 50)
+        .read_multiple_f32(0, 50)
         .await
         .expect("Failed to read large batch of real variables");
     assert_eq!(read_large, large_values);
@@ -504,14 +488,14 @@ test_with_logging!(test_plural_real_variable_maximum_count, {
     #[allow(clippy::cast_precision_loss)]
     let max_values: Vec<f32> = (0..118).map(|i| i as f32 * 0.1).collect();
     client
-        .write_multiple_real_variables(0, max_values.clone())
+        .write_multiple_f32(0, max_values.clone())
         .await
         .expect("Failed to write maximum count real variables");
 
     wait_for_operation().await;
 
     let read_max = client
-        .read_multiple_real_variables(0, 118)
+        .read_multiple_f32(0, 118)
         .await
         .expect("Failed to read maximum count real variables");
     assert_eq!(read_max, max_values);
@@ -538,17 +522,14 @@ test_with_logging!(test_plural_real_variable_floating_point_precision, {
     ];
 
     client
-        .write_multiple_real_variables(0, precision_values.clone())
+        .write_multiple_f32(0, precision_values.clone())
         .await
         .expect("Failed to write precision test real variables");
 
     wait_for_operation().await;
 
     let read_precision = client
-        .read_multiple_real_variables(
-            0,
-            u32::try_from(precision_values.len()).expect("Should fit in u32"),
-        )
+        .read_multiple_f32(0, u32::try_from(precision_values.len()).expect("Should fit in u32"))
         .await
         .expect("Failed to read precision test real variables");
 
@@ -575,7 +556,7 @@ test_with_logging!(test_multiple_character_variables_operations, {
     let values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
 
     client
-        .write_multiple_character_variables(0, values.clone())
+        .write_multiple_strings(0, values.clone())
         .await
         .expect("Failed to write multiple character variables");
 
@@ -583,7 +564,7 @@ test_with_logging!(test_multiple_character_variables_operations, {
 
     // Read back and verify
     let read_values = client
-        .read_multiple_character_variables(0, 3)
+        .read_multiple_strings(0, 3)
         .await
         .expect("Failed to read multiple character variables");
     assert_eq!(read_values, values);
@@ -592,14 +573,14 @@ test_with_logging!(test_multiple_character_variables_operations, {
     let single_values = vec!["Test".to_string()];
 
     client
-        .write_multiple_character_variables(10, single_values.clone())
+        .write_multiple_strings(10, single_values.clone())
         .await
         .expect("Failed to write single character variable");
 
     wait_for_operation().await;
 
     let read_single = client
-        .read_multiple_character_variables(10, 1)
+        .read_multiple_strings(10, 1)
         .await
         .expect("Failed to read single character variable");
     assert_eq!(read_single, single_values);
@@ -608,14 +589,14 @@ test_with_logging!(test_multiple_character_variables_operations, {
     let max_values: Vec<String> = (0..29).map(|i| format!("Test{i:02}")).collect();
 
     client
-        .write_multiple_character_variables(20, max_values.clone())
+        .write_multiple_strings(20, max_values.clone())
         .await
         .expect("Failed to write maximum count character variables");
 
     wait_for_operation().await;
 
     let read_max = client
-        .read_multiple_character_variables(20, 29)
+        .read_multiple_strings(20, 29)
         .await
         .expect("Failed to read maximum count character variables");
     assert_eq!(read_max, max_values);
@@ -625,14 +606,14 @@ test_with_logging!(test_multiple_character_variables_operations, {
         vec!["ASCII_STRING".to_string(), "こんにちは".to_string(), "Binary123".to_string()];
 
     client
-        .write_multiple_character_variables(50, pattern_values.clone())
+        .write_multiple_strings(50, pattern_values.clone())
         .await
         .expect("Failed to write pattern character variables");
 
     wait_for_operation().await;
 
     let read_patterns = client
-        .read_multiple_character_variables(50, 3)
+        .read_multiple_strings(50, 3)
         .await
         .expect("Failed to read pattern character variables");
     assert_eq!(read_patterns, pattern_values);
@@ -645,30 +626,50 @@ test_with_logging!(test_multiple_character_variables_validation, {
     let client = create_test_client().await.expect("Failed to create client");
 
     // Test invalid count: 0
-    let result = client.read_multiple_character_variables(0, 0).await;
+    let result = client.read_multiple_strings(0, 0).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 0 (must be 1-29)")
+    );
 
     // Test invalid count: > 29
-    let result = client.read_multiple_character_variables(0, 30).await;
+    let result = client.read_multiple_strings(0, 30).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 30 (must be 1-29)")
+    );
 
     // Test invalid count for write: 0
-    let result = client.write_multiple_character_variables(0, vec![]).await;
+    let result = client.write_multiple_strings(0, vec![]).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 0"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 0 (must be 1-29)")
+    );
 
     // Test invalid count for write: > 29
     let large_values: Vec<String> = (0..30).map(|i| format!("Test{i}")).collect();
-    let result = client.write_multiple_character_variables(0, large_values).await;
+    let result = client.write_multiple_strings(0, large_values).await;
     assert!(result.is_err());
-    assert!(result.expect_err("Should be error").to_string().contains("Invalid count: 30"));
+    assert!(
+        result
+            .expect_err("Should be error")
+            .to_string()
+            .contains("Invalid count: 30 (must be 1-29)")
+    );
 
     // Test string too long when encoded
     let long_string = "This is a very long string that exceeds 16 bytes when encoded";
     let long_values = vec![long_string.to_string()];
-    let result = client.write_multiple_character_variables(0, long_values).await;
+    let result = client.write_multiple_strings(0, long_values).await;
     assert!(result.is_err());
     assert!(
         result.expect_err("Should be error").to_string().contains("exceeds 16 bytes when encoded")

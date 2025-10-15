@@ -53,26 +53,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Read string variable
     match client.read_string(0).await {
-        Ok(value) => info!("✓ S000 = '{}'", String::from_utf8_lossy(&value)),
+        Ok(value) => info!("✓ S000 = '{value}'"),
         Err(e) => info!("✗ Failed to read S000: {e}"),
     }
 
     // Write string variable
-    let test_string = b"Hello, Robot!";
-    match client.write_string(0, test_string.to_vec()).await {
-        Ok(()) => info!("✓ Wrote '{}' to S000", String::from_utf8_lossy(test_string)),
+    let test_string = "Hello, Robot!";
+    match client.write_string(0, test_string.to_string()).await {
+        Ok(()) => info!("✓ Wrote '{test_string}' to S000"),
         Err(e) => info!("✗ Failed to write to S000: {e}"),
     }
 
     // Verify written string
     match client.read_string(0).await {
         Ok(value) => {
-            let expected = String::from_utf8_lossy(test_string);
-            let actual = String::from_utf8_lossy(&value);
             if value == test_string {
-                info!("✓ S000 = '{actual}' (expected: '{expected}')");
+                info!("✓ S000 = '{value}' (expected: '{test_string}')");
             } else {
-                info!("✗ S000 = '{actual}' (expected: '{expected}')");
+                info!("✗ S000 = '{value}' (expected: '{test_string}')");
             }
         }
         Err(e) => info!("✗ Failed to read S000: {e}"),
@@ -84,13 +82,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Write multiple character type variables
     let character_values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
 
-    match client.write_multiple_character_variables(0, character_values.clone()).await {
+    match client.write_multiple_strings(0, character_values.clone()).await {
         Ok(()) => info!("✓ Wrote {} character variables to S000-S002", character_values.len()),
         Err(e) => info!("✗ Failed to write multiple character variables: {e}"),
     }
 
     // Read multiple character type variables and verify
-    match client.read_multiple_character_variables(0, 3).await {
+    match client.read_multiple_strings(0, 3).await {
         Ok(read_values) => {
             info!("✓ Read {} character variables from S000-S002:", read_values.len());
             for (i, value) in read_values.iter().enumerate() {

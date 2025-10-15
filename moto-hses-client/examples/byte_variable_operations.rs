@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Plural Byte Variable Operations (0x302) ---");
 
     // Read multiple byte variables
-    match client.read_multiple_byte_variables(0, 4).await {
+    match client.read_multiple_u8(0, 4).await {
         Ok(values) => {
             info!("✓ Read 4 byte variables starting from B000:");
             for (i, value) in values.iter().enumerate() {
@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write multiple byte variables
     let test_values = vec![100, 200, 50, 75];
-    match client.write_multiple_byte_variables(0, test_values.clone()).await {
+    match client.write_multiple_u8(0, test_values.clone()).await {
         Ok(()) => {
             info!("✓ Wrote {} byte variables starting from B000:", test_values.len());
             for (i, value) in test_values.iter().enumerate() {
@@ -114,10 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Verify written values
     #[allow(clippy::expect_used)]
     match client
-        .read_multiple_byte_variables(
-            0,
-            u32::try_from(test_values.len()).expect("Count should fit in u32"),
-        )
+        .read_multiple_u8(0, u32::try_from(test_values.len()).expect("Count should fit in u32"))
         .await
     {
         Ok(values) => {
