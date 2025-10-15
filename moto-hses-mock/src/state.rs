@@ -246,6 +246,49 @@ impl MockState {
         }
     }
 
+    /// Get multiple integer variable values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u8::MAX`
+    #[allow(clippy::panic)]
+    pub fn get_multiple_integer_variables(&self, start_variable: u8, count: usize) -> Vec<i16> {
+        let mut values = Vec::with_capacity(count);
+        for i in 0..count {
+            let var_num = start_variable
+                + u8::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                });
+            let var_data = self.get_variable(var_num);
+            // I variable is 2 bytes (i16)
+            let value = var_data.map_or(0_i16, |data| {
+                if data.len() >= 2 {
+                    i16::from_le_bytes([data[0], data[1]])
+                } else {
+                    0
+                }
+            });
+            values.push(value);
+        }
+        values
+    }
+
+    /// Set multiple integer variable values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the variable index exceeds `u8::MAX`
+    #[allow(clippy::panic)]
+    pub fn set_multiple_integer_variables(&mut self, start_variable: u8, values: &[i16]) {
+        for (i, &value) in values.iter().enumerate() {
+            let var_num = start_variable
+                + u8::try_from(i).unwrap_or_else(|_| {
+                    panic!("Variable index {i} (start_variable: {start_variable}) exceeds u8::MAX")
+                });
+            self.set_variable(var_num, value.to_le_bytes().to_vec());
+        }
+    }
+
     /// Get I/O state
     #[must_use]
     pub fn get_io_state(&self, io_number: u16) -> bool {
