@@ -26,4 +26,6 @@ pub use position::ReadCurrentPosition;
 pub use register::{ReadMultipleRegisters, ReadRegister, WriteMultipleRegisters, WriteRegister};
 pub use servo::{HoldServoControl, HoldServoType, HoldServoValue};
 pub use status::{ReadStatus, ReadStatusData1, ReadStatusData2};
-pub use variable::{ReadVar, VariableCommandId, WriteVar};
+pub use variable::{
+    ReadMultipleByteVariables, ReadVar, VariableCommandId, WriteMultipleByteVariables, WriteVar,
+};
