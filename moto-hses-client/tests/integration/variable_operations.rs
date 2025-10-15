@@ -400,3 +400,167 @@ test_with_logging!(test_plural_double_variable_maximum_count, {
         .expect("Failed to read maximum count double variables");
     assert_eq!(read_max, max_values);
 });
+
+test_with_logging!(test_plural_real_variable_operations, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test reading multiple real type variables
+    let read_values = client
+        .read_multiple_real_variables(0, 4)
+        .await
+        .expect("Failed to read multiple real variables");
+    assert_eq!(read_values.len(), 4);
+    assert_eq!(read_values, vec![0.0, 0.0, 0.0, 0.0]); // Default values
+
+    // Test writing multiple real type variables
+    let values = vec![1.5, -2.75, std::f32::consts::PI, -4.0];
+    client
+        .write_multiple_real_variables(0, values.clone())
+        .await
+        .expect("Failed to write multiple real variables");
+
+    wait_for_operation().await;
+
+    // Read back and verify
+    let read_values = client
+        .read_multiple_real_variables(0, 4)
+        .await
+        .expect("Failed to read back multiple real variables");
+    assert_eq!(read_values, values);
+
+    // Test with different start variable
+    let values2 = vec![0.5, -1.25];
+    client
+        .write_multiple_real_variables(10, values2.clone())
+        .await
+        .expect("Failed to write multiple real variables at offset 10");
+
+    wait_for_operation().await;
+
+    let read_values2 = client
+        .read_multiple_real_variables(10, 2)
+        .await
+        .expect("Failed to read multiple real variables at offset 10");
+    assert_eq!(read_values2, values2);
+});
+
+test_with_logging!(test_plural_real_variable_validation, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test invalid count: zero
+    let result: Result<Vec<f32>, _> = client.read_multiple_real_variables(0, 0).await;
+    assert!(result.is_err(), "Zero count should fail");
+
+    // Test invalid count: too large
+    let result: Result<Vec<f32>, _> = client.read_multiple_real_variables(0, 119).await;
+    assert!(result.is_err(), "Count too large should fail");
+
+    // Test empty values write (should fail)
+    let result: Result<(), _> = client.write_multiple_real_variables(0, vec![]).await;
+    assert!(result.is_err(), "Empty values should fail");
+
+    // Test values count too large (should fail)
+    let large_values: Vec<f32> = vec![0.0; 119];
+    let result: Result<(), _> = client.write_multiple_real_variables(0, large_values).await;
+    assert!(result.is_err(), "Values count too large should fail");
+});
+
+test_with_logging!(test_plural_real_variable_large_batch, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test large batch of real variables
+    #[allow(clippy::cast_precision_loss)]
+    let large_values: Vec<f32> = (0..50).map(|i| i as f32 * 1.5).collect();
+    client
+        .write_multiple_real_variables(0, large_values.clone())
+        .await
+        .expect("Failed to write large batch of real variables");
+
+    wait_for_operation().await;
+
+    let read_large = client
+        .read_multiple_real_variables(0, 50)
+        .await
+        .expect("Failed to read large batch of real variables");
+    assert_eq!(read_large, large_values);
+});
+
+test_with_logging!(test_plural_real_variable_maximum_count, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test maximum count (118) - this tests the protocol limit
+    #[allow(clippy::cast_precision_loss)]
+    let max_values: Vec<f32> = (0..118).map(|i| i as f32 * 0.1).collect();
+    client
+        .write_multiple_real_variables(0, max_values.clone())
+        .await
+        .expect("Failed to write maximum count real variables");
+
+    wait_for_operation().await;
+
+    let read_max = client
+        .read_multiple_real_variables(0, 118)
+        .await
+        .expect("Failed to read maximum count real variables");
+    assert_eq!(read_max, max_values);
+});
+
+test_with_logging!(test_plural_real_variable_floating_point_precision, {
+    let _server =
+        create_variable_test_server().await.expect("Failed to start variable test server");
+
+    let client = create_test_client().await.expect("Failed to create client");
+
+    // Test floating point precision with various values
+    let precision_values = vec![
+        0.0,
+        -0.0,
+        1.0,
+        -1.0,
+        std::f32::consts::PI,
+        std::f32::consts::E,
+        1.0e-6,
+        1.0e6,
+        f32::MAX,
+        f32::MIN_POSITIVE,
+    ];
+
+    client
+        .write_multiple_real_variables(0, precision_values.clone())
+        .await
+        .expect("Failed to write precision test real variables");
+
+    wait_for_operation().await;
+
+    let read_precision = client
+        .read_multiple_real_variables(
+            0,
+            u32::try_from(precision_values.len()).expect("Should fit in u32"),
+        )
+        .await
+        .expect("Failed to read precision test real variables");
+
+    // Compare with epsilon tolerance for floating point values
+    for (expected, actual) in precision_values.iter().zip(read_precision.iter()) {
+        if expected.is_finite() && actual.is_finite() {
+            assert!(
+                (expected - actual).abs() < f32::EPSILON,
+                "Precision mismatch: expected {expected}, got {actual}"
+            );
+        } else {
+            assert_eq!(expected, actual, "Non-finite value mismatch");
+        }
+    }
+});

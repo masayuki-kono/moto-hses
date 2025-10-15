@@ -5,6 +5,7 @@ use moto_hses_proto::{ROBOT_CONTROL_PORT, TextEncoding};
 use std::time::Duration;
 
 #[tokio::main]
+#[allow(clippy::too_many_lines)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let args: Vec<String> = std::env::args().collect();
@@ -77,6 +78,67 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Err(e) => {
             info!("✗ Failed to read R000: {e}");
+        }
+    }
+
+    // Plural Real Variable Operations (0x305 command)
+    info!("\n--- Plural Real Variable Operations (0x305) ---");
+
+    // Read multiple real variables
+    match client.read_multiple_real_variables(0, 4).await {
+        Ok(values) => {
+            info!("✓ Read {count} real variables: {values:?}", count = values.len());
+        }
+        Err(e) => {
+            info!("✗ Failed to read multiple real variables: {e}");
+        }
+    }
+
+    // Write multiple real variables
+    let values = vec![1.5, -2.75, std::f32::consts::PI, -4.0];
+    match client.write_multiple_real_variables(0, values.clone()).await {
+        Ok(()) => {
+            info!("✓ Wrote {count} real variables: {values:?}", count = values.len());
+        }
+        Err(e) => {
+            info!("✗ Failed to write multiple real variables: {e}");
+        }
+    }
+
+    // Verify written values
+    match client.read_multiple_real_variables(0, 4).await {
+        Ok(read_values) => {
+            info!("✓ Read back {count} real variables: {read_values:?}", count = read_values.len());
+        }
+        Err(e) => {
+            info!("✗ Failed to read back multiple real variables: {e}");
+        }
+    }
+
+    // Test with different start variable
+    let values2 = vec![0.5, -1.25];
+    match client.write_multiple_real_variables(10, values2.clone()).await {
+        Ok(()) => {
+            info!(
+                "✓ Wrote {count} real variables at offset 10: {values2:?}",
+                count = values2.len()
+            );
+        }
+        Err(e) => {
+            info!("✗ Failed to write real variables at offset 10: {e}");
+        }
+    }
+
+    // Verify values at offset 10
+    match client.read_multiple_real_variables(10, 2).await {
+        Ok(read_values2) => {
+            info!(
+                "✓ Read back {count} real variables at offset 10: {read_values2:?}",
+                count = read_values2.len()
+            );
+        }
+        Err(e) => {
+            info!("✗ Failed to read back real variables at offset 10: {e}");
         }
     }
 
