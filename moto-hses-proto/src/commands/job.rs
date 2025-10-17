@@ -197,7 +197,7 @@ impl Command for JobSelectCommand {
     }
 
     fn attribute(&self) -> u8 {
-        1 // Fixed to 1
+        0 // Fixed to 0(All attributes)
     }
 
     fn service(&self) -> u8 {
