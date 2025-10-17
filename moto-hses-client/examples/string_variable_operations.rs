@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("\n--- Multiple Character Variable Operations (0x306) ---");
 
     // Write multiple character type variables
-    let character_values = vec!["Hello".to_string(), "World".to_string(), "Test1234".to_string()];
+    let character_values = vec!["Hello".to_string(), "Robot".to_string(), "World".to_string()];
 
     match client.write_multiple_strings(0, character_values.clone()).await {
         Ok(()) => info!("✓ Wrote {} character variables to S000-S002", character_values.len()),
@@ -112,6 +112,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => info!("✗ Failed to read multiple character variables: {e}"),
     }
 
-    info!("\n--- String Variable Operations Example completed successfully ---");
     Ok(())
 }
