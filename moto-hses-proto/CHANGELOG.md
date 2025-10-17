@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-10-17
+
+### Features
+- **Robot Control Commands**:
+  - Start-up (Job Start) (0x86)
+  - Job Select (0x87)
+  - Plural I/O Data Reading/Writing (0x300)
+  - Plural Register Data Reading/Writing (0x301)
+  - Plural Variable Operations (0x302-0x306): Byte, Integer, Double Precision Integer, Real, Character types
+
 ## [0.1.2] - 2025-10-07
 
 ### Refactored
