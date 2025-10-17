@@ -115,33 +115,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // Test with different start variable
-    let values2 = vec![0.5, -1.25];
-    match client.write_multiple_f32(10, values2.clone()).await {
-        Ok(()) => {
-            info!(
-                "✓ Wrote {count} real variables at offset 10: {values2:?}",
-                count = values2.len()
-            );
-        }
-        Err(e) => {
-            info!("✗ Failed to write real variables at offset 10: {e}");
-        }
-    }
-
-    // Verify values at offset 10
-    match client.read_multiple_f32(10, 2).await {
-        Ok(read_values2) => {
-            info!(
-                "✓ Read back {count} real variables at offset 10: {read_values2:?}",
-                count = read_values2.len()
-            );
-        }
-        Err(e) => {
-            info!("✗ Failed to read back real variables at offset 10: {e}");
-        }
-    }
-
-    info!("\n--- Real Variable Operations Example completed successfully ---");
     Ok(())
 }
