@@ -65,19 +65,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Register 0 value after write: {new_value}");
 
     // Test reading multiple registers (0x301 command)
-    info!("Reading multiple registers from 0 to 4...");
-    let values = client.read_multiple_registers(0, 5).await?;
+    info!("Reading multiple registers from 2 to 6...");
+    let values = client.read_multiple_registers(2, 5).await?;
     info!("Read {} register values: {values:?}", values.len());
 
     // Test writing multiple registers (0x301 command)
-    info!("Writing multiple registers to 10-14...");
+    info!("Writing multiple registers to 2-6...");
     let values_to_write = vec![1000, 2000, 3000, 4000, 5000];
-    client.write_multiple_registers(10, values_to_write.clone()).await?;
+    client.write_multiple_registers(2, values_to_write.clone()).await?;
     info!("Successfully wrote {} register values", values_to_write.len());
 
     // Verify the multiple register write
-    info!("Reading back multiple registers from 10-14 to verify write...");
-    let read_values = client.read_multiple_registers(10, 5).await?;
+    info!("Reading back multiple registers from 2-6 to verify write...");
+    let read_values = client.read_multiple_registers(2, 5).await?;
     info!("Read back values: {read_values:?}");
     info!(
         "Write verification: {}",
