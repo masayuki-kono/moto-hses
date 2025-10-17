@@ -307,7 +307,7 @@ impl HsesClient {
     /// # Arguments
     ///
     /// * `select_type` - Type of job to select
-    /// * `job_name` - Name of the job to select (max 32 bytes when encoded)
+    /// * `job_name` - Name of the job to select (max 32 bytes when encoded, extension .JOB not required)
     /// * `line_number` - Starting line number (0 to 9999)
     ///
     /// # Errors

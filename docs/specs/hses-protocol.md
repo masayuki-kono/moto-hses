@@ -1281,7 +1281,8 @@ This data interlocks the P.P (Programming Pendant) and I/O operation system sign
   - `13`: Set master job (Task 3)
   - `14`: Set master job (Task 4)
   - `15`: Set master job (Task 5)
-- **Attribute**: Fixed to 1
+- **Attribute**: Fixed to 0
+  - Note: While the specification states that "1:Job name,2:Line number" can also be specified, the Service only accepts 0x02 and specifying any Attribute other than 0 will return A002 (Attribute Error)
 - **Service**: 0x02 (Set_Attribute_All)
 - **Payload**:
   - 9 × 32-bit integers (36 bytes): Job selection data

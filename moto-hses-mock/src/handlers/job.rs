@@ -100,8 +100,8 @@ impl CommandHandler for JobSelectHandler {
             return Err(proto::ProtocolError::InvalidMessage("Invalid instance".to_string()));
         }
 
-        // Validate attribute (should be 1)
-        if message.sub_header.attribute != 1 {
+        // Validate attribute (should be 0)
+        if message.sub_header.attribute != 0 {
             return Err(proto::ProtocolError::InvalidAttribute);
         }
 

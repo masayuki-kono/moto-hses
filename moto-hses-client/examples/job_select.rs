@@ -49,8 +49,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    match client.select_job(JobSelectType::InExecution, "MAIN.JOB", 2).await {
-        Ok(()) => println!("✓ Successfully selected MAIN.JOB for execution"),
+    // Job name does not require extension (.JOB)
+    let job_name = "TEST".to_string();
+    let line_number = 2;
+    match client.select_job(JobSelectType::InExecution, job_name.clone(), line_number).await {
+        Ok(()) => println!("✓ Successfully selected {job_name} for execution"),
         Err(e) => println!("✗ Failed to select job: {}", e),
     }
 

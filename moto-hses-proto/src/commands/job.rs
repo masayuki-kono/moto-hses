@@ -197,7 +197,7 @@ impl Command for JobSelectCommand {
     }
 
     fn attribute(&self) -> u8 {
-        1 // Fixed to 1
+        0 // Fixed to 0(All attributes)
     }
 
     fn service(&self) -> u8 {
@@ -238,7 +238,7 @@ mod tests {
 
         assert_eq!(JobSelectCommand::command_id(), 0x87);
         assert_eq!(command.instance(), 1);
-        assert_eq!(command.attribute(), 1);
+        assert_eq!(command.attribute(), 0);
         assert_eq!(command.service(), 0x02);
     }
 
