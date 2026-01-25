@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-01-25
+
+### Changed
+- Remove unused third-party/fs100 submodule
+- Migrate documentation references to external skills
+
 ## [0.2.0] - 2025-10-17
 
 ### Features
