@@ -22,3 +22,11 @@ target
 
 # Log files
 logs
+
+# Symlinked skills (installed via add-skill)
+.cursor/skills/hses-protocol
+.cursor/skills/moto-hses-usage
+.cursor/skills/rust-code-quality-guide
+
+# Agent skills installed via add-skill
+.agents

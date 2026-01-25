@@ -22,9 +22,9 @@ This project implements features step by step, ensuring that unit tests pass at 
 
 When there are unclear points, refer to specifications in the following order:
 
-1. `docs/design/protocol-commands.md` - HSES Protocol Command Reference
+1. **moto-hses-usage** skill - HSES Protocol Command Reference (see `references/protocol-commands.md` in the skill)
 2. `docs/design/architecture.md` - Architecture Design
-3. `docs/specs/hses-protocol.md` - HSES Protocol Specification
+3. **hses-protocol** skill - HSES Protocol Specification (see `references/hses-protocol.md` in the skill)
 
 ## Code Quality Rules
 

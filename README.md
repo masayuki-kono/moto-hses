@@ -75,12 +75,12 @@ The following robot models have been tested and verified for compatibility:
 
 ### Specifications
 
-- [`docs/specs/hses-protocol.md`](docs/specs/hses-protocol.md) — HSES protocol specification and implementation guidelines
+- **hses-protocol** skill — HSES protocol specification and implementation guidelines (see `references/hses-protocol.md` in the skill)
 
 ### Design Documents
 
 - [`docs/design/architecture.md`](docs/design/architecture.md) — System architecture and design principles
-- [`docs/design/protocol-commands.md`](docs/design/protocol-commands.md) — HSES Protocol Command Reference
+- **moto-hses-usage** skill — HSES Protocol Command Reference (see `references/protocol-commands.md` in the skill)
 
 ### Testing
 
