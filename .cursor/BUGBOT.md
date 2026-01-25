@@ -29,6 +29,6 @@ The following items are automatically checked by GitHub Actions, so no manual re
 
 ## Reference Materials
 - [Implementation Rules](.cursor/rules/implementation-rules.mdc) - Development rules and testing strategy
-- [HSES Protocol Specification](docs/specs/hses-protocol.md) - Protocol specification
+- **hses-protocol** skill - HSES Protocol Specification (see `references/hses-protocol.md` in the skill)
 - [Architecture Design](docs/design/architecture.md) - Architecture design
-- [Protocol Commands Reference](docs/design/protocol-commands.md) - Command reference
+- **moto-hses-usage** skill - Protocol Commands Reference (see `references/protocol-commands.md` in the skill)
