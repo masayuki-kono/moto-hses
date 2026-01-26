@@ -1,7 +1,7 @@
 #![allow(clippy::expect_used)]
 // Test utilities for integration tests
 
-use moto_hses_client::{ClientConfig, HsesClient};
+use moto_hses_client::{ClientConfig, HsesClient, SharedHsesClient};
 use moto_hses_proto::ROBOT_CONTROL_PORT;
 use std::time::Duration;
 
@@ -51,4 +51,14 @@ pub async fn create_test_client_with_host_and_port(
 pub async fn wait_for_operation() {
     // Small delay to ensure operations complete
     tokio::time::sleep(Duration::from_millis(50)).await;
+}
+
+/// Create a shared test client with default host and port
+///
+/// # Errors
+///
+/// Returns an error if the client fails to connect
+pub async fn create_shared_test_client() -> Result<SharedHsesClient, Box<dyn std::error::Error>> {
+    let client = create_test_client().await?;
+    Ok(SharedHsesClient::new(client))
 }

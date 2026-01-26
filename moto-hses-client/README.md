@@ -68,6 +68,7 @@ The following robot models have been tested and verified for compatibility:
 
 - **Async/await support**: Built on Tokio for high-performance async I/O
 - **Type-safe API**: Leverages Rust's type system for compile-time safety
+- **Thread-safe**: `SharedHsesClient` allows safe concurrent access from multiple tasks
 - **Comprehensive operations**: Support for all HSES protocol operations
 
 ## Installation
@@ -81,6 +82,8 @@ tokio = { version = "1.0", features = ["full"] }
 ```
 
 ## Usage
+
+### Basic Usage
 
 ```rust
 use moto_hses_client::HsesClient;
@@ -101,6 +104,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Alarm reset completed");
 
     Ok(())
+}
+```
+
+### Thread-Safe Usage
+
+For multi-threaded applications, use `SharedHsesClient` which wraps the client in `Arc<Mutex<_>>`:
+
+```rust
+use moto_hses_client::{HsesClient, SharedHsesClient, HsesClientOps};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Create a basic client and wrap it for thread-safe access
+    let client = HsesClient::new("192.168.0.3:10040").await?;
+    let shared_client = SharedHsesClient::new(client);
+
+    // Clone for use in multiple tasks
+    let client1 = shared_client.clone();
+    let client2 = shared_client.clone();
+
+    // Use from multiple concurrent tasks
+    let handle1 = tokio::spawn(async move {
+        client1.read_status().await
+    });
+
+    let handle2 = tokio::spawn(async move {
+        client2.read_position(0).await
+    });
+
+    let (status, position) = tokio::try_join!(handle1, handle2)?;
+    println!("Status: {:?}", status?);
+    println!("Position: {:?}", position?);
+
+    Ok(())
+}
+```
+
+### Using the Trait for Abstraction
+
+The `HsesClientOps` trait allows writing generic code that works with both `HsesClient` and `SharedHsesClient`:
+
+```rust
+use moto_hses_client::{HsesClientOps, ClientError};
+use moto_hses_proto::Status;
+
+async fn monitor_robot(client: &impl HsesClientOps) -> Result<Status, ClientError> {
+    client.read_status().await
 }
 ```
 

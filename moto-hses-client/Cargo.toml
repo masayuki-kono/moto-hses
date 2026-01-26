@@ -19,6 +19,7 @@ tokio = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
+async-trait = { workspace = true }
 
 [dev-dependencies]
 tokio-test = { workspace = true }
@@ -79,3 +80,7 @@ path = "examples/read_executing_job_info.rs"
 [[example]]
 name = "hold_servo_control"
 path = "examples/hold_servo_control.rs"
+
+[[example]]
+name = "shared_client"
+path = "examples/shared_client.rs"
