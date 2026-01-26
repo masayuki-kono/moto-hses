@@ -194,6 +194,26 @@ cargo test --test integration_tests
 - Client-server communication
 - All client operations with validation
 
+## AI-Assisted Development
+
+For developers using AI coding assistants such as [Cursor](https://cursor.com/), you can install Agent Skills that provide HSES protocol knowledge and moto-hses usage guidance:
+
+```bash
+# Example for Cursor (use -a claude-code for Claude Code, -a codex for Codex, etc.)
+npx add-skill masayuki-kono/agent-skills --skill hses-protocol --skill moto-hses-usage -a cursor -y
+```
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| **hses-protocol** | HSES protocol specification and implementation guidelines |
+| **moto-hses-usage** | moto-hses Rust crate usage guide and command reference |
+
+These skills help AI assistants understand the HSES protocol and provide accurate code suggestions when developing with moto-hses.
+
+> **Note**: Requires Node.js. For more information, see [add-skill](https://github.com/vercel-labs/add-skill).
+
 ## References
 
 - [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) — C++ reference implementation

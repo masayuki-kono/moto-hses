@@ -237,6 +237,26 @@ This project is licensed under the Apache License, Version 2.0. See the [LICENSE
 - [`moto-hses-proto`](https://crates.io/crates/moto-hses-proto) - Protocol definitions and serialization
 - [`moto-hses-mock`](https://crates.io/crates/moto-hses-mock) - Mock HSES server for testing
 
+## AI-Assisted Development
+
+For developers using AI coding assistants such as [Cursor](https://cursor.com/), you can install Agent Skills that provide HSES protocol knowledge and moto-hses usage guidance:
+
+```bash
+# Example for Cursor (use -a claude-code for Claude Code, -a codex for Codex, etc.)
+npx add-skill masayuki-kono/agent-skills --skill hses-protocol --skill moto-hses-usage -a cursor -y
+```
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| **hses-protocol** | HSES protocol specification and implementation guidelines |
+| **moto-hses-usage** | moto-hses Rust crate usage guide and command reference |
+
+These skills help AI assistants understand the HSES protocol and provide accurate code suggestions when developing with moto-hses.
+
+> **Note**: Requires Node.js. For more information, see [add-skill](https://github.com/vercel-labs/add-skill).
+
 ## References
 
 - [Yaskawa HSES Manual](https://www.motoman.com/getmedia/16B5CD92-BD0B-4DE0-9DC9-B71D0B6FE264/160766-1CD.pdf.aspx?ext=.pdf)
