@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-26
+
+### Changed
+- Version bump for workspace consistency with moto-hses-client 0.3.0
+
 ## [0.2.1] - 2026-01-25
 
 ### Changed
