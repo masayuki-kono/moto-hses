@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-01-26
+
+### Features
+- **Thread-Safe Client**:
+  - Add `SharedHsesClient` wrapper for thread-safe concurrent access
+  - Add `HsesClientOps` trait for abstraction over `HsesClient` and `SharedHsesClient`
+  - Support safe concurrent access from multiple Tokio tasks
+
 ## [0.2.1] - 2026-01-25
 
 ### Changed
