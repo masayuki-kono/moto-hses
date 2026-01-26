@@ -12,4 +12,5 @@ pub mod position_operations;
 pub mod read_executing_job_info;
 pub mod read_status;
 pub mod register_operations;
+pub mod shared_client;
 pub mod variable_operations;

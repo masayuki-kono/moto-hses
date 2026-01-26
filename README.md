@@ -112,6 +112,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Thread-Safe Usage
+
+For multi-threaded applications, use `SharedHsesClient`:
+
+```rust
+use moto_hses_client::{HsesClient, SharedHsesClient, HsesClientOps};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = HsesClient::new("192.168.0.3:10040").await?;
+    let shared_client = SharedHsesClient::new(client);
+
+    // Use from multiple concurrent tasks
+    let client1 = shared_client.clone();
+    let client2 = shared_client.clone();
+
+    let handle1 = tokio::spawn(async move { client1.read_status().await });
+    let handle2 = tokio::spawn(async move { client2.read_position(0).await });
+
+    let (status, position) = tokio::try_join!(handle1, handle2)?;
+    Ok(())
+}
+```
+
 ### Examples
 
 Comprehensive examples are available in the [`examples/`](moto-hses-client/examples/) directory:
