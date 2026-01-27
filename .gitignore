@@ -24,6 +24,7 @@ target
 logs
 
 # Symlinked skills (installed via add-skill)
+.cursor/skills/hses-packet-analysis
 .cursor/skills/hses-protocol
 .cursor/skills/moto-hses-usage
 .cursor/skills/rust-code-quality-guide

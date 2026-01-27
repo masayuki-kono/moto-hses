@@ -7,7 +7,7 @@ This command adds the required agent skills to the project from the `masayuki-ko
 ## Command
 
 ```bash
-npx add-skill masayuki-kono/agent-skills --skill hses-protocol --skill moto-hses-usage --skill rust-code-quality-guide -a cursor -y
+npx add-skill masayuki-kono/agent-skills -s hses-protocol moto-hses-usage hses-packet-analysis rust-code-quality-guide -a cursor -y
 ```
 
 ## Skills Included

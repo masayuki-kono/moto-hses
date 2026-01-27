@@ -243,7 +243,7 @@ For developers using AI coding assistants such as [Cursor](https://cursor.com/),
 
 ```bash
 # Example for Cursor (use -a claude-code for Claude Code, -a codex for Codex, etc.)
-npx add-skill masayuki-kono/agent-skills --skill hses-protocol --skill moto-hses-usage -a cursor -y
+npx add-skill masayuki-kono/agent-skills -s hses-protocol moto-hses-usage hses-packet-analysis rust-code-quality-guide -a cursor -y
 ```
 
 ### Available Skills
@@ -252,6 +252,8 @@ npx add-skill masayuki-kono/agent-skills --skill hses-protocol --skill moto-hses
 |-------|-------------|
 | **hses-protocol** | HSES protocol specification and implementation guidelines |
 | **moto-hses-usage** | moto-hses Rust crate usage guide and command reference |
+| **hses-packet-analysis** | HSES protocol packet capture analysis and report generation |
+| **rust-code-quality-guide** | Code quality guide for Rust |
 
 These skills help AI assistants understand the HSES protocol and provide accurate code suggestions when developing with moto-hses.
 
@@ -262,3 +264,4 @@ These skills help AI assistants understand the HSES protocol and provide accurat
 - [Yaskawa HSES Manual](https://www.motoman.com/getmedia/16B5CD92-BD0B-4DE0-9DC9-B71D0B6FE264/160766-1CD.pdf.aspx?ext=.pdf)
 - [fizyr/yaskawa_ethernet](https://github.com/fizyr/yaskawa_ethernet) - C++ reference implementation
 - [hsinkoyu/fs100](https://github.com/hsinkoyu/fs100) - Python reference implementation
+- [masayuki-kono/agent-skills](https://github.com/masayuki-kono/agent-skills) - Agent skills for AI coding agents
