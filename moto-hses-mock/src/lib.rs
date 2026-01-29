@@ -26,7 +26,7 @@ pub struct MockConfig {
     pub default_position: proto::Position,
     pub registers: HashMap<u16, i16>,
     pub variables: HashMap<u16, Vec<u8>>,
-    pub io_states: HashMap<u16, bool>,
+    pub io_states: HashMap<u16, u8>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: Vec<proto::Alarm>,
     pub executing_job: Option<proto::ExecutingJobInfo>,
@@ -49,8 +49,8 @@ impl MockConfig {
         variables.insert(2, vec![0x00, 0x00, 0x20, 0x41]); // D002 = 10.0
 
         let mut io_states = HashMap::new();
-        io_states.insert(1, true); // Robot user input 1
-        io_states.insert(1001, false); // Robot user output 1
+        io_states.insert(1, 1); // Robot user input 1
+        io_states.insert(1001, 0); // Robot user output 1
 
         Self {
             host: host.into(),

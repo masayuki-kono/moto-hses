@@ -21,7 +21,7 @@ pub struct MockState {
     pub status: proto::Status,
     pub position: proto::Position,
     pub variables: HashMap<u16, Vec<u8>>,
-    pub io_states: HashMap<u16, bool>,
+    pub io_states: HashMap<u16, u8>,
     pub registers: HashMap<u16, i16>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: AlarmHistory,
@@ -115,8 +115,8 @@ impl MockState {
         // This avoids conflicts between different variable types (B, I, D, R, S) using the same indices
 
         let mut io_states = HashMap::new();
-        io_states.insert(1, true); // Robot user input 1
-        io_states.insert(1001, false); // Robot user output 1
+        io_states.insert(1, 1); // Robot user input 1
+        io_states.insert(1001, 0); // Robot user output 1
 
         let mut registers = HashMap::new();
         registers.insert(0, 0);
@@ -436,13 +436,13 @@ impl MockState {
 
     /// Get I/O state
     #[must_use]
-    pub fn get_io_state(&self, io_number: u16) -> bool {
-        self.io_states.get(&io_number).copied().unwrap_or(false)
+    pub fn get_io_state(&self, io_number: u16) -> u8 {
+        self.io_states.get(&io_number).copied().unwrap_or(0)
     }
 
     /// Set I/O state
-    pub fn set_io_state(&mut self, io_number: u16, state: bool) {
-        self.io_states.insert(io_number, state);
+    pub fn set_io_state(&mut self, io_number: u16, value: u8) {
+        self.io_states.insert(io_number, value);
     }
 
     /// Get multiple I/O states
@@ -457,19 +457,12 @@ impl MockState {
     ) -> Result<Vec<u8>, String> {
         let mut result = Vec::with_capacity(count);
         for i in 0..count {
-            let mut byte_value = 0u8;
-            for bit in 0..8 {
-                let offset = u16::try_from(i * 8 + bit)
-                    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
-                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
-                    format!("I/O number {start_io_number} + {offset} overflows u16")
-                })?;
-                let state = self.get_io_state(io_number);
-                if state {
-                    byte_value |= 1 << bit;
-                }
-            }
-            result.push(byte_value);
+            let offset =
+                u16::try_from(i).map_err(|_| format!("I/O offset {i} exceeds u16::MAX"))?;
+            let io_number = start_io_number
+                .checked_add(offset)
+                .ok_or_else(|| format!("I/O number {start_io_number} + {offset} overflows u16"))?;
+            result.push(self.get_io_state(io_number));
         }
         Ok(result)
     }
@@ -484,16 +477,13 @@ impl MockState {
         start_io_number: u16,
         io_data: &[u8],
     ) -> Result<(), String> {
-        for (i, &byte) in io_data.iter().enumerate() {
-            for bit in 0..8 {
-                let offset = u16::try_from(i * 8 + bit)
-                    .map_err(|_| format!("I/O offset {} exceeds u16::MAX", i * 8 + bit))?;
-                let io_number = start_io_number.checked_add(offset).ok_or_else(|| {
-                    format!("I/O number {start_io_number} + {offset} overflows u16")
-                })?;
-                let state = (byte & (1 << bit)) != 0;
-                self.set_io_state(io_number, state);
-            }
+        for (i, &value) in io_data.iter().enumerate() {
+            let offset =
+                u16::try_from(i).map_err(|_| format!("I/O offset {i} exceeds u16::MAX"))?;
+            let io_number = start_io_number
+                .checked_add(offset)
+                .ok_or_else(|| format!("I/O number {start_io_number} + {offset} overflows u16"))?;
+            self.set_io_state(io_number, value);
         }
         Ok(())
     }

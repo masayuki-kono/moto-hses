@@ -26,15 +26,15 @@ impl CommandHandler for IoHandler {
 
         match service {
             0x0e => {
-                // Read - return 1 byte representing 8 I/O states
-                let value = u8::from(state.get_io_state(io_number));
+                // Read - return 1 byte per I/O channel
+                let value = state.get_io_state(io_number);
                 Ok(vec![value])
             }
             0x10 => {
-                // Write - accept 1 byte representing 8 I/O states
+                // Write - accept 1 byte per I/O channel
                 if !message.payload.is_empty() {
                     let value = message.payload[0];
-                    state.set_io_state(io_number, value != 0);
+                    state.set_io_state(io_number, value);
                 }
                 Ok(vec![])
             }
