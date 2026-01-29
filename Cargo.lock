@@ -270,9 +270,9 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.64"
+version = "0.1.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33e57f83510bb73707521ebaffa789ec8caf86f9657cad665b092b581d40e9fb"
+checksum = "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470"
 dependencies = [
  "android_system_properties",
  "core-foundation-sys",
@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-client"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "async-trait",
  "chrono",
@@ -379,7 +379,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-mock"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "env_logger",
  "log",
@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "moto-hses-proto"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "bytes",
  "encoding_rs",
