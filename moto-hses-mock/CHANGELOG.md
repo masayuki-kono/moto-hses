@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-01-29
+
+### Fixed
+- Use byte (u8) for mock I/O state instead of bool
+
 ## [0.3.2] - 2026-01-28
 
 ### Changed
