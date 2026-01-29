@@ -4,7 +4,7 @@ use crate::commands::Command;
 use crate::error::ProtocolError;
 
 /// File list request command
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadFileList {
     pub pattern: String,
     pub encoding: crate::encoding::TextEncoding,
@@ -43,7 +43,7 @@ impl Command for ReadFileList {
 }
 
 /// Send file command
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SendFile {
     pub filename: String,
     pub content: Vec<u8>,
@@ -90,7 +90,7 @@ impl Command for SendFile {
 }
 
 /// Receive file command
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiveFile {
     pub filename: String,
     pub encoding: crate::encoding::TextEncoding,
@@ -129,7 +129,7 @@ impl Command for ReceiveFile {
 }
 
 /// Delete file command
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeleteFile {
     pub filename: String,
     pub encoding: crate::encoding::TextEncoding,

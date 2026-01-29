@@ -4,7 +4,7 @@ use super::command_trait::Command;
 use crate::error::ProtocolError;
 
 /// Read register command (0x79)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadRegister {
     pub register_number: u16,
 }
@@ -41,7 +41,7 @@ impl Command for ReadRegister {
 }
 
 /// Write register command (0x79)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteRegister {
     pub register_number: u16,
     pub value: i16,
@@ -80,7 +80,7 @@ impl Command for WriteRegister {
 }
 
 /// Read multiple registers command (0x301)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadMultipleRegisters {
     pub start_register_number: u16,
     pub count: u32, // Number of register data (max 237)
@@ -137,7 +137,7 @@ impl Command for ReadMultipleRegisters {
 }
 
 /// Write multiple registers command (0x301)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteMultipleRegisters {
     pub start_register_number: u16,
     pub values: Vec<i16>, // Register values to write

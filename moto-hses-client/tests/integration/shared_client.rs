@@ -32,6 +32,6 @@ test_with_logging!(test_shared_client_concurrent_access, {
     let data2 = result3.expect("Task 3 failed");
 
     // Verify results are consistent
-    assert_eq!(status.data1.running, data1.running);
-    assert_eq!(status.data2.servo_on, data2.servo_on);
+    assert_eq!(status.data1, data1);
+    assert_eq!(status.data2, data2);
 });

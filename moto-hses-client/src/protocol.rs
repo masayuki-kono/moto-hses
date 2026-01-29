@@ -44,7 +44,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn read_variable<T>(&self, index: u16) -> Result<T, ClientError>
     where
-        T: HsesPayload + VariableCommandId,
+        T: HsesPayload + VariableCommandId + PartialEq,
     {
         let command = ReadVariable::<T> { index, _phantom: std::marker::PhantomData };
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -56,7 +56,7 @@ impl HsesClient {
     /// Returns an error if communication fails
     pub async fn write_variable<T>(&self, index: u16, value: T) -> Result<(), ClientError>
     where
-        T: HsesPayload + VariableCommandId,
+        T: HsesPayload + VariableCommandId + PartialEq,
     {
         let command = WriteVariable::<T> { index, value };
         let _response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -91,7 +91,7 @@ impl HsesClient {
         count: u32,
     ) -> Result<Vec<T>, ClientError>
     where
-        T: MultipleVariableCommandId + MultipleVariableResponse + Send + Sync,
+        T: MultipleVariableCommandId + MultipleVariableResponse + Send + Sync + PartialEq,
     {
         let command = ReadMultipleVariables::<T>::new(start_variable_number, count)?;
         let response = self.send_command_with_retry(command, Division::Robot).await?;
@@ -115,7 +115,7 @@ impl HsesClient {
         values: Vec<T>,
     ) -> Result<(), ClientError>
     where
-        T: MultipleVariableCommandId + Send + Sync + Clone + HsesPayload,
+        T: MultipleVariableCommandId + Send + Sync + Clone + HsesPayload + PartialEq,
         WriteMultipleVariables<T>: Command<Response = ()>,
     {
         let command = WriteMultipleVariables::<T>::new(start_variable_number, values)?;

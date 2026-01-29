@@ -17,7 +17,7 @@ pub enum TaskType {
 }
 
 /// Command for reading executing job information (0x73)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadExecutingJobInfo {
     pub instance: u16,
     pub attribute: u8,
@@ -87,7 +87,7 @@ impl Command for ReadExecutingJobInfo {
 }
 
 /// Command for starting job execution (0x86)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JobStartCommand;
 
 impl JobStartCommand {
@@ -141,7 +141,7 @@ pub enum JobSelectType {
 }
 
 /// Command for selecting job (0x87)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct JobSelectCommand {
     pub select_type: JobSelectType,
     pub job_name: String,

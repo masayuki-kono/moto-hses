@@ -34,7 +34,7 @@ impl From<u8> for AlarmAttribute {
 }
 
 /// Command for reading alarm data (0x70)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadAlarmData {
     pub instance: u16,
     pub attribute: AlarmAttribute,
@@ -98,7 +98,7 @@ pub enum AlarmCategory {
 }
 
 /// Command for reading alarm history (0x71)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadAlarmHistory {
     pub instance: u16,
     pub attribute: AlarmAttribute,
@@ -193,7 +193,7 @@ impl From<u16> for AlarmResetType {
 }
 
 /// Command for alarm reset / error cancel (0x82)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AlarmReset {
     pub reset_type: AlarmResetType,
 }
@@ -520,7 +520,7 @@ mod tests {
     fn test_alarm_reset_clone_and_debug() {
         let reset_cmd = AlarmReset::reset();
         let cloned_cmd = reset_cmd.clone();
-        assert_eq!(reset_cmd.reset_type, cloned_cmd.reset_type);
+        assert_eq!(reset_cmd, cloned_cmd);
 
         // Test Debug trait
         let debug_str = format!("{reset_cmd:?}");

@@ -278,14 +278,16 @@ impl MultipleVariableResponse for String {
 }
 
 /// Read multiple variables command (generic)
-#[derive(Debug, Clone)]
-pub struct ReadMultipleVariables<T: MultipleVariableCommandId> {
+/// `T` may be `f32`, which does not implement `Eq`, so we only derive `PartialEq`.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReadMultipleVariables<T: MultipleVariableCommandId + PartialEq> {
     pub start_variable_number: u16,
     pub count: u32,
     pub _phantom: PhantomData<T>,
 }
 
-impl<T: MultipleVariableCommandId> ReadMultipleVariables<T> {
+impl<T: MultipleVariableCommandId + PartialEq> ReadMultipleVariables<T> {
     /// Create a new `ReadMultipleVariables` command
     ///
     /// # Errors
@@ -296,7 +298,7 @@ impl<T: MultipleVariableCommandId> ReadMultipleVariables<T> {
     }
 }
 
-impl<T: MultipleVariableCommandId> Command for ReadMultipleVariables<T> {
+impl<T: MultipleVariableCommandId + PartialEq> Command for ReadMultipleVariables<T> {
     type Response = Vec<T>;
     fn command_id() -> u16 {
         T::multiple_command_id()
@@ -316,21 +318,23 @@ impl<T: MultipleVariableCommandId> Command for ReadMultipleVariables<T> {
 }
 
 /// Write multiple variables command (generic)
-#[derive(Debug, Clone)]
-pub struct WriteMultipleVariables<T: MultipleVariableCommandId> {
+/// `T` may be `f32`, which does not implement `Eq`, so we only derive `PartialEq`.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct WriteMultipleVariables<T: MultipleVariableCommandId + PartialEq> {
     pub start_variable_number: u16,
     pub values: Vec<T>,
 }
 
 /// Write multiple string variables command with encoding support
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteMultipleStringVariables {
     pub start_variable_number: u16,
     pub values: Vec<String>,
     pub text_encoding: crate::encoding::TextEncoding,
 }
 
-impl<T: MultipleVariableCommandId + Clone + HsesPayload> WriteMultipleVariables<T> {
+impl<T: MultipleVariableCommandId + PartialEq + Clone + HsesPayload> WriteMultipleVariables<T> {
     /// Create a new `WriteMultipleVariables` command
     ///
     /// # Errors
@@ -530,12 +534,15 @@ impl Command for WriteMultipleStringVariables {
     }
 }
 
-pub struct ReadVariable<T: HsesPayload + VariableCommandId> {
+/// `T` may be `f32`, which does not implement `Eq`, so we only derive `PartialEq`.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReadVariable<T: HsesPayload + VariableCommandId + PartialEq> {
     pub index: u16, // Support extended variable settings (0-999)
     pub _phantom: PhantomData<T>,
 }
 
-impl<T: HsesPayload + VariableCommandId> Command for ReadVariable<T> {
+impl<T: HsesPayload + VariableCommandId + PartialEq> Command for ReadVariable<T> {
     type Response = T;
     fn command_id() -> u16 {
         T::command_id()
@@ -554,19 +561,23 @@ impl<T: HsesPayload + VariableCommandId> Command for ReadVariable<T> {
     }
 }
 
-pub struct WriteVariable<T: HsesPayload + VariableCommandId> {
+/// `T` may be `f32`, which does not implement `Eq`, so we only derive `PartialEq`.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct WriteVariable<T: HsesPayload + VariableCommandId + PartialEq> {
     pub index: u16, // Support extended variable settings (0-999)
     pub value: T,
 }
 
 /// Write string variable command with encoding support
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteStringVar {
     pub index: u16, // Support extended variable settings (0-999)
     pub value: String,
     pub text_encoding: crate::encoding::TextEncoding,
 }
 
-impl<T: HsesPayload + VariableCommandId> Command for WriteVariable<T> {
+impl<T: HsesPayload + VariableCommandId + PartialEq> Command for WriteVariable<T> {
     type Response = ();
     fn command_id() -> u16 {
         T::command_id()

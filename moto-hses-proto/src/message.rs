@@ -4,7 +4,7 @@ use crate::error::ProtocolError;
 use bytes::{Buf, BufMut, BytesMut};
 
 // HSES Common Header (0-23 bytes)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HsesCommonHeader {
     pub magic: [u8; 4],
     pub header_size: u16,
@@ -86,7 +86,7 @@ impl HsesCommonHeader {
 }
 
 // Request Sub-header (24-31 bytes)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HsesRequestSubHeader {
     pub command: u16,
     pub instance: u16,
@@ -131,7 +131,7 @@ impl HsesRequestSubHeader {
 }
 
 // Response Sub-header (24-31 bytes)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HsesResponseSubHeader {
     pub service: u8,
     pub status: u8,
@@ -186,7 +186,7 @@ impl HsesResponseSubHeader {
 }
 
 // Request Message
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HsesRequestMessage {
     pub header: HsesCommonHeader,
     pub sub_header: HsesRequestSubHeader,
@@ -241,7 +241,7 @@ impl HsesRequestMessage {
 }
 
 // Response Message
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HsesResponseMessage {
     pub header: HsesCommonHeader,
     pub sub_header: HsesResponseSubHeader,
@@ -319,12 +319,7 @@ mod tests {
         let mut data = &buf[..];
         let decoded = HsesCommonHeader::decode(&mut data).unwrap();
 
-        assert_eq!(header.magic, decoded.magic);
-        assert_eq!(header.header_size, decoded.header_size);
-        assert_eq!(header.division, decoded.division);
-        assert_eq!(header.ack, decoded.ack);
-        assert_eq!(header.request_id, decoded.request_id);
-        assert_eq!(header.payload_size, decoded.payload_size);
+        assert_eq!(header, decoded);
     }
 
     #[test]
@@ -347,11 +342,7 @@ mod tests {
         let mut data = &buf[..];
         let decoded = HsesRequestSubHeader::decode(&mut data).unwrap();
 
-        assert_eq!(sub_header.command, decoded.command);
-        assert_eq!(sub_header.instance, decoded.instance);
-        assert_eq!(sub_header.attribute, decoded.attribute);
-        assert_eq!(sub_header.service, decoded.service);
-        assert_eq!(sub_header.padding, decoded.padding);
+        assert_eq!(sub_header, decoded);
     }
 
     #[test]
@@ -373,10 +364,7 @@ mod tests {
         let mut data = &buf[..];
         let decoded = HsesResponseSubHeader::decode(&mut data).unwrap();
 
-        assert_eq!(sub_header.service, decoded.service);
-        assert_eq!(sub_header.status, decoded.status);
-        assert_eq!(sub_header.added_status_size, decoded.added_status_size);
-        assert_eq!(sub_header.added_status, decoded.added_status);
+        assert_eq!(sub_header, decoded);
     }
 
     #[test]
@@ -402,13 +390,7 @@ mod tests {
 
         let decoded = HsesRequestMessage::decode(&encoded).unwrap();
 
-        assert_eq!(message.header.division, decoded.header.division);
-        assert_eq!(message.header.ack, decoded.header.ack);
-        assert_eq!(message.header.request_id, decoded.header.request_id);
-        assert_eq!(message.header.payload_size, decoded.header.payload_size);
-        assert_eq!(message.sub_header.command, decoded.sub_header.command);
-        assert_eq!(message.sub_header.service, decoded.sub_header.service);
-        assert_eq!(message.payload, decoded.payload);
+        assert_eq!(message, decoded);
     }
 
     #[test]
@@ -435,13 +417,6 @@ mod tests {
 
         let decoded = HsesResponseMessage::decode(&encoded).unwrap();
 
-        assert_eq!(message.header.division, decoded.header.division);
-        assert_eq!(message.header.ack, decoded.header.ack);
-        assert_eq!(message.header.request_id, decoded.header.request_id);
-        assert_eq!(message.header.payload_size, decoded.header.payload_size);
-        assert_eq!(message.sub_header.service, decoded.sub_header.service);
-        assert_eq!(message.sub_header.status, decoded.sub_header.status);
-        assert_eq!(message.sub_header.added_status, decoded.sub_header.added_status);
-        assert_eq!(message.payload, decoded.payload);
+        assert_eq!(message, decoded);
     }
 }
