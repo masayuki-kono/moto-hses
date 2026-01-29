@@ -112,7 +112,7 @@ impl IoCategory {
 }
 
 /// Read I/O command (0x78)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadIo {
     pub io_number: u16,
 }
@@ -149,7 +149,7 @@ impl Command for ReadIo {
 }
 
 /// Write I/O command (0x78)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteIo {
     pub io_number: u16,
     pub value: u8,
@@ -187,7 +187,7 @@ impl Command for WriteIo {
 }
 
 /// Read multiple I/O data command (0x300)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadMultipleIo {
     pub start_io_number: u16,
     pub count: u32, // Number of I/O data (max 474, must be multiple of 2)
@@ -235,7 +235,7 @@ impl Command for ReadMultipleIo {
 }
 
 /// Write multiple I/O data command (0x300)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WriteMultipleIo {
     pub start_io_number: u16,
     pub io_data: Vec<u8>, // Each byte contains 8 I/O states

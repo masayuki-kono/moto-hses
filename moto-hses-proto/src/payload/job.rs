@@ -4,7 +4,7 @@ use crate::error::ProtocolError;
 use crate::payload::HsesPayload;
 
 /// Executing job information data structure
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExecutingJobInfo {
     pub job_name: String,
     pub line_number: u32,

@@ -5,7 +5,7 @@ use crate::error::ProtocolError;
 use crate::payload::HsesPayload;
 
 /// Alarm data structure
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Alarm {
     pub code: u32,
     pub data: u32,

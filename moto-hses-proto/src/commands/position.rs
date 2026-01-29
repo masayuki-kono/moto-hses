@@ -4,7 +4,7 @@ use super::command_trait::Command;
 use crate::error::ProtocolError;
 
 /// Read current position command (0x75)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadCurrentPosition {
     pub control_group: u8,
 }

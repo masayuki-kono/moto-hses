@@ -4,7 +4,7 @@ use super::command_trait::Command;
 use crate::error::ProtocolError;
 
 /// Read status command (0x72) - reads all status data
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadStatus;
 
 impl Default for ReadStatus {
@@ -45,7 +45,7 @@ impl Command for ReadStatus {
 }
 
 /// Read status data 1 command (0x72)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadStatusData1;
 
 impl Default for ReadStatusData1 {
@@ -86,7 +86,7 @@ impl Command for ReadStatusData1 {
 }
 
 /// Read status data 2 command (0x72)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadStatusData2;
 
 impl Default for ReadStatusData2 {

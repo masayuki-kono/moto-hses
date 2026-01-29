@@ -5,7 +5,7 @@ use crate::payload::HsesPayload;
 use bytes::Buf;
 
 // Enhanced status structure
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Status {
     pub data1: StatusData1,
     pub data2: StatusData2,
@@ -83,7 +83,7 @@ impl HsesPayload for Status {
 }
 
 // Attribute-specific status structures
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct StatusData1 {
     pub step: bool,
@@ -96,7 +96,7 @@ pub struct StatusData1 {
     pub remote: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct StatusData2 {
     pub teach_pendant_hold: bool,
@@ -284,9 +284,7 @@ mod tests {
         let serialized = status.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
         let deserialized =
             Status::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
-        assert_eq!(status.data1.step, deserialized.data1.step);
-        assert_eq!(status.data2.servo_on, deserialized.data2.servo_on);
-        assert_eq!(status.data1.running, deserialized.data1.running);
+        assert_eq!(status, deserialized);
     }
 
     #[test]
@@ -345,7 +343,7 @@ mod tests {
         let serialized = status.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
         let deserialized =
             Status::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
-        assert_eq!(status.data1.step, deserialized.data1.step);
+        assert_eq!(status, deserialized);
     }
 
     #[test]
@@ -360,7 +358,7 @@ mod tests {
         let serialized = status_data1.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
         let deserialized =
             StatusData1::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
-        assert_eq!(status_data1.step, deserialized.step);
+        assert_eq!(status_data1, deserialized);
     }
 
     #[test]
@@ -375,6 +373,6 @@ mod tests {
         let serialized = status_data2.serialize(crate::encoding::TextEncoding::Utf8).unwrap();
         let deserialized =
             StatusData2::deserialize(&serialized, crate::encoding::TextEncoding::Utf8).unwrap();
-        assert_eq!(status_data2.servo_on, deserialized.servo_on);
+        assert_eq!(status_data2, deserialized);
     }
 }

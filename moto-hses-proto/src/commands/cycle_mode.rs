@@ -4,7 +4,7 @@ use super::command_trait::Command;
 use crate::error::ProtocolError;
 
 /// Cycle mode switching command (0x84)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CycleModeSwitchingCommand {
     pub mode: CycleMode,
 }
