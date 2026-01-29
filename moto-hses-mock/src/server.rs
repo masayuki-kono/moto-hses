@@ -343,9 +343,9 @@ impl MockServer {
     }
 
     /// Set an I/O state in the server state
-    pub async fn set_io_state(&self, io_number: u16, state: bool) {
+    pub async fn set_io_state(&self, io_number: u16, value: u8) {
         let mut server_state = self.state.write().await;
-        server_state.set_io_state(io_number, state);
+        server_state.set_io_state(io_number, value);
     }
 
     /// Set the robot status
@@ -427,8 +427,8 @@ impl MockServerBuilder {
     }
 
     #[must_use]
-    pub fn with_io_state(mut self, io_number: u16, state: bool) -> Self {
-        self.config.io_states.insert(io_number, state);
+    pub fn with_io_state(mut self, io_number: u16, value: u8) -> Self {
+        self.config.io_states.insert(io_number, value);
         self
     }
 

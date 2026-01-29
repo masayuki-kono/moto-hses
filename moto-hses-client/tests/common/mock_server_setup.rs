@@ -198,10 +198,10 @@ pub async fn create_io_test_server()
     manager
         .start_with_builder(|builder| {
             builder
-                .with_io_state(1, true) // Input 1 = ON
-                .with_io_state(2, false) // Input 2 = OFF
-                .with_io_state(1001, false) // Output 1 = OFF
-                .with_io_state(1002, true) // Output 2 = ON
+                .with_io_state(1, 1) // Input 1 = ON
+                .with_io_state(2, 0) // Input 2 = OFF
+                .with_io_state(1001, 0) // Output 1 = OFF
+                .with_io_state(1002, 1) // Output 2 = ON
         })
         .await?;
 

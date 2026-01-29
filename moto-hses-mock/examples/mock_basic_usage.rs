@@ -45,8 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     server.set_variable(20, vec![0x00, 0x00, 0x48, 0x42]).await; // D020 = 50.0
 
     // Set some I/O states
-    server.set_io_state(1, true).await; // Input 1 = ON
-    server.set_io_state(1001, false).await; // Output 1 = OFF
+    server.set_io_state(1, 1).await; // Input 1 = ON
+    server.set_io_state(1001, 0).await; // Output 1 = OFF
 
     info!("Test data configured:");
     info!("  - 4 test alarms added (Instance 1-4)");
