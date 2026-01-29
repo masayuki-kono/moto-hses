@@ -77,7 +77,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-moto-hses-proto = "0.3.3"
+moto-hses-proto = "0.3.4"
 ```
 
 ## Usage
