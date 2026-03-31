@@ -6,6 +6,19 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+/// Variable type for HSES variable spaces.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum VariableType {
+    Byte,
+    Integer,
+    Double,
+    Real,
+    String,
+}
+
+/// Typed variable map keyed by `(VariableType, index)`.
+pub type TypedVariables = HashMap<(VariableType, u16), Vec<u8>>;
+
 /// Selected job information
 #[derive(Debug, Clone)]
 pub struct SelectedJobInfo {
@@ -20,7 +33,7 @@ pub struct MockState {
     pub text_encoding: proto::TextEncoding,
     pub status: proto::Status,
     pub position: proto::Position,
-    pub variables: HashMap<u16, Vec<u8>>,
+    pub variables: TypedVariables,
     pub io_states: HashMap<u16, u8>,
     pub registers: HashMap<u16, i16>,
     pub alarms: Vec<proto::Alarm>,
@@ -110,7 +123,7 @@ impl MockState {
     /// Create a new `MockState` with test data
     #[allow(clippy::too_many_lines)]
     fn new_with_test_data() -> Self {
-        let variables = HashMap::new();
+        let variables = TypedVariables::new();
         // Note: Variables are initialized as needed, not pre-populated
         // This avoids conflicts between different variable types (B, I, D, R, S) using the same indices
 
@@ -201,13 +214,13 @@ impl MockState {
     }
     /// Get variable value
     #[must_use]
-    pub fn get_variable(&self, index: u16) -> Option<&Vec<u8>> {
-        self.variables.get(&index)
+    pub fn get_variable(&self, var_type: VariableType, index: u16) -> Option<&Vec<u8>> {
+        self.variables.get(&(var_type, index))
     }
 
     /// Set variable value
-    pub fn set_variable(&mut self, index: u16, value: Vec<u8>) {
-        self.variables.insert(index, value);
+    pub fn set_variable(&mut self, var_type: VariableType, index: u16, value: Vec<u8>) {
+        self.variables.insert((var_type, index), value);
     }
 
     /// Get multiple byte variable values
@@ -224,7 +237,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            let var_data = self.get_variable(var_num);
+            let var_data = self.get_variable(VariableType::Byte, var_num);
             values.push(var_data.map_or(0, |data| data.first().copied().unwrap_or(0)));
         }
         values
@@ -242,7 +255,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            self.set_variable(var_num, vec![value]);
+            self.set_variable(VariableType::Byte, var_num, vec![value]);
         }
     }
 
@@ -260,7 +273,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            let var_data = self.get_variable(var_num);
+            let var_data = self.get_variable(VariableType::Integer, var_num);
             // I variable is 2 bytes (i16)
             let value = var_data.map_or(0_i16, |data| {
                 if data.len() >= 2 { i16::from_le_bytes([data[0], data[1]]) } else { 0 }
@@ -282,7 +295,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            self.set_variable(var_num, value.to_le_bytes().to_vec());
+            self.set_variable(VariableType::Integer, var_num, value.to_le_bytes().to_vec());
         }
     }
 
@@ -300,7 +313,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            let var_data = self.get_variable(var_num);
+            let var_data = self.get_variable(VariableType::Double, var_num);
             // D variable is 4 bytes (i32)
             let value = var_data.map_or(0_i32, |data| {
                 if data.len() >= 4 {
@@ -326,7 +339,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            self.set_variable(var_num, value.to_le_bytes().to_vec());
+            self.set_variable(VariableType::Double, var_num, value.to_le_bytes().to_vec());
         }
     }
 
@@ -353,7 +366,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            let var_data = self.get_variable(var_num);
+            let var_data = self.get_variable(VariableType::Real, var_num);
             // R variable is 4 bytes (f32)
             let value = var_data.map_or(0.0_f32, |data| {
                 if data.len() >= 4 {
@@ -384,7 +397,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            self.set_variable(var_num, value.to_le_bytes().to_vec());
+            self.set_variable(VariableType::Real, var_num, value.to_le_bytes().to_vec());
         }
     }
 
@@ -406,7 +419,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            let var_data = self.get_variable(var_num);
+            let var_data = self.get_variable(VariableType::String, var_num);
             // S variable is 16 bytes
             let mut value = [0u8; 16];
             if let Some(data) = var_data {
@@ -430,7 +443,7 @@ impl MockState {
                 + u16::try_from(i).unwrap_or_else(|_| {
                     panic!("Variable index {i} (start_variable: {start_variable}) exceeds u16::MAX")
                 });
-            self.set_variable(var_num, value.to_vec());
+            self.set_variable(VariableType::String, var_num, value.to_vec());
         }
     }
 
@@ -647,6 +660,35 @@ impl MockState {
     #[must_use]
     pub const fn get_cycle_mode(&self) -> proto::CycleMode {
         self.cycle_mode
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{MockState, VariableType};
+
+    #[test]
+    fn variables_are_isolated_by_type_at_same_index() {
+        let mut state = MockState::default();
+        let index = 10;
+
+        state.set_variable(VariableType::Byte, index, vec![0x11]);
+        state.set_variable(VariableType::Integer, index, vec![0x22, 0x33]);
+        state.set_variable(VariableType::Double, index, vec![0x44, 0x55, 0x66, 0x77]);
+        state.set_variable(VariableType::Real, index, vec![0x00, 0x00, 0x80, 0x3f]);
+        state.set_variable(VariableType::String, index, b"abc".to_vec());
+
+        assert_eq!(state.get_variable(VariableType::Byte, index), Some(&vec![0x11]));
+        assert_eq!(state.get_variable(VariableType::Integer, index), Some(&vec![0x22, 0x33]));
+        assert_eq!(
+            state.get_variable(VariableType::Double, index),
+            Some(&vec![0x44, 0x55, 0x66, 0x77])
+        );
+        assert_eq!(
+            state.get_variable(VariableType::Real, index),
+            Some(&vec![0x00, 0x00, 0x80, 0x3f])
+        );
+        assert_eq!(state.get_variable(VariableType::String, index), Some(&b"abc".to_vec()));
     }
 }
 

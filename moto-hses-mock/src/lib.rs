@@ -13,7 +13,7 @@ pub mod state;
 
 pub use handlers::CommandHandler;
 pub use server::MockServer;
-pub use state::MockState;
+pub use state::{MockState, TypedVariables, VariableType};
 
 /// Mock server configuration
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ pub struct MockConfig {
     pub default_status: proto::Status,
     pub default_position: proto::Position,
     pub registers: HashMap<u16, i16>,
-    pub variables: HashMap<u16, Vec<u8>>,
+    pub variables: TypedVariables,
     pub io_states: HashMap<u16, u8>,
     pub alarms: Vec<proto::Alarm>,
     pub alarm_history: Vec<proto::Alarm>,
@@ -43,10 +43,10 @@ impl MockConfig {
         registers.insert(3, 300);
         registers.insert(4, 400);
 
-        let mut variables = HashMap::new();
-        variables.insert(0, vec![0x01, 0x00, 0x00, 0x00]); // D000 = 1
-        variables.insert(1, vec![0x64, 0x00, 0x00, 0x00]); // D001 = 100
-        variables.insert(2, vec![0x00, 0x00, 0x20, 0x41]); // D002 = 10.0
+        let mut variables = TypedVariables::new();
+        variables.insert((VariableType::Double, 0), vec![0x01, 0x00, 0x00, 0x00]); // D000 = 1
+        variables.insert((VariableType::Double, 1), vec![0x64, 0x00, 0x00, 0x00]); // D001 = 100
+        variables.insert((VariableType::Double, 2), vec![0x00, 0x00, 0x20, 0x41]); // D002 = 10.0
 
         let mut io_states = HashMap::new();
         io_states.insert(1, 1); // Robot user input 1

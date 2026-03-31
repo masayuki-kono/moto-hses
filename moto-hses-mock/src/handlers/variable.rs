@@ -1,7 +1,7 @@
 //! Variable-related command handlers
 
 use super::CommandHandler;
-use crate::state::MockState;
+use crate::state::{MockState, VariableType};
 use moto_hses_proto as proto;
 
 /// Handler for byte variable operations (0x7a)
@@ -26,7 +26,7 @@ impl CommandHandler for ByteVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(VariableType::Byte, var_index).map_or_else(
                     || {
                         // B variable: 1 byte (actual data type size)
                         Ok(vec![0])
@@ -44,7 +44,7 @@ impl CommandHandler for ByteVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(VariableType::Byte, var_index, message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -75,7 +75,7 @@ impl CommandHandler for IntegerVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(VariableType::Integer, var_index).map_or_else(
                     || {
                         // I variable: 2 bytes (actual data type size)
                         Ok(vec![0, 0])
@@ -93,7 +93,7 @@ impl CommandHandler for IntegerVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(VariableType::Integer, var_index, message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -124,7 +124,7 @@ impl CommandHandler for DoubleVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(VariableType::Double, var_index).map_or_else(
                     || {
                         // Return 4 bytes for 32-bit integer variable
                         Ok(vec![0, 0, 0, 0])
@@ -142,7 +142,7 @@ impl CommandHandler for DoubleVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(VariableType::Double, var_index, message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -173,7 +173,7 @@ impl CommandHandler for RealVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(VariableType::Real, var_index).map_or_else(
                     || {
                         // Return 4 bytes for real variable as expected by Python client
                         Ok(vec![0, 0, 0, 0])
@@ -194,7 +194,7 @@ impl CommandHandler for RealVarHandler {
             0x10 => {
                 // Write
                 if !message.payload.is_empty() {
-                    state.set_variable(var_index, message.payload.clone());
+                    state.set_variable(VariableType::Real, var_index, message.payload.clone());
                 }
                 Ok(vec![])
             }
@@ -225,7 +225,7 @@ impl CommandHandler for StringVarHandler {
         match service {
             0x0e => {
                 // Read
-                state.get_variable(var_index).map_or_else(
+                state.get_variable(VariableType::String, var_index).map_or_else(
                     || {
                         // Return 16 bytes for uninitialized variables (all zeros)
                         Ok(vec![0u8; 16])
@@ -246,13 +246,21 @@ impl CommandHandler for StringVarHandler {
                     // Store the full 16-byte S variable data, but trim trailing nulls for storage
                     let data = &message.payload[..16];
                     let trimmed_len = data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                    state.set_variable(var_index, data[..trimmed_len].to_vec());
+                    state.set_variable(
+                        VariableType::String,
+                        var_index,
+                        data[..trimmed_len].to_vec(),
+                    );
                 } else if !message.payload.is_empty() {
                     // Handle shorter payloads by padding with zeros
                     let mut data = message.payload.clone();
                     data.resize(16, 0); // Pad to 16 bytes
                     let trimmed_len = data.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-                    state.set_variable(var_index, data[..trimmed_len].to_vec());
+                    state.set_variable(
+                        VariableType::String,
+                        var_index,
+                        data[..trimmed_len].to_vec(),
+                    );
                 }
                 Ok(vec![])
             }
