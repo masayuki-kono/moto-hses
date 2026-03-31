@@ -1,7 +1,7 @@
 //! Basic usage example for mock server
 
 use log::info;
-use moto_hses_mock::{MockConfig, MockServer};
+use moto_hses_mock::{MockConfig, MockServer, VariableType};
 use moto_hses_proto as proto;
 
 #[tokio::main]
@@ -41,8 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     server.add_test_alarm(proto::payload::alarm::test_alarms::emergency_stop()).await;
 
     // Set some test variables
-    server.set_variable(10, vec![0x42, 0x00, 0x00, 0x00]).await; // D010 = 66
-    server.set_variable(20, vec![0x00, 0x00, 0x48, 0x42]).await; // D020 = 50.0
+    server.set_variable(VariableType::Double, 10, vec![0x42, 0x00, 0x00, 0x00]).await; // D010 = 66
+    server.set_variable(VariableType::Double, 20, vec![0x00, 0x00, 0x48, 0x42]).await; // D020 = 50.0
 
     // Set some I/O states
     server.set_io_state(1, 1).await; // Input 1 = ON

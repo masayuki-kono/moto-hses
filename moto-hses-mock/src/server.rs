@@ -1,7 +1,7 @@
 //! Mock HSES server implementation
 
 use crate::handlers::CommandHandlerRegistry;
-use crate::state::{MockState, SharedState};
+use crate::state::{MockState, SharedState, TypedVariables, VariableType};
 use moto_hses_proto as proto;
 use proto::commands::alarm::AlarmCategory;
 use std::net::SocketAddr;
@@ -337,9 +337,9 @@ impl MockServer {
     }
 
     /// Set a variable in the server state
-    pub async fn set_variable(&self, index: u16, value: Vec<u8>) {
+    pub async fn set_variable(&self, var_type: VariableType, index: u16, value: Vec<u8>) {
         let mut state = self.state.write().await;
-        state.set_variable(index, value);
+        state.set_variable(var_type, index, value);
     }
 
     /// Set an I/O state in the server state
@@ -457,7 +457,7 @@ impl MockServerBuilder {
     }
 
     #[must_use]
-    pub fn with_variables(mut self, variables: std::collections::HashMap<u16, Vec<u8>>) -> Self {
+    pub fn with_variables(mut self, variables: TypedVariables) -> Self {
         self.config.variables = variables;
         self
     }
