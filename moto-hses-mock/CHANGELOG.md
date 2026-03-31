@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-03-31
+
+### Fixed
+- Isolate variable storage by type so B/I/D/R/S can share the same index without collisions
+
 ## [0.3.4] - 2026-01-29
 
 ### Changed
